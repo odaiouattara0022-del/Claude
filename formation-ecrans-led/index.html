@@ -1631,7 +1631,7 @@ Canevas     = 1 257 × 1 200 px, avec une jointure de fermeture à placer à l'a
 <section class="mod" id="eval" data-title="Évaluation finale" data-dur="1 h" data-num="20" data-special="1" hidden>
 <div class="step" data-kind="quiz" data-title="Évaluation finale" hidden>
 <h3>Évaluation finale</h3>
-<p>20 questions sur toute la formation. Seuil de validation : 16 / 20.</p>
+<p>20 questions tirées au hasard sur toute la formation. Seuil de validation : 16 / 20. Trois essais, la meilleure note est gardée.</p>
 <div class="qs" id="quiz"></div>
 <div class="score"><b id="score">0 / 20</b><button class="btn" id="resetQuiz" type="button">Recommencer</button></div>
 </div>
@@ -1647,8 +1647,9 @@ Canevas     = 1 257 × 1 200 px, avec une jointure de fermeture à placer à l'a
 <div class="step" data-kind="pratique" data-title="Résultats des stagiaires" hidden>
 <h3>Résultats des stagiaires</h3>
 <p>Chaque stagiaire qui ouvre la formation avec son compte apparaît ici en direct. Pour qu’un stagiaire puisse enregistrer sa progression, partagez la page avec lui en « Peut interagir ». Seuls les personnes qui peuvent modifier la page voient ce tableau.</p>
-<p class="msg" id="fmMsg">Chargement des résultats…</p>
+<div class="row"><p class="msg" id="fmMsg" style="flex:1">Chargement des résultats…</p><button class="btn" id="fmExport" type="button" disabled>Exporter pour Excel (CSV)</button></div>
 <div class="tbl fm"><table><thead><tr><th>Stagiaire</th><th>Progression</th><th>Modules</th><th>Évaluation</th><th>Statut</th><th>Activité</th></tr></thead><tbody id="fmBody"></tbody></table></div>
+<div id="fmDetail" style="display:flex;flex-direction:column;gap:12px"></div>
 </div>
 </section>
 <section class="mod" id="certif" data-title="Projet de certification" data-dur="½ journée" data-num="★" data-special="1" hidden>
@@ -1910,6 +1911,48 @@ m13:[['Tous les cabinets après le n° 5 sont noirs :',['Câble entre 4 et 5 ou 
     ['Un module neuf est plus clair que les autres :',['Il est défectueux','Coefficients de calibration à charger','Câble réseau à changer'],1,'Autre lot, autre calibration.'],
     ['La méthode de diagnostic de base :',['Délimiter, remonter la chaîne, permuter','Tout remplacer','Redémarrer le PC'],0,'On isole l’élément en cause.']]
 };
+var MQX = {
+m1:[['Que mesure le pas de pixel ?',['La taille d’une LED','La distance entre les centres de deux pixels','La diagonale de l’écran'],1,'En millimètres : P2.6 = 2,6 mm.'],['Un écran intérieur standard affiche en général…',['600 à 1 500 nits','5 000 à 8 000 nits','Moins de 100 nits'],0,'Au-delà, l’image éblouit en intérieur.'],['Avantage principal de la cathode commune ?',['Moins de consommation et de chaleur','Plus de pixels','Pas besoin de carte réceptrice'],0,'Environ 30 à 40 % d’économie.']],
+m2:[['Écran collé au mur sans accès arrière : quelle maintenance ?',['Par l’arrière','Par l’avant (modules magnétiques)','Aucune'],1,'La maintenance avant évite une passerelle arrière.'],['Un sol LED exige surtout…',['Un support nivelé et une charge admissible suffisante','Un indice IP20','Un scan 1/64'],0,'Il faut contrôler le plancher et niveler chaque pied.'],['Colonne cylindrique décorative :',['Modules flexibles','Cabinets acier 960 × 960','Totem asynchrone'],0,'Les modules flexibles épousent la courbe.']],
+m3:[['Rôle de la carte HUB ?',['Répartir les signaux vers les nappes des modules','Convertir le 230 V','Stocker les vidéos'],0,'Elle fait le lien entre carte réceptrice et modules.'],['Tension typique en sortie d’alimentation d’un cabinet ?',['230 V','5 V (ou moins en cathode commune)','48 V'],1,'Les modules sont alimentés en basse tension.'],['Un processeur VX, c’est…',['Une carte émettrice avec mise à l’échelle et couches','Un module LED','Un capteur de luminosité'],0,'Un tout-en-un pour la régie.']],
+m4:[['Pixels par m² en P3.91 ?',['≈ 16 000','≈ 65 500','≈ 250 000'],1,'(1000 / 3,906)² ≈ 65 536.'],['Puissance moyenne typique par rapport au maximum ?',['Environ un tiers','Le double','Identique'],0,'Le contenu vidéo est rarement tout blanc.'],['Un mur de 3,1 millions de pixels demande au minimum…',['2 ports','5 ports','20 ports'],1,'3,1 M / 650 000 ≈ 4,8, arrondi à 5.']],
+m5:[['Angle entre cabinets de 500 mm pour un rayon de 6 m ?',['≈ 1°','≈ 4,8°','≈ 15°'],1,'360 × 0,5 / (2π × 6) ≈ 4,8°.'],['Fixer un écran sur une cloison en placo seule :',['Possible avec de bonnes chevilles','Jamais : il faut un support porteur','Oui sous 50 kg'],1,'Le placo ne porte pas un écran.'],['Travail en hauteur : priorité à…',['Protections collectives (nacelle, échafaudage)','Harnais seul','Échelle'],0,'Le harnais vient en dernier recours.']],
+m6:[['Un groupe électrogène se dimensionne à…',['≈ 1,5 × la puissance max de l’écran','La puissance moyenne','La moitié du max'],0,'Charge non linéaire, marge indispensable.'],['Pourquoi équilibrer les phases ?',['Éviter une phase saturée et un neutre surchargé','Pour la couleur','Ce n’est pas utile'],0,'Répartissez les départs sur L1, L2, L3.'],['Disjoncteur qui saute au démarrage : courbe conseillée ?',['B','C ou D','Aucune importance'],1,'Elles tolèrent l’appel de courant.']],
+m7:[['À la réception du matériel, on commence par…',['Contrôler caisses, chocs et numéros de série','Monter directement','Allumer en plein blanc'],0,'Toute réserve se note à la livraison.'],['Écran extérieur : les câbles entrent…',['Par le haut','Par le bas avec boucle d’égouttement','Par l’avant'],1,'L’eau ne doit pas suivre le câble.'],['Pas fin ou COB : la surface LED se manipule…',['À mains nues','Avec gants et protection antistatique','Au chiffon humide'],1,'La surface est fragile et sensible à l’électricité statique.']],
+m8:[['Au-delà de 100 m entre régie et écran :',['Rallonger le Cat6','Convertisseurs fibre','Wi-Fi'],1,'La fibre porte les données sur des kilomètres.'],['Un port porte 650 000 px, un cabinet 36 864 px : combien de cabinets au maximum ?',['12','17','30'],1,'17 × 36 864 = 626 688 px.'],['Pourquoi câbler en serpentin ?',['Câbles courts et plan simple à suivre','C’est obligatoire','Pour la calibration'],0,'Aller sur une rangée, retour sur la suivante.']],
+m9:[['Mot de passe d’usine du mode avancé de NovaLCT ?',['admin','1234','Aucun'],0,'À changer en production.'],['Dans LEDVISION, le fichier de carte réceptrice a l’extension…',['.rcfgx','.rcvbp','.mp4'],1,'.rcfgx est l’équivalent NovaStar.'],['Sur un VX, une incrustation caméra par-dessus les paroles s’appelle…',['Un PIP (couche)','Un scan','Un gamma'],0,'Les couches se règlent en façade ou au logiciel.']],
+m10:[['Dans ViPlex, une « solution » est…',['Un programme fait de pages et de fenêtres','Un firmware','Un câble'],0,'Elle se publie ensuite vers les lecteurs.'],['Le point d’accès Wi-Fi d’un lecteur Huidu…',['Commence par « HD- »','Commence par « AP- »','S’appelle toujours « Huidu »'],0,'« AP » + numéro de série, c’est chez NovaStar.'],['Pendant une mise à jour de firmware :',['On peut couper le courant','Ne jamais couper le courant','Débrancher le réseau'],1,'Une coupure peut rendre la carte inutilisable.']],
+m11:[['Écran 2304 × 1344 et sortie PC 1920 × 1080 en découpe :',['Tout s’affiche','Une partie de l’écran ne reçoit rien','L’image est déformée'],1,'Il faut une sortie plus grande ou une mise à l’échelle.'],['Mise à l’échelle avec des rapports d’aspect différents :',['Image déformée ou bandes noires','Aucun effet','Meilleure netteté'],0,'Gardez le même rapport d’aspect.'],['Colonne de 1 m de diamètre en P2.5 : pixels sur le tour ?',['≈ 400','≈ 1 257','≈ 3 142'],1,'π × 1 000 / 2,5 ≈ 1 257.']],
+m12:[['Uniformité de luminosité attendue après calibration ?',['≥ 97 %','≥ 50 %','Sans importance'],0,'Valeur usuelle à préciser au contrat.'],['Défaut visible seulement à faible luminosité : quelle mire ?',['Blanc 10 %','Rouge 100 %','Grille'],0,'Les écarts de lot ressortent à bas niveau.'],['Le dossier remis au client contient…',['Plans, fichiers de configuration, identifiants, PV','Seulement la facture','Rien'],0,'C’est la base de toute intervention future.']],
+m13:[['Cabinet brouillé après remplacement de la carte réceptrice :',['Renvoyer le fichier de carte et sauvegarder','Changer tous les modules','Changer le PC'],0,'Une carte neuve n’a pas la bonne configuration.'],['Traînée de pixels faiblement allumés (« chenille ») :',['Humidité','Câble HDMI','Luminosité trop basse'],0,'Préchauffage progressif.'],['Stock de modules de rechange conseillé ?',['3 à 5 % du même lot','Aucun','50 %'],0,'Même lot = même teinte.']],
+m14:[['GTI dans un contrat de maintenance :',['Garantie de temps d’intervention','Gestion technique informatique','Garantie totale incluse'],0,'Le délai est écrit dans le contrat.'],['Un cabinet se transporte…',['Face LED protégée, en flight case','Face LED au sol','En vrac'],0,'Les coins et la face LED sont fragiles.'],['Pourquoi chiffrer des modules de rechange ?',['Pour remplacer avec le même lot, donc la même teinte','Pour gonfler le prix','Inutile'],0,'Un lot différent se voit à l’écran.']]
+};
+var FQX = [
+['Quelle technologie protège des LED SMD sous une résine ?',['GOB','DIP','MiP'],0,'Glue On Board : robuste pour la location et les sols.'],
+['Écran P2.6 : distance de vision confortable ?',['≈ 1 m','≈ 5 à 8 m','≈ 50 m'],1,'2 à 3 × le pas, en mètres.'],
+['Rôle du capteur de luminosité ?',['Adapter la luminosité à l’éclairage ambiant','Mesurer la température','Détecter le public'],0,'Utile surtout en extérieur.'],
+['Un processeur qui bascule sur une autre source si le PC tombe utilise…',['Une entrée de secours','Le genlock','Le gamma'],0,'À déclarer dans les réglages d’entrée.'],
+['Combien de cabinets de 500 × 1 000 mm pour un écran de 4 × 3 m ?',['24','12','48'],0,'8 colonnes × 3 rangées.'],
+['Au-delà de combien de degrés par joint les verrous d’angle courants ne suffisent plus ?',['10°','1°','45°'],0,'Au-delà : rayon plus grand ou modules flexibles.'],
+['Courant de fuite à ne pas dépasser sur un différentiel 30 mA ?',['≈ 9 mA','30 mA','100 mA'],0,'Environ 30 % du seuil.'],
+['Taurus, C-series et HD-A3 sont des…',['Lecteurs asynchrones','Modules','Alimentations'],0,'NovaStar, Colorlight, Huidu.'],
+['Pour un affichage pixel pour pixel sans découpe, le PC doit sortir…',['La résolution native de l’écran','Toujours du 4K','Du 720p'],0,'Résolution personnalisée ou EDID.'],
+['Un défaut qui suit le module quand on le permute vient…',['Du module','De la carte HUB','Du câble réseau'],0,'Permuter isole l’élément en cause.'],
+['Module GOB ou COB défectueux :',['Retour en usine','LED changée sur place à l’air chaud','Remplacer tout l’écran'],0,'La résine ou les puces nues empêchent la réparation locale.'],
+['Dans un devis, la main-d’œuvre se calcule…',['Jours × techniciens × taux journalier','Au m² uniquement','Elle est offerte'],0,'Ajoutez déplacements et nuits.'],
+['Écran publicitaire extérieur la nuit :',['Respecter extinction et luminance réglementaires','100 % toute la nuit','Clignotements autorisés'],0,'Règlement local de publicité.'],
+['Quelle mire vérifie l’ordre des cabinets ?',['La mire pixel map numérotée','Le rouge plein','Le noir'],0,'Chaque cabinet affiche son numéro.'],
+['Que faire d’un fichier de configuration après la mise en service ?',['L’archiver dans le dossier client et sur une clé près du contrôleur','Le supprimer','L’envoyer au public'],0,'Il permet de reconfigurer en quelques minutes.']
+];
+function pickQuiz(bank, n){
+  return shuffle(bank.slice()).slice(0, n).map(function(q){
+    var o = q[1].map(function(t, i){ return {t:t, ok: i === q[2]}; });
+    shuffle(o);
+    return [q[0], o.map(function(x){ return x.t; }), o.findIndex(function(x){ return x.ok; }), q[3]];
+  });
+}
+
+Object.keys(MQX).forEach(function(k){ MQ[k] = (MQ[k] || []).concat(MQX[k]); });
 function renderQuiz(box, Q, onDone){
   box.innerHTML = '';
   var score = 0, answered = 0;
@@ -1932,9 +1975,10 @@ function renderQuiz(box, Q, onDone){
   onDone(0, 0, Q.length);
 }
 $$('[data-quiz]').forEach(function(box){
-  var id = box.dataset.quiz, Q = MQ[id] || [];
+  var id = box.dataset.quiz, Q;
   var sc = $$('[data-score="' + id + '"]')[0];
   function run(){
+    Q = pickQuiz(MQ[id] || [], 3);
     renderQuiz(box, Q, function(s, a, n){
       if (!a) { sc.textContent = (st.quiz[id] >= 2 ? 'Déjà validé · ' : '') + '0 / ' + n; return; }
       sc.textContent = s + ' / ' + n + (a === n ? (s >= 2 ? ' · module validé ✓' : ' · à retravailler') : '');
@@ -1965,14 +2009,32 @@ var FQ = [
     ['Quelle est la longueur maximale d’un câble Cat6 entre deux équipements ?', ['30 m','100 m','300 m','1 km'], 1, 'Au-delà : fibre optique.'],
     ['Écran suspendu : quel élément est obligatoire en plus des points de levage ?', ['Un capteur de luminosité','Des élingues de sécurité indépendantes','Un deuxième PC','Un filtre anti-moiré'], 1, 'La sécurité secondaire est indispensable au-dessus des personnes.'],
     ['Pourquoi remettre un plan de câblage vu de face ?', ['Pour la décoration','Pour diagnostiquer et reconfigurer rapidement','C’est facultatif','Pour le calcul de vent'], 1, 'C’est le document clé lors d’une panne.']
-  ];
-function runFinal(){
-  renderQuiz($('quiz'), FQ, function(s, a, n){
-    $('score').textContent = s + ' / ' + n + (a === n ? (s >= 16 ? ' · validé' : ' · à retravailler') : '');
-    if (a === n && s > (st.final || 0)){ st.final = s; save(); }
+  ].concat(FQX);
+function maxTries(){ return 3 + (st.bonus || 0); }
+function finalGate(){
+  var box = $('quiz'), used = st.finalTries || 0, left = maxTries() - used;
+  box.innerHTML = '';
+  $('resetQuiz').hidden = true;
+  $('score').textContent = st.final ? 'Meilleure note : ' + st.final + ' / 20' : 'Pas encore passée';
+  var info = el('div', {'class':'q'});
+  info.appendChild(el('p', {text: left > 0 ? 'Essais restants : ' + left + ' sur ' + maxTries() + '.' : 'Vous avez utilisé tous vos essais.'}));
+  info.appendChild(el('p', {'class':'expl', text: left > 0 ? '20 questions tirées au hasard dans une banque de ' + FQ.length + '. Un essai est compté dès que vous commencez : ne rechargez pas la page en cours de route. Votre meilleure note est gardée.' : 'Demandez au formateur un essai supplémentaire. Il l\u2019accorde depuis l\u2019espace formateur, puis rechargez la page.'}));
+  if (left > 0) info.appendChild(el('button', {'class':'btn primary', type:'button', text:'Commencer l\u2019essai ' + (used + 1), onclick: startFinal}));
+  box.appendChild(info);
+}
+function startFinal(){
+  st.finalTries = (st.finalTries || 0) + 1; save();
+  var Q = pickQuiz(FQ, 20);
+  renderQuiz($('quiz'), Q, function(s, a, n){
+    $('score').textContent = s + ' / ' + n + (a === n ? (s >= 16 ? ' · validé' : ' · à retravailler') : ' · essai ' + st.finalTries + ' / ' + maxTries());
+    if (a === n){
+      if (s > (st.final || 0)) st.final = s;
+      save();
+      var r = $('resetQuiz'); r.hidden = false; r.textContent = 'Retour aux essais';
+    }
   });
 }
-$('resetQuiz').addEventListener('click', runFinal); runFinal();
+$('resetQuiz').addEventListener('click', finalGate); finalGate();
 
 /* ================= Schéma serpentin ================= */
 (function(){
@@ -2617,7 +2679,7 @@ function progressDoc(){
   var modsOut = {};
   mods.forEach(function(s){ modsOut[s.id] = {seen: Math.min(seenCount(s.id), stepsOf(s).length), total: stepsOf(s).length, quiz: st.quiz[s.id] || 0, ok: isDone(s)}; });
   var validated = mods.filter(isDone).length;
-  return {name: (st.name || '').slice(0, 80), validated: validated, total: mods.length, final: st.final || 0, certified: eligible(), modules: modsOut, updatedAt: new Date().toISOString()};
+  return {name: (st.name || '').slice(0, 80), validated: validated, total: mods.length, final: st.final || 0, finalTries: st.finalTries || 0, bonus: st.bonus || 0, certified: eligible(), certNo: st.certNo || null, certAt: st.certAt || null, modules: modsOut, updatedAt: new Date().toISOString()};
 }
 function schedulePush(){
   if (!TR.ref) return;
@@ -2641,6 +2703,9 @@ function mergeRemote(d){
     st.quiz[id] = Math.max(st.quiz[id] || 0, m.quiz || 0);
   });
   st.final = Math.max(st.final || 0, d.final || 0);
+  st.finalTries = Math.max(st.finalTries || 0, d.finalTries || 0);
+  st.bonus = d.bonus || 0;
+  if (!st.certNo && d.certNo){ st.certNo = d.certNo; st.certAt = d.certAt; }
   if (!st.name && d.name) st.name = d.name;
 }
 (function(){
@@ -2672,27 +2737,74 @@ function mergeRemote(d){
     });
   }, function(){});
 })();
+TR.rows = [];
 function watchClass(){
   var body = $('fmBody'), msgEl = $('fmMsg');
+  $('fmExport').addEventListener('click', exportCsv);
   TR.db.collection('results').onSnapshot(function(snap){
-    var rows = snap.docs.map(function(d){ return d.data(); }).filter(Boolean);
-    rows.sort(function(a, b){ return (b.validated || 0) - (a.validated || 0) || String(a.name).localeCompare(String(b.name)); });
-    body.innerHTML = '';
-    if (!rows.length){ msgEl.textContent = 'Aucun stagiaire pour l’instant. Partagez la page avec eux en « Peut interagir ».'; return; }
-    msgEl.textContent = rows.length + ' stagiaire' + (rows.length > 1 ? 's' : '') + ' · ' + rows.filter(function(r){ return r.certified; }).length + ' certifié(s)';
+    var rows = snap.docs.map(function(d){ var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+    rows.sort(function(a, b){ return (b.validated || 0) - (a.validated || 0) || String(a.name || '').localeCompare(String(b.name || '')); });
+    TR.rows = rows; body.innerHTML = '';
+    $('fmExport').disabled = !rows.length;
+    if (!rows.length){ msgEl.textContent = 'Aucun stagiaire pour l’instant. Partagez la page avec eux en « Peut interagir ».'; $('fmDetail').innerHTML = ''; return; }
+    msgEl.textContent = rows.length + ' stagiaire' + (rows.length > 1 ? 's' : '') + ' · ' + rows.filter(function(r){ return r.certified; }).length + ' certifié(s). Cliquez une ligne pour le détail.';
     rows.forEach(function(r){
-      var pct = r.total ? r.validated / r.total * 100 : 0;
-      var tr = el('tr', null, [
+      var pct = r.total ? (r.validated || 0) / r.total * 100 : 0;
+      var tr = el('tr', {tabindex:'0', style:'cursor:pointer'}, [
         el('td', {text: r.name || 'Sans nom'}),
         el('td', null, [el('span', {'class':'pb'}, [el('i', {style:'width:' + pct + '%'})])]),
         el('td', {'class':'num', text: (r.validated || 0) + ' / ' + (r.total || '–')}),
-        el('td', {'class':'num', text: r.final ? r.final + ' / 20' : '–'}),
-        el('td', null, [el('span', {'class':'badge' + (r.certified ? ' ok' : ''), text: r.certified ? 'Certifié' : 'En cours'})]),
+        el('td', {'class':'num', text: (r.final ? r.final + ' / 20' : '–') + ' · ' + (r.finalTries || 0) + ' essai' + ((r.finalTries || 0) > 1 ? 's' : '')}),
+        el('td', null, [el('span', {'class':'badge' + (r.certified ? ' ok' : ''), text: r.certified ? (r.certNo || 'Certifié') : 'En cours'})]),
         el('td', {'class':'num', text: r.updatedAt ? new Date(r.updatedAt).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '–'})
       ]);
+      tr.addEventListener('click', function(){ detail(r.id); });
+      tr.addEventListener('keydown', function(e){ if (e.key === 'Enter') detail(r.id); });
       body.appendChild(tr);
     });
+    if (TR.open) detail(TR.open, true);
   }, function(){ msgEl.textContent = 'Impossible de lire les résultats pour le moment.'; });
+}
+function detail(id, refresh){
+  var r = TR.rows.filter(function(x){ return x.id === id; })[0], box = $('fmDetail');
+  if (!r){ box.innerHTML = ''; TR.open = null; return; }
+  TR.open = id; box.innerHTML = '';
+  box.appendChild(el('h4', {text: 'Détail : ' + (r.name || 'Sans nom')}));
+  var t = el('table'), tb = el('tbody');
+  t.appendChild(el('thead', null, [el('tr', null, [el('th', {text:'Module'}), el('th', {text:'Étapes vues'}), el('th', {text:'Quiz'}), el('th', {text:'Statut'})])]));
+  mods.forEach(function(s){
+    var m = (r.modules || {})[s.id] || {};
+    tb.appendChild(el('tr', null, [el('td', {text: s.dataset.num + ' · ' + s.dataset.title}), el('td', {'class':'num', text: (m.seen || 0) + ' / ' + (m.total || stepsOf(s).length)}), el('td', {'class':'num', text: s.id === 'm0' ? '—' : (m.quiz || 0) + ' / 3'}), el('td', null, [el('span', {'class':'badge' + (m.ok ? ' ok' : (m.seen ? ' go' : '')), text: m.ok ? 'Validé' : (m.seen ? 'En cours' : 'À faire')})])]));
+  });
+  t.appendChild(tb); box.appendChild(el('div', {'class':'tbl'}, [t]));
+  box.appendChild(el('p', {text: 'Évaluation finale : ' + (r.final ? r.final + ' / 20' : 'non passée') + ' · essais utilisés : ' + (r.finalTries || 0) + ' sur ' + (3 + (r.bonus || 0)) + (r.certNo ? ' · attestation ' + r.certNo : '')}));
+  var fb = el('p', {'class':'msg', hidden:''});
+  var bonus = el('button', {'class':'btn', type:'button', text:'Accorder un essai supplémentaire', onclick:function(){
+    TR.db.doc('results/' + id).update({bonus: (r.bonus || 0) + 1}).then(function(){ fb.hidden = false; fb.className = 'msg ok'; fb.textContent = 'Essai accordé. Le stagiaire doit recharger la page pour le voir.'; }, function(){ fb.hidden = false; fb.className = 'msg bad'; fb.textContent = 'Impossible d’enregistrer pour le moment. Réessayez.'; });
+  }});
+  var del = el('button', {'class':'btn', type:'button', text:'Retirer ce stagiaire du tableau'});
+  del.addEventListener('click', function(){
+    if (del.dataset.confirm !== '1'){ del.dataset.confirm = '1'; del.textContent = 'Confirmer la suppression'; del.style.borderColor = 'var(--bad)'; del.style.color = 'var(--bad)'; return; }
+    TR.db.doc('results/' + id).delete().then(function(){ TR.open = null; box.innerHTML = ''; }, function(){ fb.hidden = false; fb.className = 'msg bad'; fb.textContent = 'Suppression impossible pour le moment. Réessayez.'; });
+  });
+  box.appendChild(el('div', {'class':'row'}, [bonus, del, el('button', {'class':'btn', type:'button', text:'Fermer', onclick:function(){ TR.open = null; box.innerHTML = ''; }})]));
+  box.appendChild(fb);
+  if (!refresh) box.scrollIntoView({block:'nearest'});
+}
+function exportCsv(){
+  var head = ['Stagiaire','Modules validés','Total modules','Évaluation finale /20','Essais utilisés','Certifié','N° attestation','Dernière activité'].concat(mods.map(function(s){ return 'M' + s.dataset.num; }));
+  var esc = function(v){ v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var lines = [head.map(esc).join(';')];
+  TR.rows.forEach(function(r){
+    var row = [r.name || 'Sans nom', r.validated || 0, r.total || '', r.final || '', r.finalTries || 0, r.certified ? 'oui' : 'non', r.certNo || '', r.updatedAt ? new Date(r.updatedAt).toLocaleString('fr-FR') : ''];
+    mods.forEach(function(s){ var m = (r.modules || {})[s.id] || {}; row.push(m.ok ? 'validé' : (m.seen || 0) + '/' + (m.total || '')); });
+    lines.push(row.map(esc).join(';'));
+  });
+  var csv = '﻿' + lines.join('\r\n'), fm = $('fmMsg');
+  window.claude.use('downloads').then(function(dl){
+    if (!dl){ fm.textContent = 'Export indisponible ici.'; return; }
+    dl.save({filename: 'resultats-formation-led-' + new Date().toISOString().slice(0, 10) + '.csv', data: csv}).then(function(){ fm.textContent = 'Export enregistré. Il s’ouvre dans Excel.'; }, function(e){ fm.textContent = e && e.code === 'declined' ? 'Export annulé.' : 'Export impossible pour le moment.'; });
+  });
 }
 function renderAttest(){
   var box = $('attBox'); if (!box) return;
@@ -2713,6 +2825,13 @@ function renderAttest(){
     }
     return;
   }
+  if (!st.certNo){
+    var seed = (TR && TR.uid ? TR.uid : '') + (st.name || '') + Date.now(), h = 2166136261;
+    for (var ci = 0; ci < seed.length; ci++){ h ^= seed.charCodeAt(ci); h = Math.imul(h, 16777619) >>> 0; }
+    st.certNo = 'LED-' + new Date().getFullYear() + '-' + ('000000' + h.toString(36).toUpperCase()).slice(-6);
+    st.certAt = new Date().toISOString(); save();
+  }
+  box.appendChild(el('p', {text: 'N° d\u2019attestation : ' + st.certNo + '. Le formateur retrouve ce numéro dans son tableau pour confirmer l\u2019attestation.'}));
   var cvs = el('canvas', {id:'attCanvas', width:'1600', height:'1131', 'aria-label':'Attestation de formation'});
   box.appendChild(cvs); drawAttest(cvs);
   var b = el('button', {'class':'btn primary', type:'button', text:'Télécharger l’attestation (PNG)'});
@@ -2747,7 +2866,7 @@ function drawAttest(c){
   x.font = '700 40px "IBM Plex Sans", "Segoe UI", sans-serif'; x.fillStyle = '#1650B8';
   x.fillText('Écrans LED : installation de tous les types et programmation', 110, 525);
   x.fillStyle = '#15191F'; x.font = '400 28px "IBM Plex Sans", "Segoe UI", sans-serif';
-  var facts = [['Durée', '35 heures'], ['Modules validés', mods.length + ' / ' + mods.length], ['Évaluation finale', (st.final || 0) + ' / 20'], ['Date', new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})]];
+  var facts = [['Durée', '35 heures'], ['Modules validés', mods.length + ' / ' + mods.length], ['Évaluation finale', (st.final || 0) + ' / 20'], ['Date', new Date(st.certAt || Date.now()).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})]];
   facts.forEach(function(f, k){
     var fx = 110 + k * 350;
     x.fillStyle = '#56606C'; x.font = '500 20px "IBM Plex Mono", Menlo, monospace'; x.fillText(f[0].toUpperCase(), fx, 610);
@@ -2758,6 +2877,7 @@ function drawAttest(c){
   mods.forEach(function(s, k){ var col = k < 8 ? 0 : 1, row = k % 8; x.fillText(s.dataset.num + '  ' + s.dataset.title, 110 + col * 700, 775 + row * 32); });
   x.strokeStyle = '#15191F'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(1080, 1040); x.lineTo(1480, 1040); x.stroke();
   x.fillStyle = '#56606C'; x.font = '500 20px "IBM Plex Mono", Menlo, monospace'; x.fillText('SIGNATURE DU FORMATEUR', 1080, 1065);
+  x.fillText('N° ' + (st.certNo || ''), 110, 1065);
 }
 
 var LAZY = {};
