@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Régie IP Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#E7ECEA; --panel:#FFFFFF; --panel2:#F3F6F5; --ink:#15211E; --muted:#56655F; --line:#C9D3CF;
+  --accent:#0A7C70; --accent-ink:#FFFFFF; --accent-soft:#D4ECE8;
+  --term-bg:#0C1513; --term-ink:#CDEEDD; --term-dim:#7C9D90; --term-cmd:#FFFFFF; --term-err:#FF8E7E; --term-hint:#F0C46A; --term-sys:#93BBFF; --chip-bg:#15231F; --chip-line:#2A3D37;
+  --ok:#1D7F49; --warn:#9C5E00; --bad:#BC3426; --ok-soft:#D9EFE2; --warn-soft:#F6E7CC; --bad-soft:#F7DAD5;
+  --v1:#7D8B86; --v10:#0A8F80; --v20:#C27400; --v30:#7549C4; --v99:#4F6A8F; --down:#AEB8B4;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1513; --panel:#16201D; --panel2:#1B2724; --ink:#E2ECE8; --muted:#93A69F; --line:#2B3A36;
+    --accent:#3DC3B1; --accent-ink:#04201B; --accent-soft:#163A35;
+    --term-bg:#070C0B; --chip-bg:#101B18; --chip-line:#26372F;
+    --ok:#4FC486; --warn:#E3A640; --bad:#FF7B69; --ok-soft:#153325; --warn-soft:#3A2A10; --bad-soft:#3D1C17;
+    --v1:#8A9994; --v10:#3DC3B1; --v20:#F0A83A; --v30:#A88AF0; --v99:#86A3CC; --down:#4A5853;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1513; --panel:#16201D; --panel2:#1B2724; --ink:#E2ECE8; --muted:#93A69F; --line:#2B3A36;
+  --accent:#3DC3B1; --accent-ink:#04201B; --accent-soft:#163A35;
+  --term-bg:#070C0B; --chip-bg:#101B18; --chip-line:#26372F;
+  --ok:#4FC486; --warn:#E3A640; --bad:#FF7B69; --ok-soft:#153325; --warn-soft:#3A2A10; --bad-soft:#3D1C17;
+  --v1:#8A9994; --v10:#3DC3B1; --v20:#F0A83A; --v30:#A88AF0; --v99:#86A3CC; --down:#4A5853;
+}
+html{height:100%;box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;max-width:780px;margin:0 auto;padding-inline:16px;display:flex;flex-direction:column}
+header.top{display:flex;flex-direction:column;gap:8px;padding-block:10px 8px}
+.row1{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--cond);font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;line-height:1}
+.brand small{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;letter-spacing:.04em;text-transform:none;color:var(--muted);margin-top:3px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:7px 11px;font-family:var(--mono);font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.led{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+.guide{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px;flex:none}
+.g-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.g-kicker{font-family:var(--cond);font-weight:700;letter-spacing:.06em;color:var(--accent);font-size:12px;text-transform:uppercase;line-height:1.1}
+.g-title{font-weight:600;font-size:14.5px;line-height:1.25;text-wrap:balance}
+.g-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.g-step{font-size:13.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.g-step b{font-weight:600}
+.g-acts{display:flex;gap:4px;flex:none}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;font-size:12.5px;padding:4px 6px;border-radius:6px}
+.linkbtn:hover{background:var(--accent-soft)}
+.g-sol{display:flex;flex-direction:column;gap:3px;max-height:96px;overflow:auto;padding-top:2px}
+.g-sol button{text-align:left;font:12px var(--mono);border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:5px 8px;white-space:pre;flex:none}
+.g-sol .lbl{font:11px var(--mono);color:var(--muted);padding:4px 2px 0}
+.g-note{font-size:12px;color:var(--muted)}
+.termbar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--chip-line);font:11.5px var(--mono);color:var(--term-dim);flex:none;min-width:0}
+.tb-host{color:var(--term-cmd);font-weight:500;white-space:nowrap;flex:none}
+.tb-tag{padding:1px 7px;border-radius:999px;border:1px solid var(--chip-line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tb-tag.warn{color:var(--term-hint);border-color:var(--term-hint)}
+.sp{flex:1}
+.fsbtn{flex:none;border:1px solid var(--chip-line);background:var(--chip-bg);color:var(--term-ink);border-radius:6px;padding:3px 8px;font:12px var(--mono)}
+.keys{display:flex;gap:6px;padding:8px 10px 0;border-top:1px solid var(--chip-line);flex:none;overflow-x:auto;scrollbar-width:none}
+.keys::-webkit-scrollbar{display:none}
+.svc-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.svc-sum div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.25}
+.svc-sum b{font-weight:600}
+.mis.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mis.closed{padding-block:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+section.tab{flex:1;min-height:0;overflow:auto;padding-block:2px 12px}
+#t-term{display:flex;flex-direction:column;overflow:hidden;padding-bottom:8px}
+#t-term[hidden]{display:none}
+.term{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--term-bg);border-radius:10px;overflow:hidden;color:var(--term-ink)}
+.log{flex:1;min-height:0;overflow:auto;padding:10px 12px;font:12.5px/1.5 var(--mono);white-space:pre;-webkit-overflow-scrolling:touch}
+.log .in{color:var(--term-cmd)}
+.log .err{color:var(--term-err)}
+.log .hint{color:var(--term-hint);white-space:pre-wrap}
+.log .sys{color:var(--term-sys)}
+.log .dim{color:var(--term-dim);white-space:pre-wrap}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-top:1px solid var(--chip-line);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--chip-line);background:var(--chip-bg);color:var(--term-ink);border-radius:6px;padding:6px 9px;font:12px var(--mono);white-space:nowrap}
+.chip.key{color:var(--term-hint)}
+.inrow{display:flex;align-items:center;gap:8px;padding:8px 10px 10px;border-top:1px solid var(--chip-line)}
+.prompt{font:13px var(--mono);color:var(--term-dim);white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+#cmd{flex:1;min-width:0;background:transparent;border:0;color:var(--term-cmd);font:16px var(--mono);padding:6px 0;caret-color:var(--term-hint)}
+#cmd:focus{outline:none}
+.send{flex:none;border:0;background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:8px 12px;font-weight:600;font-size:13px}
+nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
+nav.tabs button{border:0;background:transparent;padding:8px 4px 9px;font-size:12px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent;margin-top:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--accent);border-top-color:var(--accent)}
+nav.tabs svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lblb{display:inline-flex;align-items:center;gap:5px}
+.cnt{font:10.5px var(--mono);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:0 5px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+h2{font-family:var(--cond);font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin:14px 0 8px;text-wrap:balance}
+h3{font-size:15px;margin:0;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.svc{display:flex;flex-direction:column;gap:6px}
+.svc-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.svc ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted)}
+.svc ul li{margin-top:2px}
+.topo-wrap{overflow-x:auto}
+.topo{width:100%;max-width:560px;display:block;margin:0 auto}
+.topo text{font-family:var(--mono)}
+.t-name{fill:var(--ink);font-size:10.5px;font-weight:500}
+.t-sub{fill:var(--muted);font-size:8.5px}
+.t-sw{fill:var(--ink);font-size:11px;font-weight:500;text-anchor:middle}
+.t-port{fill:var(--muted);font-size:7.5px;text-anchor:middle}
+.n-box{fill:var(--panel);stroke:var(--line)}
+.sw-bar{fill:var(--panel2);stroke:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted);justify-content:center;margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.pingbox{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+select{font:13px var(--sans);padding:8px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 12px;font-weight:500;font-size:13px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.result{font-family:var(--mono);font-size:12.5px;margin-top:8px;white-space:pre-wrap}
+.mis{display:flex;flex-direction:column;gap:8px}
+.mis-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.mis-num{font-family:var(--cond);font-weight:700;font-size:15px;color:var(--accent);letter-spacing:.05em}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px}
+.tick{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--line);margin-top:1px;display:grid;place-items:center}
+.steps li.on .tick{background:var(--ok);border-color:var(--ok)}
+.steps li.on .tick::after{content:"";width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.steps li.on{color:var(--muted)}
+.bar{height:5px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+details summary{cursor:pointer;font-size:13px;color:var(--accent);font-weight:500}
+pre.sol{font:12px/1.5 var(--mono);background:var(--panel2);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:8px 0 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.sym{margin:0;padding-left:18px;font-size:13.5px}
+.help table{border-collapse:collapse;width:100%;font-size:13px}
+.help th,.help td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.help th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.help code,.mono{font-family:var(--mono);font-size:12px}
+.help ul{margin:6px 0 0;padding-left:18px}
+.tbl{overflow-x:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-size:13px;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .2s;opacity:0;pointer-events:none;z-index:5}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}}
+@media (max-width:420px){.log{font-size:11.5px}.brand{font-size:19px}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header class="top">
+    <div class="row1">
+      <div class="brand">Régie IP Lab<small>simulateur réseau AV · syntaxe Cisco IOS</small></div>
+      <div class="seg" role="group" aria-label="Switch à configurer">
+        <button type="button" id="dev-regie" data-dev="regie"><span class="led" id="led-regie"></span><span id="lbl-regie">Switch</span></button>
+        <button type="button" id="dev-core" data-dev="core"><span class="led" id="led-core"></span><span id="lbl-core">SW-COEUR</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="tab" id="t-term" aria-label="Terminal">
+      <div class="guide" id="guide"></div>
+      <div class="term">
+        <div class="termbar">
+          <span class="tb-host" id="tb-host">Switch</span>
+          <span class="tb-tag" id="mode-pill">utilisateur</span>
+          <span class="tb-tag" id="save-pill">sauvegardé</span>
+          <span class="sp"></span>
+          <button type="button" class="fsbtn" id="fs" aria-label="Taille du texte">A±</button>
+        </div>
+        <div class="log" id="log" aria-live="polite"></div>
+        <div class="keys" id="keys">
+          <button type="button" class="chip key" data-act="?">?</button>
+          <button type="button" class="chip key" data-act="tab">Tab</button>
+          <button type="button" class="chip key" data-act="up" aria-label="Commande précédente">↑</button>
+          <button type="button" class="chip key" data-act="down" aria-label="Commande suivante">↓</button>
+          <button type="button" class="chip key" data-act="clr">Effacer l'écran</button>
+        </div>
+        <div class="chips" id="chips" aria-label="Commandes suggérées"></div>
+        <form class="inrow" id="form" autocomplete="off">
+          <span class="prompt" id="prompt">Switch&gt;</span>
+          <input id="cmd" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" aria-label="Commande" placeholder="tapez une commande">
+          <button class="send" type="submit">Entrée</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="tab" id="t-net" aria-label="Réseau" hidden>
+      <h2>État des services</h2>
+      <div class="svc-sum" id="svc-sum"></div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 8px">Calculé en direct à partir de la configuration des deux switchs.</p>
+      <div class="stack" id="services"></div>
+      <h2>Topologie</h2>
+      <div class="card">
+        <div class="topo-wrap" id="topo"></div>
+        <div class="legend">
+          <span><i style="background:var(--v10)"></i>VLAN 10 audio</span>
+          <span><i style="background:var(--v20)"></i>VLAN 20 vidéo</span>
+          <span><i style="background:var(--v30)"></i>VLAN 30 contrôle</span>
+          <span><i style="background:var(--v1)"></i>VLAN 1 par défaut</span>
+          <span><i style="background:var(--down)"></i>coupé</span>
+        </div>
+      </div>
+      <h2>Tester une liaison</h2>
+      <div class="card">
+        <div class="pingbox">
+          <select id="ping-a" aria-label="Appareil source"></select>
+          <span class="muted">vers</span>
+          <select id="ping-b" aria-label="Appareil destination"></select>
+        </div>
+        <div class="actions" style="margin-top:10px"><button class="btn primary" type="button" id="ping-go">Tester</button></div>
+        <div class="result" id="ping-out"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="t-mis" aria-label="Missions" hidden>
+      <h2>Missions</h2>
+      <p class="muted" style="margin-bottom:10px">Vous équipez la régie d'une salle de 800 places : son Dante, caméras PTZ NDI, lumière sACN. SW-COEUR est déjà en place côté scène. SW-REGIE sort d'usine. Suivez les missions dans l'ordre.</p>
+      <div class="stack" id="missions"></div>
+    </section>
+
+    <section class="tab help" id="t-aide" aria-label="Aide" hidden>
+      <h2>Les modes</h2>
+      <div class="card tbl">
+        <table>
+          <thead><tr><th>Invite</th><th>Mode</th><th>Entrer / sortir</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Switch&gt;</td><td>Utilisateur : consultation seulement</td><td><code>enable</code></td></tr>
+            <tr><td class="mono">Switch#</td><td>Privilégié : show, ping, sauvegarde</td><td><code>configure terminal</code> · <code>disable</code></td></tr>
+            <tr><td class="mono">Switch(config)#</td><td>Configuration globale</td><td><code>interface …</code>, <code>vlan …</code> · <code>end</code></td></tr>
+            <tr><td class="mono">(config-if)#</td><td>Un port ou une interface VLAN</td><td><code>exit</code> revient d'un niveau</td></tr>
+            <tr><td class="mono">(config-if-range)#</td><td>Plusieurs ports à la fois</td><td><code>exit</code> · <code>end</code></td></tr>
+            <tr><td class="mono">(config-vlan)#</td><td>Un VLAN (nom)</td><td><code>exit</code> · <code>end</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>Raccourcis</h2>
+      <div class="card">
+        <ul>
+          <li>Les mots s'abrègent : <code>conf t</code>, <code>sh vl br</code>, <code>int ra g1/0/1 - 4</code>, <code>sw mo acc</code>.</li>
+          <li><code>?</code> affiche ce qui peut suivre. <code>sh ?</code> liste les commandes show.</li>
+          <li>Tab (ou la touche Tab des raccourcis) complète le mot en cours.</li>
+          <li>Flèche haut ou <b>↑</b> rappelle la commande précédente.</li>
+          <li><code>do show …</code> lance une commande show depuis le mode configuration.</li>
+          <li>Rien n'est gardé après <code>reload</code> sans <code>write memory</code>.</li>
+        </ul>
+      </div>
+      <h2>Commandes utiles</h2>
+      <div class="card tbl">
+        <table>
+          <tbody>
+            <tr><td><code>show running-config</code></td><td>Configuration en cours</td></tr>
+            <tr><td><code>show vlan brief</code></td><td>VLAN et ports associés</td></tr>
+            <tr><td><code>show interfaces status</code></td><td>État, VLAN et vitesse de chaque port</td></tr>
+            <tr><td><code>show interfaces trunk</code></td><td>Liens trunk et VLAN autorisés</td></tr>
+            <tr><td><code>show ip igmp snooping querier</code></td><td>Qui est querier dans chaque VLAN</td></tr>
+            <tr><td><code>show ip igmp snooping groups</code></td><td>Flux multicast et ports abonnés</td></tr>
+            <tr><td><code>show mls qos interface gi1/0/1</code></td><td>Confiance DSCP d'un port</td></tr>
+            <tr><td><code>show lldp neighbors</code></td><td>Qui est branché sur quel port</td></tr>
+            <tr><td><code>ping 192.168.99.1</code></td><td>Tester une adresse depuis une interface VLAN</td></tr>
+            <tr><td><code>write memory</code></td><td>Sauvegarder</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>Ce que simule le labo</h2>
+      <div class="card">
+        <p>Un switch d'accès 24 ports gigabit + liens 10G, avec la syntaxe Cisco IOS Catalyst. Contrairement à un Catalyst réel, l'IGMP snooping est désactivé en sortie d'usine, comme sur beaucoup de switchs non pensés pour l'AV. L'onglet Réseau calcule en direct si le son Dante, la vidéo NDI et le contrôle passent, et pourquoi. Le labo complète la formation « Réseau pour l'audio-vidéo » (modules 1, 3 et 10).</p>
+        <p class="muted" style="margin-top:8px">Votre progression est gardée dans ce navigateur.</p>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn" type="button" id="reset">Réinitialiser le labo</button>
+          <button class="btn danger" type="button" id="reset-yes" hidden>Confirmer : tout effacer</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="term" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>Terminal</button>
+    <button type="button" role="tab" data-tab="net" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/></svg><span class="lblb">Réseau<span class="dot" id="b-net"></span></span></button>
+    <button type="button" role="tab" data-tab="mis" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span class="lblb">Missions<span class="cnt" id="b-mis"></span></span></button>
+    <button type="button" role="tab" data-tab="aide" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>Aide</button>
+  </nav>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+const KEY='regie-ip-lab-v1';
+const $=id=>document.getElementById(id);
+
+/* ---------- modèle ---------- */
+function mkIf(){return {shut:false,mode:'access',vlan:1,allowed:null,portfast:false,eee:true,trust:false,desc:''};}
+function mkSwitch(host,nte){
+  const ifs={};
+  for(let i=1;i<=24;i++) ifs['Gi1/0/'+i]=mkIf();
+  for(let i=1;i<=nte;i++) ifs['Te1/1/'+i]=mkIf();
+  return {hostname:host,vlans:{'1':'default'},ifs,svis:{},igmp:{global:false,off:[]},querier:false,qos:false,startup:null};
+}
+function snap(sw){const c=JSON.parse(JSON.stringify(sw));c.startup=null;return c;}
+function factoryCore(){
+  const c=mkSwitch('SW-COEUR',4);
+  Object.assign(c.vlans,{'10':'AUDIO','20':'VIDEO','30':'CONTROLE','99':'ADMIN'});
+  const set=(p,o)=>Object.assign(c.ifs[p],o);
+  set('Gi1/0/1',{vlan:10,portfast:true,eee:false,trust:true,desc:'STAGEBOX'});
+  set('Gi1/0/2',{vlan:10,portfast:true,eee:false,trust:true,desc:'AMPLI'});
+  set('Gi1/0/3',{vlan:30,portfast:true,desc:'LUMIERE'});
+  set('Te1/1/1',{mode:'trunk',trust:true,desc:'VERS REGIE'});
+  c.svis['99']={ip:'192.168.99.1',mask:'255.255.255.0',shut:false};
+  c.igmp.global=true; c.qos=true;
+  c.startup=snap(c);
+  return c;
+}
+function newTerm(){return {mode:'user',ifs:[],vlans:[],svi:null};}
+function fresh(){
+  return {sw:{regie:mkSwitch('Switch',2),core:factoryCore()},term:{regie:newTerm(),core:newTerm()},cur:'regie',tab:'term',
+    flags:{},dirty:{regie:false,core:false},faults:[],done:{},seen:{},logs:{regie:[],core:[]},hist:{regie:[],core:[]}};
+}
+const HOSTS=[
+  {id:'CONSOLE',name:'Console Dante',sw:'regie',port:'Gi1/0/1',ip:'192.168.10.21',role:'dante'},
+  {id:'PC-MULTI',name:'PC multipiste',sw:'regie',port:'Gi1/0/2',ip:'192.168.10.30',role:'dante'},
+  {id:'CAM1',name:'PTZ 1 NDI',sw:'regie',port:'Gi1/0/5',ip:'192.168.20.31',role:'ndi'},
+  {id:'CAM2',name:'PTZ 2 NDI',sw:'regie',port:'Gi1/0/6',ip:'192.168.20.32',role:'ndi'},
+  {id:'PC-VMIX',name:'PC vMix',sw:'regie',port:'Gi1/0/7',ip:'192.168.20.40',role:'ndi'},
+  {id:'COMPANION',name:'Companion',sw:'regie',port:'Gi1/0/9',ip:'192.168.30.20',role:'ctrl'},
+  {id:'STAGEBOX',name:'Stagebox',sw:'core',port:'Gi1/0/1',ip:'192.168.10.22',role:'dante'},
+  {id:'AMPLI',name:'Ampli',sw:'core',port:'Gi1/0/2',ip:'192.168.10.23',role:'dante'},
+  {id:'LUMIERE',name:'Console lumière',sw:'core',port:'Gi1/0/3',ip:'192.168.30.30',role:'ctrl'}
+];
+const TRUNK={regie:'Te1/1/1',core:'Te1/1/1'};
+const other=d=>d==='regie'?'core':'regie';
+const H=id=>HOSTS.find(h=>h.id===id);
+
+let S;
+try{const raw=localStorage.getItem(KEY); if(raw){const o=JSON.parse(raw); if(o&&o.sw&&o.sw.regie&&o.sw.core&&o.term) S=o;}}catch(e){}
+if(!S) S=fresh();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- réseau ---------- */
+const ipInt=ip=>ip.split('.').reduce((a,n)=>((a<<8)>>>0)+(+n),0)>>>0;
+function sameNet(a,b,mask){const m=ipInt(mask||'255.255.255.0');return ((ipInt(a)&m)>>>0)===((ipInt(b)&m)>>>0);}
+const vlanExists=(sw,v)=>Object.prototype.hasOwnProperty.call(sw.vlans,String(v));
+function portVlan(sw,port){const i=sw.ifs[port]; if(!i||i.shut) return null; const v=i.mode==='access'?i.vlan:1; return vlanExists(sw,v)?v:null;}
+const allowedHas=(i,v)=>i.allowed===null||i.allowed.includes(v);
+function trunkUp(v){
+  const R=S.sw.regie,C=S.sw.core,r=R.ifs[TRUNK.regie],c=C.ifs[TRUNK.core];
+  if(r.shut||c.shut||!vlanExists(R,v)||!vlanExists(C,v)) return false;
+  if(r.mode==='trunk'&&c.mode==='trunk') return allowedHas(r,v)&&allowedHas(c,v);
+  if(r.mode==='access'&&c.mode==='access') return r.vlan===v&&c.vlan===v;
+  return false;
+}
+const path=(a,b,v)=>a===b?vlanExists(S.sw[a],v):trunkUp(v);
+const hostVlan=h=>portVlan(S.sw[h.sw],h.port);
+function reach(a,b){const va=hostVlan(a),vb=hostVlan(b);return va!==null&&va===vb&&path(a.sw,b.sw,va)&&sameNet(a.ip,b.ip);}
+function whyNot(a,b){
+  for(const h of [a,b]){const i=S.sw[h.sw].ifs[h.port]; if(i.shut) return `Le port ${h.port} de ${S.sw[h.sw].hostname} (${h.id}) est désactivé (shutdown).`;}
+  const va=hostVlan(a),vb=hostVlan(b);
+  if(va!==vb) return `${a.id} est dans le VLAN ${va===null?'?':va}, ${b.id} dans le VLAN ${vb===null?'?':vb}. Ils doivent être dans le même VLAN.`;
+  if(!path(a.sw,b.sw,va)) return `Le VLAN ${va} ne passe pas par le lien Te1/1/1 entre les deux switchs (mode trunk et VLAN autorisés des deux côtés).`;
+  if(!sameNet(a.ip,b.ip)) return `${a.ip} et ${b.ip} ne sont pas dans le même sous-réseau /24.`;
+  return '';
+}
+const snoopOn=(sw,v)=>sw.igmp.global&&!sw.igmp.off.includes(v);
+function connected(dev,port){
+  const i=S.sw[dev].ifs[port]; if(!i||i.shut) return false;
+  if(HOSTS.some(h=>h.sw===dev&&h.port===port)) return true;
+  if(TRUNK[dev]===port) return !S.sw[other(dev)].ifs[TRUNK[other(dev)]].shut;
+  return false;
+}
+function services(){
+  const defs=[
+    {key:'audio',name:'Audio Dante',pairs:[['CONSOLE','STAGEBOX'],['CONSOLE','AMPLI'],['CONSOLE','PC-MULTI']]},
+    {key:'video',name:'Vidéo NDI',pairs:[['CAM1','PC-VMIX'],['CAM2','PC-VMIX']]},
+    {key:'ctrl',name:'Contrôle et lumière',pairs:[['COMPANION','LUMIERE']]}
+  ];
+  return defs.map(d=>{
+    const bad=[],warn=[];
+    d.pairs.forEach(([x,y])=>{const a=H(x),b=H(y); if(!reach(a,b)) bad.push({t:'link',m:`${x} ↔ ${y} : ${whyNot(a,b)}`});});
+    const ids=[...new Set(d.pairs.flat())], sws=[...new Set(ids.map(i=>H(i).sw))];
+    const v=hostVlan(H(ids[0]));
+    if(!bad.length&&v!==null){
+      const off=sws.filter(k=>!snoopOn(S.sw[k],v));
+      if(off.length) warn.push({t:'igmp',m:`IGMP snooping inactif sur ${off.map(k=>S.sw[k].hostname).join(' et ')} (VLAN ${v}) : le multicast inonde tous les ports.`});
+      else{
+        const q=['regie','core'].filter(k=>S.sw[k].querier&&snoopOn(S.sw[k],v)&&(sws.includes(k)||trunkUp(v)));
+        if(!q.length) bad.push({t:'igmp',m:`Aucun querier IGMP dans le VLAN ${v} : les abonnements expirent et les flux s'arrêtent après quelques minutes.`});
+      }
+      if(d.key==='audio'){
+        const dh=ids.map(H);
+        const eee=dh.filter(h=>S.sw[h.sw].ifs[h.port].eee);
+        if(eee.length) warn.push({t:'eee',m:`EEE actif sur ${eee.map(h=>h.port+' ('+h.id+')').join(', ')} : risque de clics et de pertes d'horloge.`});
+        const noq=sws.filter(k=>!S.sw[k].qos);
+        if(noq.length) warn.push({t:'qos',m:`QoS désactivée sur ${noq.map(k=>S.sw[k].hostname).join(' et ')} (mls qos) : l'audio n'est pas prioritaire.`});
+        else{
+          const nt=dh.filter(h=>!S.sw[h.sw].ifs[h.port].trust).map(h=>h.port+' ('+h.id+')');
+          if(sws.length>1) sws.forEach(k=>{if(!S.sw[k].ifs[TRUNK[k]].trust) nt.push(TRUNK[k]+' ('+S.sw[k].hostname+')');});
+          if(nt.length) warn.push({t:'qos',m:`Pas de confiance DSCP sur ${nt.join(', ')} : ajoutez mls qos trust dscp.`});
+        }
+      }
+    }
+    return {key:d.key,name:d.name,vlan:v,st:bad.length?'bad':warn.length?'warn':'ok',issues:bad.concat(warn)};
+  });
+}
+const allOk=()=>services().every(s=>s.st==='ok');
+
+/* ---------- utilitaires texte ---------- */
+const pad=(s,n)=>String(s).padEnd(n);
+function longIf(p){return p.replace(/^Gi/,'GigabitEthernet').replace(/^Te/,'TenGigabitEthernet');}
+function normIf(t){
+  const m=/^([a-z]+)\s*(\d+\/\d+\/\d+)$/i.exec(t); if(!m) return null;
+  const p=m[1].toLowerCase();
+  if('gigabitethernet'.startsWith(p)) return 'Gi'+m[2];
+  if('tengigabitethernet'.startsWith(p)) return 'Te'+m[2];
+  return null;
+}
+function parseRange(str){
+  const out=[];
+  for(const seg of str.split(',')){
+    const s=seg.replace(/\s+/g,'');
+    const m=/^([a-z]+)(\d+\/\d+\/)(\d+)(?:-(?:[a-z]+\d+\/\d+\/)?(\d+))?$/i.exec(s);
+    if(!m) return null;
+    const first=normIf(m[1]+m[2]+m[3]); if(!first) return null;
+    const pre=first.slice(0,2)+m[2], a=+m[3], b=m[4]?+m[4]:a;
+    if(b<a) return null;
+    for(let n=a;n<=b;n++) out.push(pre+n);
+  }
+  return out;
+}
+function parseVlans(s){
+  const out=[];
+  for(const part of s.split(',')){
+    const m=/^(\d+)(?:-(\d+))?$/.exec(part); if(!m) return null;
+    const a=+m[1],b=m[2]?+m[2]:a; if(a<1||b>4094||b<a) return null;
+    for(let v=a;v<=b;v++) out.push(v);
+  }
+  return out;
+}
+function compress(list){
+  const a=[...new Set(list)].sort((x,y)=>x-y),r=[];
+  for(let i=0;i<a.length;i++){let j=i; while(j+1<a.length&&a[j+1]===a[j]+1) j++; r.push(j>i+1?a[i]+'-'+a[j]:j===i+1?a[i]+','+a[j]:String(a[i])); i=j;}
+  return r.join(',');
+}
+const ipOk=t=>/^\d{1,3}(\.\d{1,3}){3}$/.test(t)&&t.split('.').every(n=>+n<256);
+function maskOk(t){if(!ipOk(t)) return false; const n=ipInt(t); const inv=(~n)>>>0; return ((inv+1)&inv)===0&&n!==0;}
+
+/* ---------- configuration texte ---------- */
+function cfgText(sw){
+  const L=['!','version 15.2','hostname '+sw.hostname,'!'];
+  if(sw.qos) L.push('mls qos');
+  if(sw.igmp.global) L.push('ip igmp snooping');
+  sw.igmp.off.slice().sort((a,b)=>a-b).forEach(v=>L.push('no ip igmp snooping vlan '+v));
+  if(sw.querier) L.push('ip igmp snooping querier');
+  L.push('!');
+  Object.keys(sw.vlans).map(Number).sort((a,b)=>a-b).forEach(v=>{if(v!==1){L.push('vlan '+v,' name '+sw.vlans[v],'!');}});
+  Object.keys(sw.ifs).forEach(p=>{
+    const i=sw.ifs[p]; L.push('interface '+longIf(p));
+    if(i.desc) L.push(' description '+i.desc);
+    if(i.mode==='access'&&i.vlan!==1) L.push(' switchport access vlan '+i.vlan);
+    if(i.mode==='trunk'&&i.allowed!==null) L.push(' switchport trunk allowed vlan '+(i.allowed.length?compress(i.allowed):'none'));
+    if(i.mode==='trunk'||i.vlan!==1) L.push(' switchport mode '+i.mode);
+    if(!i.eee) L.push(' no power efficient-ethernet');
+    if(i.trust) L.push(' mls qos trust dscp');
+    if(i.portfast) L.push(' spanning-tree portfast');
+    if(i.shut) L.push(' shutdown');
+    L.push('!');
+  });
+  Object.keys(sw.svis).map(Number).sort((a,b)=>a-b).forEach(v=>{
+    const s=sw.svis[v]; L.push('interface Vlan'+v, s.ip?` ip address ${s.ip} ${s.mask}`:' no ip address');
+    if(s.shut) L.push(' shutdown'); L.push('!');
+  });
+  L.push('end');
+  const body=L.join('\n');
+  return 'Building configuration...\n\nCurrent configuration : '+body.length+' bytes\n'+body;
+}
+
+/* ---------- commandes ---------- */
+const P={
+  '<ip>':{d:'A.B.C.D',h:'Adresse IP',ok:ipOk},
+  '<mask>':{d:'A.B.C.D',h:'Masque de sous-réseau',ok:maskOk},
+  '<vlan>':{d:'<1-4094>',h:'Numéro de VLAN',ok:t=>/^\d+$/.test(t)&&+t>=1&&+t<=4094},
+  '<vlans>':{d:'WORD',h:'Liste de VLAN, ex. 10,20,30-32',ok:t=>!!parseVlans(t)},
+  '<word>':{d:'WORD',h:'Nom sans espace',ok:t=>t.length>0},
+  '<line>':{d:'LINE',h:'Texte libre',rest:true},
+  '<if>':{d:'Gi1/0/x | Te1/1/x',h:'Nom d\'interface',ok:t=>!!normIf(t)},
+  '<range>':{d:'Gi1/0/1 - 12',h:'Plage de ports, ex. gi1/0/1 - 4',rest:true},
+  '<cmd>':{d:'LINE',h:'Commande du mode privilégié',rest:true}
+};
+const DESC={enable:'Passer en mode privilégié',disable:'Revenir au mode utilisateur',configure:'Entrer en mode configuration',terminal:'Configurer depuis le terminal',
+  show:'Afficher des informations',ping:'Tester une adresse IP',write:'Sauvegarder la configuration',memory:'Dans la mémoire de démarrage',copy:'Copier une configuration',
+  reload:'Redémarrer le switch',exit:'Revenir au niveau précédent',end:'Revenir au mode privilégié',do:'Lancer une commande du mode privilégié',
+  hostname:'Nommer le switch',vlan:'Créer ou modifier un VLAN',no:'Annuler une commande',interface:'Configurer une interface',range:'Plusieurs interfaces',
+  ip:'Paramètres IP',igmp:'Paramètres IGMP',snooping:'IGMP snooping',querier:'Querier IGMP',mls:'Paramètres QoS',qos:'Qualité de service',
+  name:'Nommer le VLAN',description:'Décrire le port',switchport:'Mode du port de switch',mode:'Mode du port',access:'Port d\'appareil, un VLAN',
+  trunk:'Lien entre switchs, plusieurs VLAN',allowed:'VLAN autorisés',add:'Ajouter des VLAN',remove:'Retirer des VLAN',all:'Tous les VLAN',
+  shutdown:'Désactiver l\'interface','spanning-tree':'Paramètres anti-boucle',portfast:'Port actif immédiatement',power:'Gestion d\'énergie',
+  'efficient-ethernet':'EEE (802.3az)',trust:'Faire confiance au marquage',dscp:'Marquage DSCP',address:'Adresse IP de l\'interface',
+  version:'Version du système','running-config':'Configuration en cours','startup-config':'Configuration de démarrage',brief:'Résumé',
+  interfaces:'État des interfaces',status:'État des ports',groups:'Groupes multicast',lldp:'Voisins LLDP',neighbors:'Appareils branchés',history:'Historique des commandes'};
+
+const CTX={'show vlan':'Afficher les VLAN','show ip':'Informations IP et IGMP','show mls':'Informations QoS','show interfaces':'État des interfaces',
+  'ip address':'Adresse IP de l\'interface','snooping vlan':'Snooping dans un VLAN','snooping querier':'Querier IGMP','igmp snooping':'IGMP snooping',
+  'no vlan':'Supprimer un VLAN','no interface':'Supprimer une interface VLAN','no ip':'Désactiver un paramètre IP','no shutdown':'Activer l\'interface',
+  'no mls':'Désactiver la QoS','no power':'Désactiver l\'économie d\'énergie','no spanning-tree':'Retirer PortFast','no description':'Effacer la description',
+  'no name':'Nom par défaut','switchport access':'Paramètres du mode accès','switchport trunk':'Paramètres du mode trunk','interface vlan':'Interface VLAN (IP du switch)',
+  'mls qos':'Qualité de service','ip interface':'Interfaces IP','ip igmp':'Paramètres IGMP','qos trust':'Faire confiance au marquage','qos interface':'QoS d\'un port','trunk allowed':'VLAN autorisés','allowed vlan':'VLAN autorisés'};
+const cmds={exec:[],config:[],vlan:[],if:[],svi:[]};
+function def(list,p,f,priv){cmds[list].push({p,toks:p.split(' '),f,priv:!!priv});}
+const cur=()=>S.sw[S.cur];
+const tm=()=>S.term[S.cur];
+function sysMsg(s){out(s,'sys');}
+
+// EXEC
+def('exec','enable',()=>{tm().mode='priv';S.flags.enable=true;});
+def('exec','disable',()=>{tm().mode='user';},true);
+def('exec','configure terminal',()=>{tm().mode='config';S.flags.conft=true;return 'Enter configuration commands, one per line.  End with CNTL/Z.';},true);
+def('exec','exit',()=>{if(tm().mode==='priv'){tm().mode='user';return 'Session terminée. Vous êtes revenu au mode utilisateur.';} return 'Session terminée. Tapez enable pour recommencer.';});
+def('exec','show version',()=>`Cisco IOS Software, simulation pédagogique Régie IP Lab, Version 15.2
+${cur().hostname} uptime is 2 hours, 14 minutes
+24 Gigabit Ethernet interfaces, ${Object.keys(cur().ifs).filter(p=>p.startsWith('Te')).length} Ten Gigabit Ethernet interfaces
+Configuration register is 0xF`);
+def('exec','show running-config',()=>cfgText(cur()),true);
+def('exec','show startup-config',()=>cur().startup?cfgText(cur().startup).replace(/^Building configuration\.\.\.\n\n/,''):'startup-config is not present',true);
+def('exec','show vlan brief',showVlan);
+def('exec','show vlan',showVlan);
+def('exec','show interfaces status',showIntStatus);
+def('exec','show interfaces trunk',showTrunk);
+def('exec','show ip interface brief',showIpBrief);
+def('exec','show ip igmp snooping',showSnoop);
+def('exec','show ip igmp snooping querier',showQuerier);
+def('exec','show ip igmp snooping groups',showGroups);
+def('exec','show mls qos',()=>cur().qos?'QoS is enabled\nQoS ip packet dscp rewrite is enabled':'QoS is disabled\nQoS ip packet dscp rewrite is enabled');
+def('exec','show mls qos interface <if>',a=>{const p=normIf(a[0]),i=p&&cur().ifs[p]; if(!i) return errOut('% Invalid interface '+a[0]); return `${longIf(p)}\ntrust state: ${i.trust&&cur().qos?'trust dscp':'not trusted'}\ntrust mode: ${i.trust?'trust dscp':'not trusted'}\ntrust enabled flag: ena\nCOS override: dis\ndefault COS: 0`;});
+def('exec','show lldp neighbors',showLldp);
+def('exec','show history',()=>S.hist[S.cur].slice(-20).map(h=>'  '+h).join('\n'));
+def('exec','write memory',doSave,true);
+def('exec','copy running-config startup-config',()=>'Destination filename [startup-config]? \n'+doSave(),true);
+def('exec','reload',doReload,true);
+def('exec','ping <ip>',a=>doPing(a[0]));
+
+// CONFIG
+def('config','hostname <word>',a=>{cur().hostname=a[0];});
+def('config','vlan <vlans>',a=>{const l=parseVlans(a[0]);l.forEach(v=>{if(!vlanExists(cur(),v)) cur().vlans[v]='VLAN'+String(v).padStart(4,'0');});tm().mode='config-vlan';tm().vlans=l;});
+def('config','no vlan <vlans>',a=>{parseVlans(a[0]).forEach(v=>{if(v!==1) delete cur().vlans[v];}); if(parseVlans(a[0]).includes(1)) return errOut('%Default VLAN 1 may not be deleted.');});
+def('config','interface <if>',a=>{const p=normIf(a[0]); if(!cur().ifs[p]) return errOut(`% Invalid interface ${a[0]} (ports disponibles : Gi1/0/1-24, Te1/1/1-${Object.keys(cur().ifs).length-24})`); tm().mode='config-if';tm().ifs=[p];tm().svi=null;});
+def('config','interface range <range>',a=>{const l=parseRange(a[0]); if(!l||!l.length||l.some(p=>!cur().ifs[p])) return errOut('% Invalid interface range. Exemple : interface range gi1/0/1 - 4'); tm().mode='config-if-range';tm().ifs=l;tm().svi=null;});
+def('config','interface vlan <vlan>',a=>{const v=+a[0]; if(!cur().svis[v]) cur().svis[v]={ip:null,mask:null,shut:true}; tm().mode='config-if';tm().svi=v;tm().ifs=[];});
+def('config','no interface vlan <vlan>',a=>{delete cur().svis[+a[0]];});
+def('config','ip igmp snooping',()=>{cur().igmp.global=true;});
+def('config','no ip igmp snooping',()=>{cur().igmp.global=false;});
+def('config','ip igmp snooping vlan <vlan>',a=>{const v=+a[0];cur().igmp.off=cur().igmp.off.filter(x=>x!==v); if(!cur().igmp.global) return hintOut('IGMP snooping est désactivé globalement : tapez aussi ip igmp snooping.');});
+def('config','no ip igmp snooping vlan <vlan>',a=>{const v=+a[0]; if(!cur().igmp.off.includes(v)) cur().igmp.off.push(v);});
+def('config','ip igmp snooping querier',()=>{cur().querier=true; if(!cur().igmp.global) return hintOut('Le querier ne fonctionne que si ip igmp snooping est activé.');});
+def('config','no ip igmp snooping querier',()=>{cur().querier=false;});
+def('config','mls qos',()=>{cur().qos=true;});
+def('config','no mls qos',()=>{cur().qos=false;});
+def('config','do <cmd>',a=>runIn('priv',a[0]));
+def('config','exit',()=>{tm().mode='priv';});
+def('config','end',endCfg);
+
+// VLAN
+def('vlan','name <word>',a=>{tm().vlans.forEach(v=>{if(vlanExists(cur(),v)) cur().vlans[v]=a[0];});});
+def('vlan','no name',()=>{tm().vlans.forEach(v=>{cur().vlans[v]='VLAN'+String(v).padStart(4,'0');});});
+def('vlan','exit',()=>{tm().mode='config';});
+def('vlan','end',endCfg);
+def('vlan','do <cmd>',a=>runIn('priv',a[0]));
+
+// INTERFACE
+const each=f=>{tm().ifs.forEach(p=>f(cur().ifs[p],p));};
+def('if','description <line>',a=>each(i=>{i.desc=a[0];}));
+def('if','no description',()=>each(i=>{i.desc='';}));
+def('if','switchport mode access',()=>each(i=>{i.mode='access';}));
+def('if','switchport mode trunk',()=>each(i=>{i.mode='trunk';}));
+def('if','switchport access vlan <vlan>',a=>{const v=+a[0]; let msg; if(!vlanExists(cur(),v)){cur().vlans[v]='VLAN'+String(v).padStart(4,'0'); msg=`% Access VLAN does not exist. Creating vlan ${v}`;} each(i=>{i.vlan=v;}); return msg;});
+def('if','switchport trunk allowed vlan <vlans>',a=>each(i=>{i.allowed=parseVlans(a[0]);}));
+def('if','switchport trunk allowed vlan add <vlans>',a=>each(i=>{if(i.allowed!==null) i.allowed=[...new Set(i.allowed.concat(parseVlans(a[0])))];}));
+def('if','switchport trunk allowed vlan remove <vlans>',a=>each(i=>{const r=parseVlans(a[0]); const base=i.allowed===null?[...Array(4094).keys()].map(x=>x+1):i.allowed; i.allowed=base.filter(v=>!r.includes(v)); if(i.allowed.length>200) i.allowed=i.allowed.filter(v=>v<=1005||!r.includes(v));}));
+def('if','switchport trunk allowed vlan all',()=>each(i=>{i.allowed=null;}));
+def('if','shutdown',()=>{const m=[];each((i,p)=>{if(!i.shut){i.shut=true;m.push(`%LINK-5-CHANGED: Interface ${longIf(p)}, changed state to administratively down`);}});m.forEach(sysMsg);});
+def('if','no shutdown',()=>{const m=[];each((i,p)=>{if(i.shut){i.shut=false; if(connected(S.cur,p)) m.push(`%LINK-3-UPDOWN: Interface ${longIf(p)}, changed state to up`);}});m.forEach(sysMsg);});
+def('if','spanning-tree portfast',()=>{each(i=>{i.portfast=true;}); return tm().ifs.some(p=>cur().ifs[p].mode==='trunk')?'%Warning: portfast should only be enabled on ports connected to a single host.':undefined;});
+def('if','no spanning-tree portfast',()=>each(i=>{i.portfast=false;}));
+def('if','power efficient-ethernet',()=>each(i=>{i.eee=true;}));
+def('if','no power efficient-ethernet',()=>each(i=>{i.eee=false;}));
+def('if','mls qos trust dscp',()=>{each(i=>{i.trust=true;}); if(!cur().qos) return hintOut('QoS est désactivée globalement : tapez aussi mls qos en configuration globale.');});
+def('if','no mls qos trust',()=>each(i=>{i.trust=false;}));
+def('if','exit',()=>{tm().mode='config';tm().ifs=[];});
+def('if','end',endCfg);
+def('if','do <cmd>',a=>runIn('priv',a[0]));
+
+// SVI
+const svi=()=>cur().svis[tm().svi];
+def('svi','ip address <ip> <mask>',a=>{svi().ip=a[0];svi().mask=a[1];});
+def('svi','no ip address',()=>{svi().ip=null;svi().mask=null;});
+def('svi','shutdown',()=>{svi().shut=true;sysMsg(`%LINK-5-CHANGED: Interface Vlan${tm().svi}, changed state to administratively down`);});
+def('svi','no shutdown',()=>{svi().shut=false;sysMsg(`%LINK-3-UPDOWN: Interface Vlan${tm().svi}, changed state to up`);});
+def('svi','description <line>',()=>{});
+def('svi','exit',()=>{tm().mode='config';tm().svi=null;});
+def('svi','end',endCfg);
+def('svi','do <cmd>',a=>runIn('priv',a[0]));
+
+function endCfg(){tm().mode='priv';tm().ifs=[];tm().svi=null;sysMsg('%SYS-5-CONFIG_I: Configured from console by console');}
+function doSave(){const sw=cur(); sw.startup=snap(sw); S.dirty[S.cur]=false; return 'Building configuration...\n[OK]';}
+function doReload(){
+  const d=S.cur, st=S.sw[d].startup;
+  S.sw[d]= st? Object.assign(JSON.parse(JSON.stringify(st)),{startup:st}) : mkSwitch('Switch',2);
+  S.term[d]=newTerm(); S.dirty[d]=false;
+  return 'Proceed with reload? [confirm]\n\nSystem Bootstrap, Version 15.2\nBooting...\n'+(st?'Configuration de démarrage chargée.':'Aucune configuration sauvegardée : retour aux réglages d\'usine.')+'\n\nPress RETURN to get started!';
+}
+
+/* ---------- show ---------- */
+function showVlan(){
+  const sw=cur(),L=['','VLAN Name                             Status    Ports','---- -------------------------------- --------- -------------------------------'];
+  Object.keys(sw.vlans).map(Number).sort((a,b)=>a-b).forEach(v=>{
+    const ports=Object.keys(sw.ifs).filter(p=>sw.ifs[p].mode==='access'&&sw.ifs[p].vlan===v);
+    const ch=[]; for(let i=0;i<ports.length;i+=4) ch.push(ports.slice(i,i+4).join(', '));
+    L.push(pad(v,4)+' '+pad(sw.vlans[v],32)+' '+pad('active',9)+' '+(ch[0]||''));
+    ch.slice(1).forEach(c=>L.push(' '.repeat(48)+c));
+  });
+  return L.join('\n');
+}
+function showIntStatus(){
+  const sw=cur(),L=['','Port      Name               Status       Vlan       Duplex  Speed Type'];
+  Object.keys(sw.ifs).forEach(p=>{
+    const i=sw.ifs[p],c=connected(S.cur,p);
+    const st=i.shut?'disabled':c?'connected':'notconnect';
+    const te=p.startsWith('Te');
+    L.push(pad(p,10)+pad(i.desc.slice(0,18),19)+pad(st,13)+pad(i.mode==='trunk'?'trunk':i.vlan,11)+pad(c?'a-full':'auto',8)+pad(c?(te?'a-10G':'a-1000'):'auto',6)+(te?'SFP-10GBase-SR':'10/100/1000BaseTX'));
+  });
+  return L.join('\n');
+}
+function showTrunk(){
+  const sw=cur(),tp=Object.keys(sw.ifs).filter(p=>sw.ifs[p].mode==='trunk'&&connected(S.cur,p));
+  if(!tp.length) return '';
+  const L=['','Port        Mode         Encapsulation  Status        Native vlan'];
+  tp.forEach(p=>L.push(pad(p,12)+pad('on',13)+pad('802.1q',15)+pad('trunking',14)+'1'));
+  L.push('','Port        Vlans allowed on trunk');
+  tp.forEach(p=>{const i=sw.ifs[p];L.push(pad(p,12)+(i.allowed===null?'1-4094':i.allowed.length?compress(i.allowed):'none'));});
+  L.push('','Port        Vlans allowed and active in management domain');
+  tp.forEach(p=>{const i=sw.ifs[p];const act=Object.keys(sw.vlans).map(Number).filter(v=>allowedHas(i,v));L.push(pad(p,12)+(act.length?compress(act):'none'));});
+  return L.join('\n');
+}
+function showIpBrief(){
+  const sw=cur(),L=['Interface              IP-Address      OK? Method Status                Protocol'];
+  Object.keys(sw.svis).map(Number).sort((a,b)=>a-b).forEach(v=>{const s=sw.svis[v];const up=!s.shut&&vlanExists(sw,v);
+    L.push(pad('Vlan'+v,23)+pad(s.ip||'unassigned',16)+pad('YES',4)+pad(s.ip?'manual':'unset',7)+pad(s.shut?'administratively down':up?'up':'down',22)+(up?'up':'down'));});
+  Object.keys(sw.ifs).forEach(p=>{const i=sw.ifs[p],c=connected(S.cur,p);
+    L.push(pad(longIf(p),23)+pad('unassigned',16)+pad('YES',4)+pad('unset',7)+pad(i.shut?'administratively down':c?'up':'down',22)+(c?'up':'down'));});
+  return L.join('\n');
+}
+function querierOf(dev,v){
+  const sw=S.sw[dev];
+  const ipOf=s=>{const x=s.svis[v]&&s.svis[v].ip?s.svis[v].ip:(Object.values(s.svis).find(y=>y.ip)||{}).ip;return x||'0.0.0.0';};
+  if(sw.querier&&snoopOn(sw,v)) return {ip:ipOf(sw),port:'Switch'};
+  const o=other(dev),os=S.sw[o];
+  if(os.querier&&snoopOn(os,v)&&trunkUp(v)) return {ip:ipOf(os),port:TRUNK[dev]};
+  return null;
+}
+function showSnoop(){
+  const sw=cur(),en=b=>b?'Enabled':'Disabled';
+  const L=['Global IGMP Snooping configuration:','-------------------------------------------',
+    'IGMP snooping              : '+en(sw.igmp.global),'IGMPv3 snooping (minimal)  : Enabled','Report suppression         : Enabled',
+    'TCN solicit query          : Disabled','TCN flood query count      : 2','Robustness variable        : 2','Last member query count    : 2',
+    'Querier                    : '+en(sw.querier),''];
+  Object.keys(sw.vlans).map(Number).sort((a,b)=>a-b).forEach(v=>L.push('Vlan '+v+':','--------','IGMP snooping                       : '+en(snoopOn(sw,v)),''));
+  return L.join('\n');
+}
+function showQuerier(){
+  const L=['Vlan      IP Address               IGMP Version   Port','-------------------------------------------------------------'];
+  Object.keys(cur().vlans).map(Number).sort((a,b)=>a-b).forEach(v=>{if(!snoopOn(cur(),v)) return; const q=querierOf(S.cur,v); if(q) L.push(pad(v,10)+pad(q.ip,25)+pad('v2',15)+q.port);});
+  return L.join('\n');
+}
+function showGroups(){
+  const d=S.cur,sw=cur(),L=['Vlan      Group                    Type        Version     Port List','-----------------------------------------------------------------------'];
+  const grp=(v,g,ids)=>{
+    if(!snoopOn(sw,v)||!querierOf(d,v)) return;
+    const ports=ids.map(H).filter(h=>h.sw===d&&hostVlan(h)===v).map(h=>h.port);
+    if(trunkUp(v)&&ids.map(H).some(h=>h.sw!==d&&hostVlan(h)===v)) ports.push(TRUNK[d]);
+    if(ports.length) L.push(pad(v,10)+pad(g,25)+pad('igmp',12)+pad('v2',12)+ports.join(', '));
+  };
+  grp(10,'239.255.0.1',['CONSOLE','PC-MULTI','STAGEBOX','AMPLI']);
+  grp(20,'239.255.20.31',['PC-VMIX']);
+  grp(20,'239.255.20.32',['PC-VMIX']);
+  grp(30,'239.255.0.1',['LUMIERE','COMPANION']);
+  return L.join('\n');
+}
+function showLldp(){
+  const d=S.cur,L=['Capability codes: (B) Bridge, (O) Other','','Device ID           Local Intf     Hold-time  Capability      Port ID'];let n=0;
+  HOSTS.filter(h=>h.sw===d&&connected(d,h.port)).forEach(h=>{L.push(pad(h.id,20)+pad(h.port,15)+pad('120',11)+pad('O',16)+'eth0');n++;});
+  if(connected(d,TRUNK[d])){L.push(pad(S.sw[other(d)].hostname,20)+pad(TRUNK[d],15)+pad('120',11)+pad('B',16)+TRUNK[other(d)]);n++;}
+  L.push('','Total entries displayed: '+n); return L.join('\n');
+}
+function doPing(ip){
+  const d=S.cur,sw=cur();
+  if(!ipOk(ip)) return errOut('% Unrecognized host or address.');
+  const head='Type escape sequence to abort.\nSending 5, 100-byte ICMP Echos to '+ip+', timeout is 2 seconds:\n';
+  let why='',ok=false;
+  const own=Object.values(sw.svis).find(s=>s.ip===ip&&!s.shut);
+  if(own) ok=true;
+  else{
+    const src=Object.keys(sw.svis).map(Number).find(v=>sw.svis[v].ip&&sameNet(ip,sw.svis[v].ip,sw.svis[v].mask));
+    if(src===undefined) {const hh=HOSTS.find(x=>x.ip===ip),vv=hh?hostVlan(hh):null;
+      why=`Aucune interface VLAN de ${sw.hostname} n'a d'adresse dans le réseau de ${ip}.`+(vv?` Pour tester depuis le switch : interface vlan ${vv}, ip address ${ip.split('.').slice(0,3).join('.')}.${d==='regie'?'2':'1'} 255.255.255.0, no shutdown.`:' Créez une interface VLAN avec une adresse dans ce réseau.');}
+    else if(sw.svis[src].shut) why=`L'interface Vlan${src} est éteinte. Une interface VLAN est créée en shutdown : tapez no shutdown dedans.`;
+    else if(!vlanExists(sw,src)) why=`Le VLAN ${src} n'existe pas sur ${sw.hostname}. Créez-le avec vlan ${src}.`;
+    else{
+      const h=HOSTS.find(x=>x.ip===ip);
+      if(h){ if(hostVlan(h)!==src) why=`${h.id} n'est pas joignable dans le VLAN ${src} (port éteint ou autre VLAN).`; else if(!path(d,h.sw,src)) why=`Le VLAN ${src} ne passe pas par le trunk Te1/1/1.`; else ok=true; }
+      else{
+        const o=other(d),os=S.sw[o],t=os.svis[src];
+        if(t&&t.ip===ip){ if(t.shut) why='L\'interface distante est éteinte.'; else if(!trunkUp(src)) why=`Le VLAN ${src} ne passe pas par le trunk Te1/1/1 (mode trunk et VLAN autorisés des deux côtés).`; else ok=true; }
+        else why='Aucun appareil ne répond à cette adresse.';
+      }
+    }
+  }
+  if(ok){
+    const k='arp_'+d+'_'+ip, first=!S.flags[k]; S.flags[k]=1;
+    if(d==='regie'&&ip==='192.168.99.1') S.flags.pingCore=true;
+    return head+(first?'.!!!!\nSuccess rate is 80 percent (4/5), round-trip min/avg/max = 1/1/2 ms':'!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms');
+  }
+  out(head+'.....\nSuccess rate is 0 percent (0/5)','out');
+  return hintOut('Astuce : '+why);
+}
+
+/* ---------- analyseur ---------- */
+function tokenize(line){
+  const raw=[];const re=/\S+/g;let m;
+  while((m=re.exec(line))) raw.push({t:m[0],s:m.index});
+  const out=[];
+  for(let i=0;i<raw.length;i++){
+    const a=raw[i],b=raw[i+1];
+    if(b&&/^[a-z]+$/i.test(a.t)&&/^\d+\/\d+\/\d+/.test(b.t)&&(('gigabitethernet'.startsWith(a.t.toLowerCase()))||('tengigabitethernet'.startsWith(a.t.toLowerCase())))){out.push({t:a.t+b.t,s:a.s});i++;}
+    else out.push(a);
+  }
+  return out;
+}
+const isLit=x=>x[0]!=='<';
+function step(cands,t,i){
+  const T=t.toLowerCase(),lit=[],par=[];
+  cands.forEach(c=>{const pt=c.toks[i]; if(pt===undefined) return;
+    if(isLit(pt)){if(pt.toLowerCase().startsWith(T)) lit.push(c);}
+    else if(P[pt].rest||P[pt].ok(t)) par.push(c);});
+  if(lit.length){
+    const words=[...new Set(lit.map(c=>c.toks[i].toLowerCase()))];
+    if(words.length>1){const ex=words.find(w=>w===T); if(ex) return {cands:lit.filter(c=>c.toks[i].toLowerCase()===ex)}; return {err:'amb',cands:lit};}
+    return {cands:lit};
+  }
+  return {cands:par};
+}
+function collect(c,toks){
+  const a=[];
+  for(let j=0;j<c.toks.length;j++){const pt=c.toks[j]; if(isLit(pt)) continue; if(P[pt].rest){a.push(toks.slice(j).map(x=>x.t).join(' '));break;} a.push(toks[j].t);}
+  return a;
+}
+function parse(list,toks){
+  let cands=list;
+  for(let i=0;i<toks.length;i++){
+    const r=step(cands,toks[i].t,i);
+    if(r.err) return {err:'amb'};
+    if(!r.cands.length) return {err:'inv',pos:i};
+    cands=r.cands;
+    const rc=cands.find(c=>{const pt=c.toks[i];return !isLit(pt)&&P[pt].rest;});
+    if(rc) return {cmd:rc,args:collect(rc,toks)};
+  }
+  const done=cands.find(c=>c.toks.length===toks.length);
+  if(done) return {cmd:done,args:collect(done,toks)};
+  return {err:'inc'};
+}
+function listFor(mode){
+  if(mode==='user') return cmds.exec.filter(c=>!c.priv);
+  if(mode==='priv') return cmds.exec;
+  if(mode==='config') return cmds.config;
+  if(mode==='config-vlan') return cmds.vlan;
+  if(mode==='config-if'&&tm().svi!==null) return cmds.svi;
+  return cmds.if;
+}
+function lenient(list,toks){
+  let cands=list;
+  for(let i=0;i<toks.length;i++){const r=step(cands,toks[i].t,i); cands=r.cands; if(!cands.length) return [];
+    if(cands.some(c=>{const pt=c.toks[i];return !isLit(pt)&&P[pt].rest;})) return 'rest';}
+  return cands;
+}
+
+/* ---------- sortie ---------- */
+function out(text,cls){if(text===undefined||text===null||text==='') return; const L=S.logs[S.cur]; L.push([cls||'out',String(text)]); if(L.length>400) L.splice(0,L.length-400); appendLine(cls||'out',String(text));}
+function errOut(t){out(t,'err');return undefined;}
+function hintOut(t){out(t,'hint');return undefined;}
+function appendLine(cls,text){const d=document.createElement('div');d.className=cls;d.textContent=text;const log=$('log');log.appendChild(d);log.scrollTop=log.scrollHeight;}
+const MODEP={user:'>',priv:'#',config:'(config)#','config-if':'(config-if)#','config-if-range':'(config-if-range)#','config-vlan':'(config-vlan)#'};
+const prompt=()=>cur().hostname+MODEP[tm().mode];
+
+function runIn(mode,line){
+  const toks=tokenize(line); if(!toks.length) return;
+  const r=parse(listFor(mode),toks);
+  if(r.err){ if(r.err==='amb') return errOut(`% Ambiguous command:  "${line}"`); if(r.err==='inc') return errOut('% Incomplete command.'); return errOut("% Invalid input detected."); }
+  return r.cmd.f(r.args);
+}
+function execLine(line){
+  const p=prompt();
+  out(p+line,'in');
+  const t=line.trim(); if(!t) return;
+  if(t.startsWith('!')){afterChange();return;}
+  const h=S.hist[S.cur]; if(h[h.length-1]!==t){h.push(t); if(h.length>60) h.shift();}
+  const mode=tm().mode, toks=tokenize(line);
+  let r=parse(listFor(mode),toks);
+  if(r.err==='inv'&&r.pos===0&&(mode==='config-if'||mode==='config-if-range'||mode==='config-vlan')){
+    const r2=parse(cmds.config,toks); if(!r2.err){tm().mode='config';tm().ifs=[];tm().svi=null;r=r2;}
+  }
+  if(r.err){
+    if(r.err==='amb') errOut(`% Ambiguous command:  "${t}"`);
+    else if(r.err==='inc') errOut('% Incomplete command.');
+    else{ out(' '.repeat(p.length+toks[r.pos].s)+'^','err'); errOut("% Invalid input detected at '^' marker.");
+      if(mode==='user'&&r.pos===0) hintOut('Astuce : en mode utilisateur (>), la plupart des commandes demandent d\'abord enable.');
+      else if(mode==='user') hintOut('Astuce : cette commande demande le mode privilégié. Tapez enable.'); }
+  } else {
+    const res=r.cmd.f(r.args);
+    if(typeof res==='string') out(res,'out');
+    if(mode.startsWith('config')&&!/^(do|exit|end)$/.test(r.cmd.toks[0])) S.dirty[S.cur]=true;
+  }
+  afterChange();
+}
+function helpLine(line){
+  const list=listFor(tm().mode);
+  out(prompt()+line+'?','in');
+  const endsSpace=line===''||/\s$/.test(line);
+  const toks=tokenize(line);
+  if(endsSpace){
+    const c=lenient(list,toks);
+    if(c==='rest'){out('  LINE    <cr>','out');return;}
+    if(!c.length){errOut("% Unrecognized command");return;}
+    const n=toks.length,seen=new Set(),rows=[];
+    c.forEach(x=>{const pt=x.toks[n]; const k=pt===undefined?'<cr>':pt; if(seen.has(k)) return; seen.add(k);
+      if(pt===undefined) rows.push(['<cr>','']); else if(isLit(pt)) rows.push([pt,CTX[(n?x.toks[n-1]+' ':'')+pt]||DESC[pt]||'']); else rows.push([P[pt].d,P[pt].h]);});
+    rows.sort((a,b)=>a[0]==='<cr>'?1:b[0]==='<cr>'?-1:a[0].localeCompare(b[0]));
+    const w=Math.max(...rows.map(r=>r[0].length))+3;
+    out(rows.map(r=>'  '+pad(r[0],w)+r[1]).join('\n'),'out');
+  } else {
+    const part=toks.pop();
+    const c=lenient(list,toks); if(c==='rest'||!c.length){errOut('% Unrecognized command');return;}
+    const n=toks.length,T=part.t.toLowerCase();
+    const words=[...new Set(c.map(x=>x.toks[n]).filter(pt=>pt&&isLit(pt)&&pt.toLowerCase().startsWith(T)))];
+    out(words.length?words.join('  '):'% Unrecognized command',words.length?'out':'err');
+  }
+}
+function complete(line){
+  const toks=tokenize(line); if(!toks.length||/\s$/.test(line)) return line;
+  const part=toks.pop(); const c=lenient(listFor(tm().mode),toks); if(c==='rest'||!c.length) return line;
+  const n=toks.length,T=part.t.toLowerCase();
+  const words=[...new Set(c.map(x=>x.toks[n]).filter(pt=>pt&&isLit(pt)&&pt.toLowerCase().startsWith(T)))];
+  if(words.length===1) return line.slice(0,part.s)+words[0]+' ';
+  return line;
+}
+
+/* ---------- missions ---------- */
+const R=()=>S.sw.regie, C=()=>S.sw.core;
+const acc=(p,v)=>{const i=R().ifs[p];return i.mode==='access'&&i.vlan===v;};
+const vn=(v,n)=>(R().vlans[v]||'').toUpperCase()===n;
+const noIssue=tag=>services().filter(s=>s.key!=='ctrl').every(s=>!s.issues.some(x=>x.t===tag));
+const MISSIONS=[
+  {id:'m1',title:'Premiers pas',dev:'regie',goal:'Prenez en main le switch de la régie : les modes, le nom, la sauvegarde.',
+   steps:[['Passer en mode privilégié (enable)',()=>!!S.flags.enable],['Entrer en configuration globale (configure terminal)',()=>!!S.flags.conft],['Nommer le switch SW-REGIE',()=>R().hostname==='SW-REGIE'],['Sauvegarder (write memory)',()=>!!(R().startup&&R().startup.hostname==='SW-REGIE')]],
+   sol:'enable\nconfigure terminal\nhostname SW-REGIE\nend\nwrite memory'},
+  {id:'m2',title:'Créer les VLAN',dev:'regie',goal:'Séparez l\'audio, la vidéo, le contrôle et l\'administration, avec les mêmes numéros que SW-COEUR.',
+   steps:[['VLAN 10 nommé AUDIO',()=>vn(10,'AUDIO')],['VLAN 20 nommé VIDEO',()=>vn(20,'VIDEO')],['VLAN 30 nommé CONTROLE',()=>vn(30,'CONTROLE')],['VLAN 99 nommé ADMIN',()=>vn(99,'ADMIN')]],
+   sol:'configure terminal\nvlan 10\n name AUDIO\nvlan 20\n name VIDEO\nvlan 30\n name CONTROLE\nvlan 99\n name ADMIN\nend'},
+  {id:'m3',title:'Brancher les appareils',dev:'regie',goal:'Mettez chaque appareil de la régie dans son VLAN. Vérifiez avec show vlan brief.',
+   steps:[['Console et PC multipiste (Gi1/0/1-2) en accès VLAN 10',()=>acc('Gi1/0/1',10)&&acc('Gi1/0/2',10)],['PTZ 1, PTZ 2 et vMix (Gi1/0/5-7) en accès VLAN 20',()=>['Gi1/0/5','Gi1/0/6','Gi1/0/7'].every(p=>acc(p,20))],['Companion (Gi1/0/9) en accès VLAN 30',()=>acc('Gi1/0/9',30)],['Port Gi1/0/1 décrit (description CONSOLE)',()=>!!R().ifs['Gi1/0/1'].desc]],
+   sol:'configure terminal\ninterface range gi1/0/1 - 2\n switchport mode access\n switchport access vlan 10\ninterface range gi1/0/5 - 7\n switchport mode access\n switchport access vlan 20\ninterface gi1/0/9\n switchport mode access\n switchport access vlan 30\ninterface gi1/0/1\n description CONSOLE\nend\nshow vlan brief'},
+  {id:'m4',title:'Relier la régie au cœur',dev:'regie',goal:'Le lien 10G Te1/1/1 doit transporter tous les VLAN AV. Donnez ensuite une adresse d\'administration au switch.',
+   steps:[['Te1/1/1 en mode trunk',()=>R().ifs['Te1/1/1'].mode==='trunk'],['VLAN 10, 20, 30 et 99 autorisés sur le trunk',()=>[10,20,30,99].every(v=>allowedHas(R().ifs['Te1/1/1'],v))],['Interface Vlan99 en 192.168.99.2 /24, allumée',()=>{const s=R().svis[99];return !!(s&&s.ip==='192.168.99.2'&&s.mask==='255.255.255.0'&&!s.shut);}],['Ping réussi vers SW-COEUR (192.168.99.1)',()=>!!S.flags.pingCore]],
+   sol:'configure terminal\ninterface te1/1/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,99\ninterface vlan 99\n ip address 192.168.99.2 255.255.255.0\n no shutdown\nend\nping 192.168.99.1'},
+  {id:'m5',title:'Maîtriser le multicast',dev:'regie',goal:'Dante et NDI envoient du multicast. Sans IGMP snooping il inonde tous les ports ; sans querier les flux s\'arrêtent. Un seul querier suffit, sur le cœur.',
+   steps:[['IGMP snooping activé sur SW-REGIE',()=>R().igmp.global],['Snooping actif dans les VLAN 10 et 20 de SW-REGIE',()=>snoopOn(R(),10)&&snoopOn(R(),20)],['Querier IGMP activé sur SW-COEUR',()=>C().querier&&C().igmp.global,'core'],['Plus aucune alerte multicast sur l\'audio et la vidéo',()=>noIssue('igmp')&&services().every(s=>s.key==='ctrl'||!s.issues.some(x=>x.t==='link'))]],
+   sol:'! Sur SW-REGIE\nconfigure terminal\nip igmp snooping\nend\nwrite memory\n\n! Sur SW-COEUR (bouton en haut)\nenable\nconfigure terminal\nip igmp snooping querier\nend\nwrite memory\nshow ip igmp snooping querier'},
+  {id:'m6',title:'Priorité au temps réel',dev:'regie',goal:'Donnez la priorité à l\'horloge et à l\'audio (DSCP), coupez l\'économie d\'énergie EEE sur les ports Dante et rendez les ports d\'appareils actifs immédiatement.',
+   steps:[['QoS activée (mls qos)',()=>R().qos],['Confiance DSCP sur Gi1/0/1-2 et Te1/1/1',()=>['Gi1/0/1','Gi1/0/2','Te1/1/1'].every(p=>R().ifs[p].trust)],['EEE désactivé sur Gi1/0/1-2',()=>['Gi1/0/1','Gi1/0/2'].every(p=>!R().ifs[p].eee)],['PortFast sur les ports d\'appareils (1, 2, 5, 6, 7, 9)',()=>[1,2,5,6,7,9].every(n=>R().ifs['Gi1/0/'+n].portfast)],['Configuration sauvegardée',()=>!S.dirty.regie&&!!(R().startup&&R().startup.qos)]],
+   sol:'configure terminal\nmls qos\ninterface range gi1/0/1 - 2\n mls qos trust dscp\n no power efficient-ethernet\ninterface te1/1/1\n mls qos trust dscp\ninterface range gi1/0/1 - 2 , gi1/0/5 - 7 , gi1/0/9\n spanning-tree portfast\nend\nwrite memory'},
+  {id:'m7',title:'Chasse aux pannes',dev:'regie',goal:'Deux pannes réalistes sont cachées dans le réseau, sur l\'un ou l\'autre switch. Partez des symptômes, utilisez show, ping et l\'onglet Réseau.',
+   steps:[['Déclencher les pannes',()=>S.faults.length>0],['Remettre tous les services au vert',()=>!!S.flags.faultFixed]],sol:null}
+];
+const FAULTS=[
+  {id:'stage',sym:'La stagebox n\'envoie plus de son à la console.',apply:()=>{C().ifs['Gi1/0/1'].shut=true;}},
+  {id:'cam2',sym:'La caméra PTZ 2 a disparu de vMix.',apply:()=>{R().ifs['Gi1/0/6'].vlan=30;}},
+  {id:'querier',sym:'L\'audio et la vidéo se coupent au bout de quelques minutes.',apply:()=>{C().querier=false;R().querier=false;}},
+  {id:'trunk',sym:'Plus aucun son entre la régie et la scène, la lumière répond toujours.',apply:()=>{const t=R().ifs['Te1/1/1'];t.allowed=(t.allowed||[1,10,20,30,99]).filter(v=>v!==10);}},
+  {id:'eee',sym:'Des clics apparaissent sur les voies de la console.',apply:()=>{R().ifs['Gi1/0/1'].eee=true;}},
+  {id:'light',sym:'Companion ne pilote plus la console lumière.',apply:()=>{C().ifs['Gi1/0/3'].vlan=20;}}
+];
+function injectFaults(){
+  if(!allOk()){toast('Mettez d\'abord tous les services au vert (missions 1 à 6).');return;}
+  const pool=FAULTS.slice(); const pick=[];
+  while(pick.length<2){const f=pool.splice(Math.floor(Math.random()*pool.length),1)[0];pick.push(f);}
+  pick.forEach(f=>f.apply()); S.faults=pick.map(f=>f.id); S.flags.faultFixed=false; S.dirty.regie=true; S.dirty.core=true;
+  toast('Deux pannes ont été injectées. Bonne chasse.'); afterChange();
+}
+function evalMissions(){
+  if(S.faults.length&&!S.flags.faultFixed&&allOk()){S.flags.faultFixed=true;}
+  MISSIONS.forEach((m,mi)=>{
+    const st=m.steps.map(s=>!!s[1]());
+    st.forEach((v,si)=>{const k=m.id+'.'+si; if(v&&!S.seen[k]){S.seen[k]=1; if(!(st.every(Boolean)&&!S.done[m.id])) toast(`Mission ${mi+1} · étape validée`);}});
+    if(st.every(Boolean)&&!S.done[m.id]){S.done[m.id]=true;toast(`Mission ${mi+1} terminée : ${m.title}`);}
+  });
+}
+
+/* ---------- interface ---------- */
+let toastT;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
+const MODEN={user:'Mode utilisateur',priv:'Mode privilégié',config:'Configuration globale','config-if':'Configuration interface','config-if-range':'Plage d\'interfaces','config-vlan':'Configuration VLAN'};
+const CHIPS={
+  user:['enable','show version','show vlan brief'],
+  priv:['configure terminal','show running-config','show vlan brief','show interfaces status','show interfaces trunk','show ip igmp snooping querier','show ip igmp snooping groups','show lldp neighbors','ping 192.168.99.1','write memory','reload'],
+  config:['hostname SW-REGIE','vlan 10','interface gi1/0/1','interface range gi1/0/1 - 2','interface te1/1/1','interface vlan 99','ip igmp snooping','ip igmp snooping querier','mls qos','do show vlan brief','end'],
+  'config-vlan':['name AUDIO','name VIDEO','name CONTROLE','name ADMIN','vlan 20','exit','end'],
+  if:['switchport mode access','switchport access vlan 10','switchport access vlan 20','switchport access vlan 30','switchport mode trunk','switchport trunk allowed vlan 10,20,30,99','no shutdown','spanning-tree portfast','no power efficient-ethernet','mls qos trust dscp','description ','exit','end'],
+  svi:['ip address 192.168.99.2 255.255.255.0','no shutdown','exit','end']
+};
+function chipList(){const m=tm().mode; if(m==='config-if'&&tm().svi!==null) return CHIPS.svi; if(m==='config-if'||m==='config-if-range') return CHIPS.if; return CHIPS[m];}
+let histIdx=-1;
+const FS=[11,12.5,14];
+function applyFs(){$('log').style.fontSize=FS[S.fs===undefined?1:S.fs]+'px';}
+function renderTerm(full){
+  $('prompt').textContent=prompt();
+  $('tb-host').textContent=cur().hostname;
+  $('mode-pill').textContent=({user:'utilisateur',priv:'privilégié',config:'config','config-if':tm().svi!==null?'config-if':'config-if','config-if-range':'config-if-range','config-vlan':'config-vlan'})[tm().mode]+(tm().ifs.length?' · '+(tm().ifs.length>1?tm().ifs[0]+'…':tm().ifs[0]):tm().svi!==null?' · Vlan'+tm().svi:'');
+  const sp=$('save-pill'); sp.textContent=S.dirty[S.cur]?'non sauvegardé':'sauvegardé'; sp.className='tb-tag'+(S.dirty[S.cur]?' warn':'');
+  ['regie','core'].forEach(d=>{$('lbl-'+d).textContent=S.sw[d].hostname;$('dev-'+d).setAttribute('aria-pressed',String(S.cur===d));});
+  const ch=$('chips'); ch.textContent='';
+  chipList().forEach(c=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=c;b.dataset.fill=c;ch.appendChild(b);});
+  applyFs(); renderGuide();
+  if(full){const log=$('log');log.textContent='';
+    if(!S.logs[S.cur].length){S.logs[S.cur].push(['dim',`${S.sw[S.cur].hostname} · simulateur Régie IP Lab (syntaxe Cisco IOS)\nTapez ? pour voir les commandes, ou ouvrez l'onglet Missions.\nLes boutons au-dessus de la ligne de saisie remplissent la commande ; appuyez sur Entrée pour l'exécuter.`]);}
+    S.logs[S.cur].forEach(([c,t])=>appendLine(c,t));}
+}
+const STN={ok:'OK',warn:'Alerte',bad:'Coupé'};
+function worst(sv){return sv.some(s=>s.st==='bad')?'bad':sv.some(s=>s.st==='warn')?'warn':'ok';}
+function renderNav(){
+  const sv=services(),w=worst(sv);
+  const d=$('b-net'); d.className='dot '+w; d.title='Réseau : '+STN[w];
+  const done=MISSIONS.filter(m=>S.done[m.id]).length; $('b-mis').textContent=done+'/'+MISSIONS.length;
+  ['regie','core'].forEach(k=>{$('led-'+k).style.background=S.dirty[k]?'var(--warn)':'var(--ok)';$('led-'+k).title=S.dirty[k]?'Modifications non sauvegardées':'Configuration sauvegardée';});
+}
+function renderNet(){
+  const sv=services(),box=$('services'); box.textContent='';
+  $('svc-sum').innerHTML=sv.map(s=>`<div><b>${esc(s.name)}</b><span class="pill ${s.st}">${STN[s.st]}</span></div>`).join('');
+  sv.forEach(s=>{
+    const c=document.createElement('div');c.className='card svc';
+    c.innerHTML=`<div class="svc-head"><h3></h3><span class="pill ${s.st}">${STN[s.st]}</span></div>`;
+    c.querySelector('h3').textContent=s.name+(s.vlan!==null?' · VLAN '+s.vlan:'');
+    if(s.issues.length){const ul=document.createElement('ul');s.issues.forEach(i=>{const li=document.createElement('li');li.textContent=i.m;ul.appendChild(li);});c.appendChild(ul);}
+    else{const p=document.createElement('p');p.className='muted';p.style.fontSize='13px';p.textContent='Liaisons, multicast et priorités conformes.';c.appendChild(p);}
+    box.appendChild(c);
+  });
+  renderTopo();
+}
+function vcol(v){return v===null?'var(--down)':({1:'var(--v1)',10:'var(--v10)',20:'var(--v20)',30:'var(--v30)',99:'var(--v99)'}[v]||'var(--v1)');}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function renderTopo(){
+  const W=340,Hh=350,top=30,rx=122,cx=198,bw=40;
+  const left=HOSTS.filter(h=>h.sw==='regie'),right=HOSTS.filter(h=>h.sw==='core');
+  let s=`<svg class="topo" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Topologie des deux switchs et des appareils">`;
+  s+=`<text class="t-sw" x="${rx+bw/2}" y="18">${esc(S.sw.regie.hostname)}</text><text class="t-sw" x="${cx+bw/2}" y="18">${esc(S.sw.core.hostname)}</text>`;
+  s+=`<rect class="sw-bar" x="${rx}" y="${top}" width="${bw}" height="${Hh-top-8}" rx="6"/><rect class="sw-bar" x="${cx}" y="${top}" width="${bw}" height="${Hh-top-8}" rx="6"/>`;
+  const ty=top+(Hh-top-8)/2;
+  const carried=[10,20,30,99].filter(trunkUp);
+  const tcol=carried.length===4?'var(--accent)':carried.length?'var(--warn)':'var(--down)';
+  s+=`<line x1="${rx+bw}" y1="${ty}" x2="${cx}" y2="${ty}" stroke="${tcol}" stroke-width="5" ${carried.length?'':'stroke-dasharray="4 3"'}/>`;
+  s+=`<text class="t-port" x="${(rx+bw+cx)/2}" y="${ty-8}">Te1/1/1</text><text class="t-port" x="${(rx+bw+cx)/2}" y="${ty+14}">${carried.length?esc(compress(carried)):'aucun'}</text>`;
+  const node=(h,x,y,w,side)=>{
+    const v=hostVlan(h),col=vcol(v),dash=v===null?'stroke-dasharray="4 3"':'';
+    const x1=side==='L'?x+w:x,x2=side==='L'?rx:cx+bw;
+    let g=`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${col}" stroke-width="3" ${dash}/>`;
+    g+=`<rect class="n-box" x="${x}" y="${y-19}" width="${w}" height="38" rx="6"/>`;
+    g+=`<text class="t-name" x="${x+7}" y="${y-4}">${esc(h.id)}</text><text class="t-sub" x="${x+7}" y="${y+9}">${esc(h.ip.replace('192.168.',''))} · V${v===null?'–':v}</text>`;
+    g+=`<text class="t-port" x="${(side==='L'?rx:cx)+bw/2}" y="${y+3}">${esc(h.port.replace('Gi',''))}</text>`;
+    return g;
+  };
+  left.forEach((h,i)=>{s+=node(h,4,top+22+i*52,92,'L');});
+  right.forEach((h,i)=>{s+=node(h,cx+bw+18,ty-80+i*80,W-(cx+bw+18)-4,'R');});
+  s+='</svg>';
+  $('topo').innerHTML=s;
+}
+const curMission=()=>MISSIONS.find(m=>!S.done[m.id]);
+function solLines(m){
+  return m.sol.split('\n').filter(l=>l.trim()).map(l=>l.startsWith('!')?`<div class="lbl">${esc(l.replace(/^!\s*/,''))}</div>`:`<button type="button" data-fill="${esc(l.trim())}">${esc(l)}</button>`).join('');
+}
+function renderGuide(){
+  const g=$('guide'), m=curMission();
+  if(!m){g.innerHTML=`<div class="g-top"><div class="g-head"><span class="g-kicker">Parcours terminé</span><span class="g-title">Les 7 missions sont validées</span></div><div class="g-acts"><button class="linkbtn" type="button" data-inject="1">Nouvelles pannes</button></div></div>`;return;}
+  const mi=MISSIONS.indexOf(m), st=m.steps.map(x=>!!x[1]()), n=st.filter(Boolean).length, next=m.steps.find((x,i)=>!st[i]);
+  const want=(next&&next[2])||m.dev, open=!!S.solOpen, hide=!!S.guideHide;
+  let h=`<div class="g-top"><div class="g-head"><span class="g-kicker">Mission ${mi+1} sur 7 · ${n}/${st.length} étapes</span><span class="g-title">${esc(m.title)}</span></div><div class="g-acts">`;
+  h+=`<button class="linkbtn" type="button" data-g="hide" aria-expanded="${!hide}">${hide?'Afficher':'Réduire'}</button></div></div>`;
+  if(!hide){
+    if(next) h+=`<div class="g-step"><span class="muted">Étape suivante</span><b>${esc(next[0])}</b></div>`;
+    const acts=[];
+    if(m.id==='m7'){ if(!S.faults.length) acts.push(`<button class="linkbtn" type="button" data-inject="1">Déclencher 2 pannes</button>`); else acts.push(`<span class="g-note">Symptômes : ${esc(S.faults.map(id=>FAULTS.find(f=>f.id===id).sym).join(' '))}</span>`); }
+    if(want!==S.cur) acts.push(`<button class="linkbtn" type="button" data-go="${want}">Passer sur ${esc(S.sw[want].hostname)}</button>`);
+    if(m.sol) acts.push(`<button class="linkbtn" type="button" data-g="sol" aria-expanded="${open}">${open?'Masquer la solution':'Voir la solution'}</button>`+(open?'<span class="g-note">touchez une ligne, puis Entrée</span>':''));
+    if(acts.length) h+=`<div class="actions" style="gap:4px;align-items:center">${acts.join('')}</div>`;
+    if(open&&m.sol) h+=`<div class="g-sol" aria-label="Touchez une ligne pour la placer dans la saisie">${solLines(m)}</div>`;
+  }
+  g.innerHTML=h;
+}
+function renderMis(){
+  const box=$('missions'); box.textContent=''; const cm=curMission();
+  MISSIONS.forEach((m,mi)=>{
+    const st=m.steps.map(s=>!!s[1]()),n=st.filter(Boolean).length,done=!!S.done[m.id],isCur=m===cm;
+    const c=document.createElement(done&&!isCur?'details':'div');c.className='card mis'+(isCur?' current':'')+(done?' closed':'');
+    const head=`<div class="mis-head"><div><div class="mis-num">MISSION ${mi+1}${isCur?' · EN COURS':''}</div><h3>${esc(m.title)}</h3></div><span class="pill ${done?'ok':''}">${done?'Terminée':n+'/'+st.length}</span></div>`;
+    let body=`<p class="muted">${esc(m.goal)}</p><div class="bar"><i style="width:${Math.round(n/st.length*100)}%"></i></div><ul class="steps">`;
+    m.steps.forEach((s,i)=>{body+=`<li class="${st[i]?'on':''}"><span class="tick"></span><span>${esc(s[0])}</span></li>`;});
+    body+='</ul>';
+    if(m.id==='m7'){
+      if(S.faults.length){body+='<p><b>Symptômes signalés :</b></p><ul class="sym">'+S.faults.map(id=>'<li>'+esc(FAULTS.find(f=>f.id===id).sym)+'</li>').join('')+'</ul>';}
+      body+=`<div class="actions"><button class="btn primary" type="button" data-inject="1">${S.faults.length?'Nouvelles pannes':'Déclencher 2 pannes'}</button><button class="btn" type="button" data-go="regie">Ouvrir le terminal</button></div>`;
+      body+='<details><summary>Indices</summary><pre class="sol">show interfaces status\nshow vlan brief\nshow interfaces trunk\nshow ip igmp snooping querier\nshow running-config\nOnglet Réseau : chaque alerte dit où chercher.</pre></details>';
+    } else {
+      body+=`<div class="actions"><button class="btn${isCur?' primary':''}" type="button" data-go="${m.dev}">${isCur?'Continuer dans le terminal':'Ouvrir le terminal'}</button></div>`;
+      body+=`<details><summary>Voir la solution</summary><pre class="sol">${esc(m.sol)}</pre></details>`;
+    }
+    c.innerHTML=done&&!isCur?`<summary style="list-style:none;cursor:pointer">${head}</summary><div class="mis" style="margin-top:8px">${body}</div>`:head+body;
+    box.appendChild(c);
+  });
+}
+function setTab(t){
+  S.tab=t;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  ['term','net','mis','aide'].forEach(k=>{$('t-'+k).hidden=k!==t;});
+  if(t==='net') renderNet(); if(t==='mis') renderMis();
+  if(t==='term'){const log=$('log');log.scrollTop=log.scrollHeight;}
+  save();
+}
+function setDev(d){S.cur=d;histIdx=-1;renderTerm(true);renderNav();save();}
+function afterChange(){evalMissions();renderTerm(false);renderNav();if(S.tab==='net')renderNet();if(S.tab==='mis')renderMis();save();}
+
+/* ---------- événements ---------- */
+$('form').addEventListener('submit',e=>{e.preventDefault();const v=$('cmd').value;$('cmd').value='';histIdx=-1;execLine(v);});
+$('cmd').addEventListener('input',e=>{const v=e.target.value; if(v.endsWith('?')){const l=v.slice(0,-1);helpLine(l);e.target.value=l;}});
+$('cmd').addEventListener('keydown',e=>{
+  const h=S.hist[S.cur];
+  if(e.key==='Tab'){e.preventDefault();e.target.value=complete(e.target.value);}
+  else if(e.key==='ArrowUp'){e.preventDefault();histMove(-1);}
+  else if(e.key==='ArrowDown'){e.preventDefault();histMove(1);}
+});
+function histMove(dir){const h=S.hist[S.cur],inp=$('cmd'); if(!h.length) return;
+  if(dir<0){histIdx=histIdx<0?h.length-1:Math.max(0,histIdx-1);inp.value=h[histIdx];}
+  else{if(histIdx<0) return; histIdx++; if(histIdx>=h.length){histIdx=-1;inp.value='';} else inp.value=h[histIdx];}}
+$('keys').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const inp=$('cmd'), a=b.dataset.act;
+  if(a==='?'){helpLine(inp.value.trim()?inp.value.replace(/\s*$/,' '):'');}
+  else if(a==='tab'){inp.value=complete(inp.value);}
+  else if(a==='up') histMove(-1);
+  else if(a==='down') histMove(1);
+  else if(a==='clr'){S.logs[S.cur]=[];renderTerm(true);save();}
+});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button'); if(b&&b.dataset.fill!==undefined) $('cmd').value=b.dataset.fill;});
+$('guide').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.fill!==undefined){$('cmd').value=b.dataset.fill;return;}
+  if(b.dataset.g==='hide'){S.guideHide=!S.guideHide;renderGuide();save();}
+  else if(b.dataset.g==='sol'){S.solOpen=!S.solOpen;renderGuide();save();}
+  else if(b.dataset.inject) injectFaults();
+  else if(b.dataset.go) setDev(b.dataset.go);
+});
+$('fs').addEventListener('click',()=>{S.fs=((S.fs===undefined?1:S.fs)+1)%FS.length;applyFs();save();});
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>setDev(b.dataset.dev)));
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+$('missions').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.inject){injectFaults();}
+  if(b.dataset.go){setDev(b.dataset.go);setTab('term');}
+});
+const selA=$('ping-a'),selB=$('ping-b');
+HOSTS.forEach((h,i)=>{[selA,selB].forEach(s=>{const o=document.createElement('option');o.value=h.id;o.textContent=h.id+' · '+h.name;s.appendChild(o);});});
+selA.value='CONSOLE';selB.value='STAGEBOX';
+$('ping-go').addEventListener('click',()=>{
+  const a=H(selA.value),b=H(selB.value),o=$('ping-out');
+  if(a===b){o.textContent='Choisissez deux appareils différents.';return;}
+  if(reach(a,b)){o.style.color='var(--ok)';o.textContent=`${a.id} → ${b.id} : réponse en 1 ms (VLAN ${hostVlan(a)}).`;}
+  else{o.style.color='var(--bad)';o.textContent=`${a.id} → ${b.id} : délai dépassé.\n${whyNot(a,b)}`;}
+});
+$('reset').addEventListener('click',()=>{$('reset-yes').hidden=false;});
+$('reset-yes').addEventListener('click',()=>{try{localStorage.removeItem(KEY);}catch(e){} S=fresh();$('reset-yes').hidden=true;renderTerm(true);renderNav();setTab('term');toast('Labo réinitialisé.');});
+
+renderTerm(true);renderNav();setTab(S.tab||'term');
+})();
+</script>
+
+</body>
+</html>

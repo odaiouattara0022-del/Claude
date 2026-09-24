@@ -1,0 +1,601 @@
+<title>Formation Réseau AV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Formation Réseau AV — thème « régie de contrôle », calqué sur NOC CCNA */
+:root{
+  color-scheme:dark;
+  --bg:#0b0f14; --bg-2:#111821; --bg-3:#16202b; --line:#22303f; --line-2:#2e4055;
+  --txt:#dbe5ef; --txt-dim:#8ea0b2; --txt-faint:#62748a;
+  --accent:#31d0aa; --accent-2:#1a8f74; --amber:#f0b429; --red:#ef5350; --blue:#4a9eff; --violet:#a78bfa;
+  --radius:10px;
+  --mono:'IBM Plex Mono','JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--txt)}
+body{font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--blue)}
+
+.shell{display:flex;min-height:100vh}
+.sidebar{width:236px;flex:0 0 236px;background:var(--bg-2);border-right:1px solid var(--line);padding:20px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:0 20px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.brand h1{font-family:var(--mono);font-size:17px;margin:0;letter-spacing:.06em;color:var(--accent)}
+.brand small{display:block;color:var(--txt-faint);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
+.nav{flex:1;overflow-y:auto}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-left:3px solid transparent;color:var(--txt-dim);font-size:14px;text-align:left;padding:10px 20px;cursor:pointer}
+.nav button:hover{background:var(--bg-3);color:var(--txt)}
+.nav button.on{background:var(--bg-3);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.ic{width:18px;text-align:center;font-family:var(--mono);opacity:.9;flex:none}
+.nav .cnt{margin-left:auto;font:11px var(--mono);color:var(--txt-faint)}
+.sidebar-foot{padding:14px 20px 0;border-top:1px solid var(--line);font-size:11px;color:var(--txt-faint)}
+.raz{background:none;border:1px solid var(--line-2);color:var(--txt-faint);border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;margin-top:8px}
+.raz:hover,.raz.arme{color:var(--red);border-color:var(--red)}
+.sync-etat{display:flex;align-items:center;gap:7px}
+.pastille{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(49,208,170,.15);flex:none}
+
+.main{flex:1;min-width:0;padding:28px 34px 70px;max-width:1180px}
+.page-head{margin-bottom:22px}
+.page-head h2{margin:0 0 4px;font-size:24px;letter-spacing:-.01em;text-wrap:balance}
+.page-head p{margin:0;color:var(--txt-dim);font-size:14px;max-width:70ch}
+h3{font-size:16px;margin:26px 0 12px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-faint);margin-bottom:6px}
+
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.stat .n{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt-faint);margin-top:3px}
+.stat.amber .n{color:var(--amber)} .stat.blue .n{color:var(--blue)} .stat.violet .n{color:var(--violet)}
+
+.bar{height:7px;background:var(--bg);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));border-radius:99px;transition:width .5s}
+.bar.amber i{background:linear-gradient(90deg,#9c6f10,var(--amber))}
+.bar.red i{background:linear-gradient(90deg,#8f2e2c,var(--red))}
+.dom-row{margin-bottom:15px}
+.dom-row .top{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:5px}
+.dom-row .top b{font-weight:600}
+.dom-row .top span{font-family:var(--mono);color:var(--txt-dim);font-size:12px}
+
+.btn{background:var(--accent);color:#06231c;border:0;border-radius:7px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:none;border:1px solid var(--line-2);color:var(--txt);font-weight:500}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.amber{background:var(--amber);color:#2e1f00}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select{background:var(--bg);border:1px solid var(--line-2);color:var(--txt);border-radius:7px;padding:9px 12px;font-family:var(--sans);font-size:14px}
+
+.cli{font-family:var(--mono);background:#05080b;border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:13px;color:#b9d4c8;white-space:pre;overflow-x:auto;line-height:1.5;margin:0 0 16px}
+code{font-family:var(--mono);background:var(--bg-3);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px;color:var(--accent)}
+
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line-2);color:var(--txt-dim);white-space:nowrap}
+.badge.ok{border-color:var(--accent-2);color:var(--accent)}
+.badge.mid{border-color:#9c6f10;color:var(--amber)}
+.badge.ko{border-color:#8f2e2c;color:var(--red)}
+
+/* QCM */
+.q-stem{font-size:16px;margin:0 0 16px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:11px;align-items:flex-start;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;padding:11px 14px;cursor:pointer;font-size:14.5px;text-align:left;color:var(--txt);width:100%}
+.opt:hover{border-color:var(--line-2)}
+.opt .k{font-family:var(--mono);font-weight:700;color:var(--txt-faint);flex:none}
+.opt.sel{border-color:var(--blue);background:#14243a}.opt.sel .k{color:var(--blue)}
+.opt.good{border-color:var(--accent);background:#0f2b25}.opt.good .k{color:var(--accent)}
+.opt.bad{border-color:var(--red);background:#2c1615}.opt.bad .k{color:var(--red)}
+.opt.lock{cursor:default}
+.explain{margin-top:14px;border-left:3px solid var(--accent);background:var(--bg-3);padding:12px 15px;border-radius:0 8px 8px 0;font-size:14px}
+.explain.bad{border-left-color:var(--red)}
+.explain b{color:var(--accent)}.explain.bad b{color:var(--red)}
+.timer{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums}
+.timer.low{color:var(--red)}
+
+/* Flashcards */
+.fcard{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--bg-2);border:1px solid var(--line-2);border-radius:14px;padding:32px 28px;cursor:pointer;width:100%;color:var(--txt)}
+.fcard .front{font-size:20px;font-weight:600}
+.fcard .back{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line-2);color:var(--accent);font-size:17px;width:100%;font-family:var(--mono)}
+.fcard .hint{color:var(--txt-faint);font-size:12px;margin-top:16px}
+
+/* Listes de missions */
+.mcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:9px;padding:13px 16px;margin-bottom:8px;cursor:pointer;color:var(--txt)}
+.mcard:hover{border-color:var(--accent);transform:translateX(2px)}
+.mcard .num{font-family:var(--mono);font-weight:700;color:var(--txt-faint);flex:0 0 40px}
+.mcard .txt{flex:1;min-width:0}
+.mcard .txt b{display:block;font-size:15px}
+.mcard .txt small{color:var(--txt-dim);font-size:12.5px;display:block}
+.mcard.done{border-color:var(--accent-2)}
+.mcard.done .txt b{color:var(--accent)}
+.jour-titre{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-faint);margin:22px 0 10px}
+
+/* Lecteur */
+.lecteur-tete{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.lecteur-tete .num{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--accent)}
+.lecteur-tete h2{margin:0;font-size:22px}
+.lecteur-tete .sous{color:var(--txt-dim);font-size:13.5px;margin:2px 0 0}
+.lead{font-size:16px;color:var(--txt);border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:0 0 20px;max-width:72ch}
+.volets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
+.volets button{background:var(--bg-2);border:1px solid var(--line);color:var(--txt-dim);border-radius:7px;padding:8px 15px;font-size:13.5px;cursor:pointer}
+.volets button:hover{border-color:var(--line-2);color:var(--txt)}
+.volets button.on{background:var(--accent);border-color:var(--accent);color:#06231c;font-weight:650}
+.pied-lecteur{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:34px;padding-top:20px;border-top:1px solid var(--line)}
+.pied-lecteur .sp{flex:1}
+
+/* Contenu des cours */
+.prose{max-width:76ch;font-size:15.5px;line-height:1.68}
+.prose>*:first-child{margin-top:0}
+.prose h3{font-size:17.5px;margin:28px 0 10px;color:var(--accent)}
+.prose p{margin:0 0 14px}
+.prose b,.prose strong{color:#fff;font-weight:650}
+.prose ul,.prose ol{margin:0 0 14px;padding-left:22px}
+.prose li{margin-bottom:5px}
+.prose li::marker{color:var(--txt-faint)}
+.prose .tbl,.table-wrap{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:9px}
+.prose table,table.t{width:100%;border-collapse:collapse;font-size:14px}
+.prose th,.prose td,table.t th,table.t td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+.prose tr:last-child td,table.t tr:last-child td{border-bottom:0}
+.prose th,table.t th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-faint);font-weight:600;background:var(--bg-3);white-space:nowrap}
+.prose .num{font-variant-numeric:tabular-nums}
+table.t td.k{font-family:var(--mono);color:var(--accent);white-space:nowrap;font-size:13px}
+.prose .caption{color:var(--txt-dim);font-size:13.5px;margin-top:-6px}
+.prose .formula{font-family:var(--mono);background:var(--bg-3);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:0 0 14px;color:var(--accent);overflow-x:auto}
+.prose .keep{background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:12px 16px;margin:0 0 16px}
+.prose .keep b:first-child{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.prose .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 16px}
+.prose .cards .card{padding:12px 14px;font-size:14px}
+.prose .cards .card b{display:block;color:var(--accent);margin-bottom:2px}
+.prose .cta{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+.prose .cta .btn{color:#06231c}
+.cite{margin:0 0 18px;padding:14px 18px;background:var(--bg-2);border-left:3px solid var(--amber);border-radius:0 9px 9px 0}
+.cite b.t{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+.cite ul{margin:0;padding-left:20px}
+.cite li{margin-bottom:6px}
+.checklist{list-style:none;padding:0!important}
+.checklist li{display:flex;gap:11px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
+.checklist li:last-child{border-bottom:0}
+.checklist input{accent-color:var(--accent);width:17px;height:17px;margin-top:4px;flex:none}
+details.plis{border:1px solid var(--line-2);border-radius:9px;background:var(--bg-2);padding:0 16px;margin:0 0 16px}
+details.plis summary{cursor:pointer;padding:13px 0;font-weight:600;color:var(--amber);list-style:none}
+details.plis summary::-webkit-details-marker{display:none}
+details.plis summary::before{content:"▸ ";display:inline-block}
+details.plis[open] summary::before{transform:rotate(90deg)}
+details.plis[open]{padding-bottom:6px}
+
+.jour{display:grid;gap:14px}
+.jour-tete{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.serie{display:flex;align-items:baseline;gap:10px}
+.serie .n{font-family:var(--mono);font-size:40px;font-weight:700;line-height:1;color:var(--amber);font-variant-numeric:tabular-nums}
+.serie .l{font-size:13px;color:var(--txt-dim)}
+.serie.zero .n{color:var(--txt-faint)}
+.frise{display:grid;grid-template-columns:repeat(14,14px);gap:4px}
+.frise i{display:block;width:14px;height:14px;border-radius:3px;background:var(--bg);border:1px solid var(--line-2)}
+.frise i.part{background:#5a4412;border-color:#9c6f10}
+.frise i.ok{background:var(--amber);border-color:var(--amber)}
+.frise i.auj{outline:2px solid var(--txt-faint);outline-offset:1px}
+.frise i.auj.ok{outline-color:var(--amber)}
+.objectifs{display:grid;gap:10px}
+.objectif{display:grid;grid-template-columns:minmax(160px,1.1fr) 2fr auto;align-items:center;gap:14px}
+.objectif .obj-txt{display:flex;flex-direction:column}
+.objectif .obj-txt b{font-size:14px}
+.objectif .obj-txt span{font-family:var(--mono);font-size:12px;color:var(--txt-dim);font-variant-numeric:tabular-nums}
+.objectif.fini .obj-txt b{color:var(--accent)}
+.jour-note{margin:0;font-size:12.5px;color:var(--txt-faint)}
+.pastille.off{background:var(--txt-faint);box-shadow:none}
+.pastille.ko{background:var(--amber);box-shadow:none}
+.muted{color:var(--txt-dim)} .mt{margin-top:18px} .mb{margin-bottom:18px}
+.toast{position:fixed;bottom:26px;right:26px;background:var(--bg-3);border:1px solid var(--accent-2);color:var(--accent);padding:12px 18px;border-radius:9px;font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:none}
+
+.tabbar,.feuille,.voile,.entete-mobile{display:none}
+@media (max-width:860px){.main{padding:22px 18px 60px}.sidebar{width:210px;flex-basis:210px}}
+@media (max-width:620px){
+  .sidebar{display:none}
+  .shell{display:block}
+  .main{padding:0 16px calc(88px + env(safe-area-inset-bottom,0px))}
+  .entete-mobile{display:flex;align-items:center;justify-content:space-between;margin:0 -16px 16px;padding:12px 16px;background:var(--bg-2);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:40}
+  .entete-mobile b{font-family:var(--mono);color:var(--accent);letter-spacing:.06em}
+  .entete-mobile span{font:11.5px var(--mono);color:var(--txt-faint)}
+  .page-head h2{font-size:20px}
+  .lecteur-tete h2{font-size:19px}.lecteur-tete .num{font-size:20px}
+  .prose{font-size:15.5px;line-height:1.62}
+  .prose td,.prose th{padding:8px 10px;font-size:13.5px}
+  .cli{font-size:12px;padding:12px 13px}
+  .grid.g4,.grid.g3{grid-template-columns:repeat(2,1fr)}
+  .stat .n{font-size:25px}.stat .l{font-size:10px}
+  .card{padding:15px 16px}
+  .mcard{padding:11px 13px;gap:10px}.mcard .num{flex:0 0 32px;font-size:13px}
+  .btn{padding:12px 16px}.btn.sm{padding:10px 14px}
+  .opt{padding:13px 14px}
+  .volets{overflow-x:auto;flex-wrap:nowrap}
+  .volets button{padding:11px 15px;white-space:nowrap}
+  .pied-lecteur .btn{flex:1 1 45%;justify-content:center}
+  .pied-lecteur .sp{display:none}
+  .fcard{min-height:180px;padding:26px 20px}.fcard .front{font-size:18px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--bg-2);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;background:none;border:0;border-top:2px solid transparent;color:var(--txt-dim);font-size:10.5px;cursor:pointer}
+  .tabbar button .ic{font-size:16px;line-height:1}
+  .tabbar button.on{color:var(--accent);border-top-color:var(--accent);font-weight:600}
+  .voile:not([hidden]){display:block;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55)}
+  .feuille:not([hidden]){display:flex;flex-direction:column;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--bg-2);border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;padding:8px 12px calc(14px + env(safe-area-inset-bottom,0px))}
+  .feuille .poignee{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:4px auto 10px}
+  .feuille button[data-v]{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px;background:none;border:0;border-radius:9px;color:var(--txt);font-size:15px;text-align:left;cursor:pointer}
+  .feuille button[data-v].on{background:var(--bg-3);color:var(--accent)}
+  .feuille-pied{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:12px 12px 0;border-top:1px solid var(--line);font-size:12px;color:var(--txt-faint)}
+  .feuille-pied .raz{padding:10px 12px;margin:0}
+  .serie .n{font-size:34px}
+  .frise{grid-template-columns:repeat(14,1fr);width:100%}
+  .frise i{width:auto;height:auto;aspect-ratio:1}
+  .objectif{grid-template-columns:1fr auto;gap:6px 12px}
+  .objectif .obj-txt{grid-column:1;grid-row:1}
+  .objectif .btn{grid-column:2;grid-row:1}
+  .objectif .bar{grid-column:1/-1;grid-row:2}
+  .toast{left:14px;right:14px;bottom:calc(74px + env(safe-area-inset-bottom,0px));text-align:center}
+}
+@media (prefers-reduced-motion:reduce){.bar i,.toast{transition:none}.mcard:hover{transform:none}}
+</style>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><h1>AV/IP</h1><small>Formation réseau audio-vidéo</small></div>
+    <nav class="nav" aria-label="Navigation principale">
+      <button data-v="bord"><span class="ic">▣</span>Tableau de bord</button>
+      <button data-v="plan"><span class="ic">▤</span>Programme</button>
+      <button data-v="modules"><span class="ic">▥</span>Modules<span class="cnt" id="cnt-mod"></span></button>
+      <button data-v="cartes"><span class="ic">▧</span>Flashcards<span class="cnt" id="cnt-cartes"></span></button>
+      <button data-v="quiz"><span class="ic">▩</span>Quiz &amp; examen</button>
+      <button data-v="panne"><span class="ic">▲</span>Salle de panne<span class="cnt" id="cnt-panne"></span></button>
+      <button data-v="ressources"><span class="ic">◈</span>Ressources</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sync-etat"><span class="pastille off"></span><span class="sync-txt">Sur cet appareil</span></div>
+      <button class="raz" type="button">Réinitialiser</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="entete-mobile"><b>AV/IP</b><span id="mob-sous">Formation réseau AV</span></header>
+    <div id="vue"></div>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <button data-v="bord"><span class="ic">▣</span><span>Accueil</span></button>
+  <button data-v="modules"><span class="ic">▥</span><span>Modules</span></button>
+  <button data-v="quiz"><span class="ic">▩</span><span>Quiz</span></button>
+  <button data-v="cartes"><span class="ic">▧</span><span>Cartes</span></button>
+  <button data-plus type="button" aria-haspopup="dialog"><span class="ic">⋯</span><span>Plus</span></button>
+</nav>
+<div class="voile" id="voile" hidden></div>
+<div class="feuille" id="feuille" role="dialog" aria-label="Autres sections" hidden>
+  <div class="poignee"></div>
+  <button data-v="plan"><span class="ic">▤</span>Programme</button>
+  <button data-v="panne"><span class="ic">▲</span>Salle de panne</button>
+  <button data-v="ressources"><span class="ic">◈</span>Ressources</button>
+  <div class="feuille-pied"><div class="sync-etat"><span class="pastille off"></span><span class="sync-txt">Sur cet appareil</span></div><button class="raz" type="button">Réinitialiser</button></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/*DATA*/
+const SEC=/*SECS*/;
+</script>
+<script>
+(function(){
+'use strict';
+const KEY='formation-reseau-av-v2';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const blank=()=>({read:{},quiz:{},exams:[],cards:{},pannes:{},check:{},days:{},best:0,t:0,v:'bord',mod:'m1',volet:'cours'});
+let S=blank();
+try{const r=JSON.parse(localStorage.getItem(KEY)||'null'); if(r&&r.read) S=Object.assign(S,r);}catch(e){}
+const local=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const save=()=>{S.t=Date.now(); local(); pushLater();};
+
+/* ---------- suivi quotidien ---------- */
+const OBJ=[{k:'c',nom:'Réviser des flashcards',cible:10,v:'cartes'},{k:'q',nom:'Répondre à des questions',cible:10,v:'quiz'},{k:'m',nom:'Terminer un module',cible:1,v:'modules'}];
+const dkey=d=>{d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const dayOf=k=>S.days[k]||{};
+const dayOk=k=>OBJ.every(o=>(dayOf(k)[o.k]||0)>=o.cible);
+const dayAny=k=>Object.values(dayOf(k)).some(n=>n>0);
+function serie(){let n=0;const d=new Date(); if(!dayOk(dkey(d))) d.setDate(d.getDate()-1); while(dayOk(dkey(d))){n++;d.setDate(d.getDate()-1);} return n;}
+function bump(k,n){const key=dkey(); const before=dayOk(key); const day=S.days[key]||(S.days[key]={}); day[k]=(day[k]||0)+(n||1);
+  const ks=Object.keys(S.days).sort(); if(ks.length>90) ks.slice(0,ks.length-90).forEach(x=>delete S.days[x]);
+  if(!before&&dayOk(key)){S.best=Math.max(S.best||0,serie()); setTimeout(()=>toast('Objectifs du jour atteints · série de '+serie()+' jour'+(serie()>1?'s':'')),600);}}
+
+/* ---------- synchronisation entre appareils (db privé par personne) ---------- */
+let DB=null, REF=null, pushT=null, syncState='off';
+function setSync(st){syncState=st; const txt={off:'Sur cet appareil',on:'Synchronisé sur vos appareils',ko:'Synchro en pause'}[st];
+  document.querySelectorAll('.sync-txt').forEach(e=>e.textContent=txt);
+  document.querySelectorAll('.pastille').forEach(e=>{e.classList.toggle('off',st==='off');e.classList.toggle('ko',st==='ko');});}
+function pushLater(){ if(!REF) return; clearTimeout(pushT); pushT=setTimeout(push,1200); }
+async function push(){ if(!REF) return; const {v,mod,volet,...keep}=S;
+  try{ await REF.set({s:JSON.stringify(keep),t:S.t}); setSync('on'); }
+  catch(e){ if(e&&e.code==='unavailable'){ setTimeout(push,1500+Math.random()*1500); } else setSync('ko'); } }
+function adopt(d){ if(!d||typeof d.s!=='string'||!(d.t>S.t)) return false;
+  try{const r=JSON.parse(d.s); const keepView={v:S.v,mod:S.mod,volet:S.volet}; S=Object.assign(blank(),r,keepView,{t:d.t}); local(); return true;}catch(e){return false;} }
+async function initSync(){
+  try{
+    const w=window.claude; if(!w||!w.use) return;
+    const [db,user]=await Promise.all([w.use('db'),w.use('user')]);
+    if(!db||!user) return;
+    const uid=await user.id(); if(!uid) return;
+    DB=db; REF=db.doc('data/users/'+uid+'/progression');
+    const snap=await REF.get();
+    if(snap.exists&&adopt(snap.data())){ if(!(Qz&&Qz.mode==='exam'&&!Qz.done)) render(); toast('Progression récupérée depuis vos autres appareils'); }
+    else if(!snap.exists||S.t>((snap.data()||{}).t||0)){ await push(); }
+    setSync('on');
+    REF.onSnapshot(s=>{ if(s.exists&&adopt(s.data())&&!(Qz&&Qz.mode==='exam'&&!Qz.done)) render(); },e=>{ setSync('ko'); });
+  }catch(e){ setSync('ko'); }
+}
+let toastT; const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2400);};
+
+const NUM=['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'];
+const modNum=id=>NUM.includes(id)?String(NUM.indexOf(id)+1).padStart(2,'0'):(id==='cas'?'EX':'GE');
+const modTitle=id=>SEC[id].t;
+const modJour=id=>(MODS.find(m=>m.id===id)||{}).jour;
+const domOf=id=>DOMAINES.find(d=>d.mods.includes(id));
+const INT=[0,10*60e3,24*3600e3,3*24*3600e3,21*24*3600e3];
+const card=id=>S.cards[id]||{box:0,due:0};
+
+/* ---------- mesures ---------- */
+function stats(){
+  const modsDone=NUM.filter(m=>S.read[m]).length;
+  const ans=QCM.filter(q=>S.quiz[q.id]), ok=ans.filter(q=>S.quiz[q.id].last).length;
+  const maitr=CARTES.filter(c=>card(c.id).box>=3).length;
+  const due=CARTES.filter(c=>card(c.id).due<=Date.now()).length;
+  const pan=PANNES.filter(p=>S.pannes[p.id]).length;
+  const err=QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last).length;
+  return {modsDone,ans:ans.length,ok,taux:ans.length?Math.round(ok/ans.length*100):0,maitr,due,pan,err};
+}
+function maitrise(d){
+  const read=d.mods.filter(m=>S.read[m]).length/d.mods.length;
+  const qs=QCM.filter(q=>d.mods.includes(q.m)), qv=qs.length?qs.filter(q=>S.quiz[q.id]&&S.quiz[q.id].last).length/qs.length:0;
+  const cs=CARTES.filter(c=>d.mods.includes(c.m)), cv=cs.length?cs.filter(c=>card(c.id).box>=2).length/cs.length:0;
+  return Math.round((read*.3+qv*.5+cv*.2)*100);
+}
+const nextMod=()=>NUM.find(m=>!S.read[m]);
+
+/* ---------- navigation ---------- */
+let timer=null;
+function go(v,opts){
+  if(timer){clearInterval(timer);timer=null;}
+  S.v=v; if(opts&&opts.mod){S.mod=opts.mod;S.volet=opts.volet||'cours';}
+  save(); closeSheet(); render(); window.scrollTo(0,0);
+}
+function navState(){
+  const base=S.v==='lecture'?'modules':S.v;
+  document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===base));
+  const plus=document.querySelector('[data-plus]'); plus.classList.toggle('on',['plan','panne','ressources'].includes(base));
+  const st=stats();
+  $('cnt-mod').textContent=st.modsDone+'/12'; $('cnt-cartes').textContent=st.due?st.due:''; $('cnt-panne').textContent=st.pan+'/'+PANNES.length;
+  $('mob-sous').textContent=({bord:'Tableau de bord',plan:'Programme',modules:'Modules',lecture:S.v==='lecture'?(NUM.includes(S.mod)?'Module '+(NUM.indexOf(S.mod)+1):modTitle(S.mod)):'',cartes:'Flashcards',quiz:'Quiz & examen',panne:'Salle de panne',ressources:'Ressources'})[S.v]||'';
+}
+function render(){
+  const v=S.v, el=$('vue');
+  ({bord:vBord,plan:vPlan,modules:vModules,lecture:vLecture,cartes:vCartes,quiz:vQuiz,panne:vPanne,ressources:vRess}[v]||vBord)(el);
+  navState();
+}
+const head=(t,p)=>`<div class="page-head"><h2>${t}</h2>${p?`<p>${p}</p>`:''}</div>`;
+const mcard=(id,sub)=>`<button class="mcard${S.read[id]?' done':''}" type="button" data-open="${id}"><span class="num">${modNum(id)}</span><span class="txt"><b>${esc(modTitle(id))}</b><small>${esc(sub)}</small></span>${S.read[id]?'<span class="badge ok">Terminé</span>':''}</button>`;
+
+/* ---------- tableau de bord ---------- */
+function vBord(el){
+  const st=stats(), nm=nextMod();
+  let conseil;
+  if(!st.modsDone) conseil='Commencez par le module 1 : tout le reste s’appuie sur l’adressage IP et les VLAN.';
+  else if(st.err>=3) conseil=`Vous avez ${st.err} questions ratées. Reprenez-les dans <b>Quiz → Mes erreurs</b> avant d’avancer.`;
+  else if(st.due>=5) conseil=`${st.due} flashcards attendent une révision : cinq minutes suffisent.`;
+  else if(nm){const w=DOMAINES.map(d=>[d,maitrise(d)]).sort((a,b)=>a[1]-b[1])[0]; conseil=`Votre domaine le plus faible est <b>${esc(w[0].nom)}</b> (${w[1]} %). Continuez avec le module ${NUM.indexOf(nm)+1}.`;}
+  else if(!S.exams.length) conseil='Tous les modules sont lus. Passez un examen blanc de 20 questions pour vous situer.';
+  else conseil='Entraînez-vous dans la Salle de panne : c’est l’exercice le plus proche du terrain.';
+  const exams=S.exams.slice(-5).reverse();
+  const k=dkey(), td=dayOf(k), sr=serie(), days=[]; for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(dkey(d));}
+  const jour=`<div class="card mb jour"><div class="jour-tete"><div class="serie${sr?'':' zero'}"><span class="n">${sr}</span><span class="l">jour${sr>1?'s':''} de suite${S.best?` · record ${Math.max(S.best,sr)}`:''}</span></div>
+    <div class="frise" aria-label="14 derniers jours">${days.map(x=>`<i class="${dayOk(x)?'ok':dayAny(x)?'part':''}${x===k?' auj':''}" title="${x}${dayOk(x)?' · objectifs atteints':dayAny(x)?' · commencé':''}"></i>`).join('')}</div></div>
+    <p class="eyebrow">Objectifs du jour</p>
+    <div class="objectifs">${OBJ.map(o=>{const n=Math.min(td[o.k]||0,o.cible),p=Math.round(n/o.cible*100);return `<div class="objectif${n>=o.cible?' fini':''}"><div class="obj-txt"><b>${o.nom}</b><span>${td[o.k]||0} / ${o.cible}</span></div><div class="bar${n>=o.cible?'':' amber'}"><i style="width:${p}%"></i></div><button class="btn ${n>=o.cible?'ghost ':''}sm" type="button" data-v="${o.v}">${n>=o.cible?'Fait':'Y aller'}</button></div>`;}).join('')}</div>
+    <p class="jour-note">Les trois objectifs atteints valident la journée et prolongent la série.${td.p?` Aujourd’hui : ${td.p} panne${td.p>1?'s':''} résolue${td.p>1?'s':''} en bonus.`:''}</p></div>`;
+  el.innerHTML=head('Tableau de bord','Où vous en êtes, et où mettre la prochaine heure.')+jour+
+  `<div class="card mb"><div class="eyebrow">Reprendre</div>${nm?`<div class="row" style="justify-content:space-between"><div><b style="font-size:17px">Module ${NUM.indexOf(nm)+1} · ${esc(modTitle(nm))}</b><div class="muted" style="font-size:13.5px">Jour ${modJour(nm)} · ${esc(domOf(nm).nom)}</div></div><button class="btn" type="button" data-open="${nm}">Continuer</button></div>`:`<div class="row" style="justify-content:space-between"><b style="font-size:17px">Les 12 modules sont terminés</b><button class="btn" type="button" data-go="quiz" data-mode="exam">Passer un examen blanc</button></div>`}</div>`+
+  `<div class="grid g4 mb">
+    <div class="card stat"><div class="n">${st.modsDone}/12</div><div class="l">Modules terminés</div></div>
+    <div class="card stat blue"><div class="n">${st.ans?st.taux+' %':'—'}</div><div class="l">Réussite aux quiz</div></div>
+    <div class="card stat violet"><div class="n">${st.maitr}/${CARTES.length}</div><div class="l">Cartes maîtrisées</div></div>
+    <div class="card stat amber"><div class="n">${st.pan}/${PANNES.length}</div><div class="l">Pannes résolues</div></div>
+  </div>`+
+  `<div class="card mb"><div class="eyebrow">Le conseil du moment</div><p style="margin:0">${conseil}</p></div>`+
+  `<div class="grid g2"><div class="card"><div class="eyebrow">Maîtrise par domaine</div><div class="mt">${DOMAINES.map(d=>{const p=maitrise(d);return `<div class="dom-row"><div class="top"><b>${esc(d.nom)}</b><span>${p} %</span></div><div class="bar${p<34?' red':p<67?' amber':''}"><i style="width:${p}%"></i></div></div>`;}).join('')}</div><p class="muted" style="font-size:12.5px;margin:6px 0 0">Le pourcentage mêle modules lus (30 %), réussite aux quiz (50 %) et flashcards retenues (20 %).</p></div>
+  <div class="card"><div class="eyebrow">Examens blancs</div>${exams.length?`<table class="t mt"><thead><tr><th>Date</th><th>Score</th><th>Résultat</th></tr></thead><tbody>${exams.map(x=>`<tr><td>${new Date(x.d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</td><td style="font-family:var(--mono)">${x.s}/${x.t}</td><td><span class="badge ${x.s/x.t>=.8?'ok':'ko'}">${x.s/x.t>=.8?'Réussi':'À retravailler'}</span></td></tr>`).join('')}</tbody></table>`:`<p class="muted mt">Aucun examen blanc pour l’instant. 20 questions, 20 minutes, réussite à 80 %.</p><button class="btn ghost sm" type="button" data-go="quiz" data-mode="exam">Lancer un examen blanc</button>`}</div></div>`;
+}
+
+/* ---------- programme ---------- */
+function vPlan(el){
+  const jours={1:'Fondations',2:'Multicast et horloge',3:'Audio et vidéo sur IP',4:'Streaming, contrôle, conception',5:'Exploitation et études de cas'};
+  el.innerHTML=head('Programme','5 jours, 35 heures, 40 % de pratique. Chaque module terminé fait avancer votre tableau de bord.')+
+  `<details class="plis"><summary>Objectifs, public et matériel</summary><div class="prose">${SEC.prog.body}</div></details>`+
+  [1,2,3,4,5].map(j=>{const ms=MODS.filter(m=>m.jour===j).map(m=>m.id); const d=ms.filter(m=>S.read[m]).length;
+    return `<div class="jour-titre">Jour ${j} · ${jours[j]} · ${d}/${ms.length}</div>`+ms.map(m=>mcard(m,(PRATIQUE[m].tp[0]||SEC[m].lead.replace(/<[^>]+>/g,'')).slice(0,110))).join('');}).join('');
+}
+
+/* ---------- modules ---------- */
+function vModules(el){
+  el.innerHTML=head('Modules','Chaque module se lit en quatre volets : le cours, l’antisèche, les pièges et la pratique.')+
+  [1,2,3,4,5].map(j=>`<div class="jour-titre">Jour ${j}</div>`+MODS.filter(m=>m.jour===j&&NUM.includes(m.id)).map(m=>mcard(m.id,SEC[m.id].lead.replace(/<[^>]+>/g,''))).join('')).join('')+
+  `<div class="jour-titre">Études de conception</div>`+mcard('cas',SEC.cas.lead.replace(/<[^>]+>/g,''))+mcard('big',SEC.big.lead.replace(/<[^>]+>/g,''));
+}
+const ORDER=NUM.concat(['cas','big']);
+function vLecture(el){
+  const id=S.mod, s=SEC[id], i=ORDER.indexOf(id);
+  const pieges=s.trap?s.trap.replace(/<div class="trap"><b>Pièges fréquents<\/b>/,'').replace(/<\/div>$/,''):(PIEGES_EXTRA[id]?'<ul>'+PIEGES_EXTRA[id].map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'');
+  const vol=[['cours','Cours']].concat(ANTI[id]?[['anti','Antisèche']]:[]).concat(pieges?[['pieges','Pièges']]:[]).concat([['pratique','Pratique']]);
+  if(!vol.some(v=>v[0]===S.volet)) S.volet='cours';
+  let body='';
+  if(S.volet==='cours') body=(s.lead?`<p class="lead">${s.lead}</p>`:'')+s.body;
+  else if(S.volet==='anti') body=`<div class="table-wrap"><table class="t"><tbody>${ANTI[id].map(r=>`<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table></div><p class="muted" style="font-size:13.5px">Les chiffres à connaître par cœur. Ils reviennent dans les flashcards et le quiz.</p>`;
+  else if(S.volet==='pieges') body=`<div class="cite"><b class="t">Pièges fréquents</b>${pieges}</div>`;
+  else{
+    const p=PRATIQUE[id], nq=QCM.filter(q=>q.m===id).length, nc=CARTES.filter(c=>c.m===id).length, pn=PANNES.filter(x=>x.m===id);
+    body=(p.tp.length?`<h3>Travaux pratiques</h3><ul>${p.tp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'')+
+      (p.lab?`<h3>Simulateur</h3><p>${esc(p.lab)} : configurez un vrai switch en syntaxe Cisco depuis votre téléphone.</p><p><a class="btn ghost sm" href="https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE" target="_blank" rel="noopener">Ouvrir Régie IP Lab</a></p>`:'')+
+      `<h3>S’entraîner sur ce module</h3><div class="row">${nq?`<button class="btn sm" type="button" data-train="${id}">Quiz du module · ${nq} questions</button>`:''}${nc?`<button class="btn ghost sm" type="button" data-cards="${id}">Flashcards · ${nc}</button>`:''}</div>`+
+      (pn.length?`<h3>Salle de panne</h3>${pn.map(x=>`<button class="mcard${S.pannes[x.id]?' done':''}" type="button" data-panne="${x.id}"><span class="num">▲</span><span class="txt"><b>${esc(x.titre)}</b><small>${S.pannes[x.id]?'Résolue':'À résoudre'}</small></span></button>`).join('')}`:'');
+  }
+  const sous=NUM.includes(id)?`Jour ${modJour(id)} · ${esc(domOf(id).nom)}`:'Étude de conception · jour 5';
+  el.innerHTML=`<div class="lecteur-tete"><span class="num">${modNum(id)}</span><div><h2>${esc(s.t)}</h2><p class="sous">${sous}</p></div></div>
+  <div class="volets" role="tablist">${vol.map(v=>`<button type="button" role="tab" data-volet="${v[0]}" class="${S.volet===v[0]?'on':''}" aria-selected="${S.volet===v[0]}">${v[1]}</button>`).join('')}</div>
+  <div class="prose">${body}</div>
+  <div class="pied-lecteur">
+    <button class="btn ghost" type="button" data-open="${ORDER[i-1]||''}" ${i>0?'':'disabled'}>← Précédent</button>
+    <span class="sp"></span>
+    <button class="btn ${S.read[id]?'ghost':''}" type="button" data-done="${id}">${S.read[id]?'✓ Terminé':'Marquer comme terminé'}</button>
+    <button class="btn ghost" type="button" data-open="${ORDER[i+1]||''}" ${i<ORDER.length-1?'':'disabled'}>Suivant →</button>
+  </div>`;
+  el.querySelectorAll('.checklist input').forEach(c=>{c.checked=!!S.check[c.id];});
+}
+
+/* ---------- quiz ---------- */
+let Qz=null;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prep(q){const o=shuffle(q.o.map((t,k)=>({t,ok:k===0})));return {q,o};}
+function startTrain(filter,list){
+  const src=list||QCM.filter(q=>filter==='all'||q.m===filter);
+  Qz={mode:'train',filter,items:shuffle(src).map(prep),i:0,pick:null};
+}
+function startExam(){Qz={mode:'exam',items:shuffle(QCM).slice(0,20).map(prep),i:0,ans:{},end:Date.now()+20*60e3,done:false};}
+function vQuiz(el){
+  if(!Qz){startTrain('all');}
+  const st=stats();
+  const tabs=`<div class="volets" role="tablist"><button type="button" data-qmode="train" class="${Qz.mode==='train'&&Qz.filter!=='err'?'on':''}">Entraînement</button><button type="button" data-qmode="exam" class="${Qz.mode==='exam'?'on':''}">Examen blanc</button><button type="button" data-qmode="err" class="${Qz.filter==='err'?'on':''}">Mes erreurs · ${st.err}</button></div>`;
+  let body='';
+  if(Qz.mode==='train'){
+    if(!Qz.items.length){body=`<div class="card"><p style="margin:0">${Qz.filter==='err'?'Aucune erreur à reprendre. Bravo.':'Aucune question pour ce filtre.'}</p></div>`;}
+    else{
+      const it=Qz.items[Qz.i%Qz.items.length], q=it.q, picked=Qz.pick;
+      const filt=Qz.filter==='err'?'':`<div class="row mb"><label class="muted" for="qf" style="font-size:13px">Module</label><select id="qf"><option value="all">Tous les modules</option>${NUM.map(m=>`<option value="${m}" ${Qz.filter===m?'selected':''}>${NUM.indexOf(m)+1} · ${esc(modTitle(m))}</option>`).join('')}</select></div>`;
+      body=filt+`<div class="card"><div class="row mb" style="justify-content:space-between"><span class="badge">Question ${Qz.i%Qz.items.length+1}/${Qz.items.length}</span><span class="badge">Module ${NUM.indexOf(q.m)+1}</span></div>
+        <p class="q-stem">${esc(q.q)}</p><div class="opts">${it.o.map((o,k)=>{let c='opt'; if(picked!==null){c+=' lock'; if(o.ok)c+=' good'; else if(k===picked)c+=' bad';} return `<button type="button" class="${c}" data-pick="${k}" ${picked!==null?'disabled':''}><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`;}).join('')}</div>
+        ${picked!==null?`<div class="explain${it.o[picked].ok?'':' bad'}"><b>${it.o[picked].ok?'Bonne réponse.':'Pas tout à fait.'}</b> ${esc(q.e)}</div><div class="row mt"><button class="btn" type="button" data-qnext>Question suivante</button><button class="btn ghost sm" type="button" data-open="${q.m}">Revoir le module</button></div>`:''}</div>`;
+    }
+  } else if(!Qz.done){
+    const it=Qz.items[Qz.i], a=Qz.ans[Qz.i];
+    body=`<div class="card"><div class="row mb" style="justify-content:space-between"><span class="badge">Question ${Qz.i+1}/20 · ${Object.keys(Qz.ans).length} répondues</span><span class="timer" id="ex-timer">20:00</span></div>
+      <p class="q-stem">${esc(it.q.q)}</p><div class="opts">${it.o.map((o,k)=>`<button type="button" class="opt${a===k?' sel':''}" data-xpick="${k}"><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`).join('')}</div>
+      <div class="row mt"><button class="btn ghost" type="button" data-xnav="-1" ${Qz.i?'':'disabled'}>← Précédente</button>${Qz.i<19?`<button class="btn" type="button" data-xnav="1">Suivante →</button>`:''}<button class="btn amber" type="button" data-xend style="margin-left:auto">Terminer l’examen</button></div></div>
+      <p class="muted mt" style="font-size:12.5px">Pas de correction pendant l’examen. Réussite à 16/20.</p>`;
+  } else {
+    const sc=Qz.items.filter((it,k)=>Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok).length;
+    const wrong=Qz.items.map((it,k)=>[it,k]).filter(([it,k])=>!(Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok));
+    body=`<div class="grid g3 mb"><div class="card stat${sc>=16?'':' amber'}"><div class="n">${sc}/20</div><div class="l">Score</div></div><div class="card stat blue"><div class="n">${Math.round(sc/20*100)} %</div><div class="l">Réussite</div></div><div class="card stat"><div class="n">${sc>=16?'OK':'—'}</div><div class="l">${sc>=16?'Examen réussi':'Objectif 16/20'}</div></div></div>
+      ${wrong.length?`<div class="card"><div class="eyebrow">À revoir · ${wrong.length} questions</div>${wrong.map(([it,k])=>`<div class="explain bad"><b>${esc(it.q.q)}</b><br>Réponse : ${esc(it.q.o[0])}. ${esc(it.q.e)}</div>`).join('')}</div>`:''}
+      <div class="row mt"><button class="btn" type="button" data-qmode="exam">Nouvel examen</button><button class="btn ghost" type="button" data-go="bord">Tableau de bord</button></div>`;
+  }
+  el.innerHTML=head('Quiz & examen blanc','Trois modes : apprendre avec correction immédiate, se tester en conditions réelles, ou reprendre ses erreurs.')+tabs+body;
+  if(Qz.mode==='exam'&&!Qz.done){
+    const tick=()=>{const r=Math.max(0,Qz.end-Date.now()),t=$('ex-timer'); if(t){t.textContent=String(Math.floor(r/60000)).padStart(2,'0')+':'+String(Math.floor(r/1000)%60).padStart(2,'0'); t.classList.toggle('low',r<120000);} if(r<=0) finishExam();};
+    tick(); if(!timer) timer=setInterval(tick,1000);
+  }
+}
+function finishExam(){
+  if(timer){clearInterval(timer);timer=null;}
+  Qz.items.forEach((it,k)=>{const ok=Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok; const r=S.quiz[it.q.id]||{ok:0,ko:0}; r[ok?'ok':'ko']++; r.last=ok; S.quiz[it.q.id]=r;});
+  const sc=Qz.items.filter((it,k)=>Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok).length;
+  S.exams.push({d:Date.now(),s:sc,t:20}); bump('q',Object.keys(Qz.ans).length); Qz.done=true; save(); render(); window.scrollTo(0,0);
+}
+
+/* ---------- flashcards ---------- */
+let Fc={filter:'all',cur:null,flip:false};
+function vCartes(el){
+  const pool=CARTES.filter(c=>Fc.filter==='all'||c.m===Fc.filter), now=Date.now();
+  const due=pool.filter(c=>card(c.id).due<=now).sort((a,b)=>card(a.id).due-card(b.id).due);
+  const appr=pool.filter(c=>{const b=card(c.id).box;return b>0&&b<3;}).length, maitr=pool.filter(c=>card(c.id).box>=3).length;
+  if(!Fc.cur||!pool.includes(Fc.cur)){Fc.cur=due[0]||null;Fc.flip=false;}
+  const next=pool.filter(c=>card(c.id).due>now).sort((a,b)=>card(a.id).due-card(b.id).due)[0];
+  let zone;
+  if(Fc.cur){const c=Fc.cur;
+    zone=`<button class="fcard" type="button" data-flip><span class="badge" style="margin-bottom:14px">Module ${NUM.indexOf(c.m)+1} · ${esc(modTitle(c.m))}</span><span class="front">${esc(c.f)}</span>${Fc.flip?`<span class="back">${esc(c.b)}</span>`:`<span class="hint">Touchez pour voir la réponse</span>`}</button>
+    ${Fc.flip?`<div class="row mt" style="justify-content:center"><button class="btn ghost" type="button" data-fc="0">À revoir</button><button class="btn" type="button" data-fc="1">Je savais</button></div>`:''}`;}
+  else zone=`<div class="card"><p style="margin:0 0 12px">Rien à réviser pour l’instant.${next?' Prochaine carte '+rel(card(next.id).due-now)+'.':''}</p><button class="btn ghost sm" type="button" data-fcany>Réviser quand même</button></div>`;
+  el.innerHTML=head('Flashcards','Répétition espacée : une carte que vous savez revient dans quelques jours, une carte ratée revient dans la minute.')+
+  `<div class="grid g3 mb"><div class="card stat amber"><div class="n">${due.length}</div><div class="l">À réviser maintenant</div></div><div class="card stat blue"><div class="n">${appr}</div><div class="l">En apprentissage</div></div><div class="card stat"><div class="n">${maitr}</div><div class="l">Maîtrisées</div></div></div>
+  <div class="row mb"><label class="muted" for="ff" style="font-size:13px">Module</label><select id="ff"><option value="all">Tous les modules</option>${NUM.filter(m=>CARTES.some(c=>c.m===m)).map(m=>`<option value="${m}" ${Fc.filter===m?'selected':''}>${NUM.indexOf(m)+1} · ${esc(modTitle(m))}</option>`).join('')}</select></div>`+zone;
+}
+function rel(ms){const m=Math.round(ms/60000); if(m<60) return 'dans '+Math.max(1,m)+' min'; const h=Math.round(m/60); if(h<24) return 'dans '+h+' h'; return 'dans '+Math.round(h/24)+' j';}
+
+/* ---------- salle de panne ---------- */
+let Pn={id:null,shown:[],pick:null};
+function vPanne(el){
+  if(!Pn.id){
+    el.innerHTML=head('Salle de panne','Un symptôme, des commandes de diagnostic, une cause à trouver. C’est l’exercice du terrain.')+
+    PANNES.map(p=>`<button class="mcard${S.pannes[p.id]?' done':''}" type="button" data-panne="${p.id}"><span class="num">▲</span><span class="txt"><b>${esc(p.titre)}</b><small>Module ${NUM.indexOf(p.m)+1} · ${S.pannes[p.id]?'Résolue':'À résoudre'}</small></span>${S.pannes[p.id]?'<span class="badge ok">Résolue</span>':''}</button>`).join('');
+    return;
+  }
+  const p=PANNES.find(x=>x.id===Pn.id);
+  if(!Pn.order) Pn.order=shuffle(p.causes.map((t,k)=>({t,ok:k===0})));
+  el.innerHTML=`<div class="lecteur-tete"><span class="num">▲</span><div><h2>${esc(p.titre)}</h2><p class="sous">Module ${NUM.indexOf(p.m)+1} · ${esc(modTitle(p.m))}</p></div></div>
+  <div class="card mb"><div class="eyebrow">Symptôme signalé</div><p style="margin:0">${esc(p.symptome)}</p></div>
+  <div class="eyebrow">Diagnostic · lancez les vérifications</div>
+  <div class="row mb">${p.cmds.map((c,k)=>`<button class="btn ghost sm" type="button" data-cmd="${k}" ${Pn.shown.includes(k)?'disabled':''}>${esc(c[0])}</button>`).join('')}</div>
+  ${Pn.shown.map(k=>`<pre class="cli">${esc((p.cmds[k][0].startsWith('show')||p.cmds[k][0].startsWith('ping')?'SW# '+p.cmds[k][0]+'\n':'» '+p.cmds[k][0]+'\n')+p.cmds[k][1])}</pre>`).join('')}
+  <div class="card"><div class="eyebrow">Quelle est la cause ?</div><div class="opts">${Pn.order.map((o,k)=>{let c='opt';if(Pn.pick!==null){c+=' lock';if(o.ok)c+=' good';else if(k===Pn.pick)c+=' bad';}return `<button type="button" class="${c}" data-cause="${k}" ${Pn.pick!==null?'disabled':''}><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`;}).join('')}</div>
+  ${Pn.pick!==null?`<div class="explain${Pn.order[Pn.pick].ok?'':' bad'}"><b>${Pn.order[Pn.pick].ok?'Panne trouvée.':'Ce n’est pas la cause.'}</b> ${esc(p.explique)}</div><div class="eyebrow mt">Réparation</div><pre class="cli">${esc(p.fix)}</pre>`:''}</div>
+  <div class="pied-lecteur"><button class="btn ghost" type="button" data-pback>← Toutes les pannes</button><span class="sp"></span>${Pn.pick!==null?`<button class="btn ghost" type="button" data-panne="${p.id}">Recommencer</button>`:''}</div>`;
+}
+
+/* ---------- ressources ---------- */
+function vRess(el){
+  el.innerHTML=head('Ressources','Glossaire, check-list d’exploitation, travaux pratiques et liens utiles.')+
+  `<div class="card mb"><div class="eyebrow">Simulateur</div><div class="row" style="justify-content:space-between"><p style="margin:0">Régie IP Lab : 7 missions sur deux switchs en syntaxe Cisco, depuis un téléphone.</p><a class="btn sm" href="https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE" target="_blank" rel="noopener">Ouvrir</a></div></div>`+
+  `<details class="plis"><summary>Check-list avant chaque événement</summary><div class="prose">${(SEC.m11.body.match(/<ul class="checklist"[\s\S]*?<\/ul>/)||[''])[0]}</div></details>`+
+  `<details class="plis"><summary>Les 12 travaux pratiques</summary><div class="prose">${SEC.tp.body}</div></details>`+
+  `<div class="prose">${SEC.glo.body}</div>`;
+  el.querySelectorAll('.checklist input').forEach(c=>{c.checked=!!S.check[c.id];});
+}
+
+/* ---------- événements ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,[data-go]'); if(!b) return;
+  const d=b.dataset;
+  if(d.v){go(d.v); if(d.v==='panne'){Pn={id:null,shown:[],pick:null};render();} return;}
+  if(b.hasAttribute('data-plus')){openSheet();return;}
+  if(d.go){ if(d.mode==='exam'){startExam();} go(d.go); return;}
+  if(d.open){go('lecture',{mod:d.open});return;}
+  if(d.volet){S.volet=d.volet;save();render();return;}
+  if(d.done){S.read[d.done]=!S.read[d.done]; if(S.read[d.done]) bump('m'); save();render();toast(S.read[d.done]?'Module terminé':'Module marqué non terminé');return;}
+  if(d.train){startTrain(d.train);go('quiz');return;}
+  if(d.cards){Fc={filter:d.cards,cur:null,flip:false};go('cartes');return;}
+  if(d.panne){Pn={id:d.panne,shown:[],pick:null};go('panne');return;}
+  if(b.hasAttribute('data-pback')){Pn={id:null,shown:[],pick:null};render();window.scrollTo(0,0);return;}
+  if(d.cmd!==undefined){Pn.shown.push(+d.cmd);render();return;}
+  if(d.cause!==undefined){Pn.pick=+d.cause; if(Pn.order[Pn.pick].ok){ if(!S.pannes[Pn.id]) bump('p'); S.pannes[Pn.id]=true;save();toast('Panne résolue');} render();return;}
+  if(d.qmode){ if(d.qmode==='exam') startExam(); else if(d.qmode==='err') {startTrain('err',QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last));} else startTrain('all'); render();return;}
+  if(d.pick!==undefined){const it=Qz.items[Qz.i%Qz.items.length]; Qz.pick=+d.pick; const ok=it.o[Qz.pick].ok; const r=S.quiz[it.q.id]||{ok:0,ko:0}; r[ok?'ok':'ko']++; r.last=ok; S.quiz[it.q.id]=r; bump('q'); save(); render(); return;}
+  if(b.hasAttribute('data-qnext')){Qz.i++;Qz.pick=null; if(Qz.filter==='err'){startTrain('err',QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last));} render();return;}
+  if(d.xpick!==undefined){Qz.ans[Qz.i]=+d.xpick;render();return;}
+  if(d.xnav){Qz.i=Math.max(0,Math.min(19,Qz.i+(+d.xnav)));render();return;}
+  if(b.hasAttribute('data-xend')){finishExam();return;}
+  if(b.hasAttribute('data-flip')){Fc.flip=!Fc.flip;render();return;}
+  if(d.fc!==undefined){const c=Fc.cur,st=card(c.id); if(d.fc==='1'){st.box=Math.min(st.box+1,4);st.due=Date.now()+INT[st.box];} else {st.box=0;st.due=Date.now()+60e3;} S.cards[c.id]=st; bump('c'); save(); Fc.cur=null; render(); return;}
+  if(b.hasAttribute('data-fcany')){const pool=CARTES.filter(c=>Fc.filter==='all'||c.m===Fc.filter);Fc.cur=pool[Math.floor(Math.random()*pool.length)];Fc.flip=false;render();return;}
+  if(b.classList.contains('raz')){ if(!b.classList.contains('arme')){document.querySelectorAll('.raz').forEach(x=>{x.classList.add('arme');x.textContent='Confirmer';}); setTimeout(()=>document.querySelectorAll('.raz').forEach(x=>{x.classList.remove('arme');x.textContent='Réinitialiser';}),4000); return;}
+    S=blank(); Qz=null; save(); document.querySelectorAll('.raz').forEach(x=>{x.classList.remove('arme');x.textContent='Réinitialiser';}); go('bord'); toast('Progression effacée'); return;}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='qf'){startTrain(t.value);render();}
+  else if(t.id==='ff'){Fc={filter:t.value,cur:null,flip:false};render();}
+  else if(t.closest&&t.closest('.checklist')){S.check[t.id]=t.checked;save();}
+});
+function openSheet(){$('feuille').hidden=false;$('voile').hidden=false;}
+function closeSheet(){$('feuille').hidden=true;$('voile').hidden=true;}
+$('voile').addEventListener('click',closeSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
+
+render();
+initSync();
+})();
+</script>

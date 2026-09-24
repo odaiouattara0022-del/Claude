@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Formation Réseau AV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Formation Réseau AV — thème « régie de contrôle », calqué sur NOC CCNA */
+:root{
+  color-scheme:dark;
+  --bg:#0b0f14; --bg-2:#111821; --bg-3:#16202b; --line:#22303f; --line-2:#2e4055;
+  --txt:#dbe5ef; --txt-dim:#8ea0b2; --txt-faint:#62748a;
+  --accent:#31d0aa; --accent-2:#1a8f74; --amber:#f0b429; --red:#ef5350; --blue:#4a9eff; --violet:#a78bfa;
+  --radius:10px;
+  --mono:'IBM Plex Mono','JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--txt)}
+body{font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--blue)}
+
+.shell{display:flex;min-height:100vh}
+.sidebar{width:236px;flex:0 0 236px;background:var(--bg-2);border-right:1px solid var(--line);padding:20px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:0 20px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.brand h1{font-family:var(--mono);font-size:17px;margin:0;letter-spacing:.06em;color:var(--accent)}
+.brand small{display:block;color:var(--txt-faint);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
+.nav{flex:1;overflow-y:auto}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-left:3px solid transparent;color:var(--txt-dim);font-size:14px;text-align:left;padding:10px 20px;cursor:pointer}
+.nav button:hover{background:var(--bg-3);color:var(--txt)}
+.nav button.on{background:var(--bg-3);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.ic{width:18px;text-align:center;font-family:var(--mono);opacity:.9;flex:none}
+.nav .cnt{margin-left:auto;font:11px var(--mono);color:var(--txt-faint)}
+.sidebar-foot{padding:14px 20px 0;border-top:1px solid var(--line);font-size:11px;color:var(--txt-faint)}
+.raz{background:none;border:1px solid var(--line-2);color:var(--txt-faint);border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;margin-top:8px}
+.raz:hover,.raz.arme{color:var(--red);border-color:var(--red)}
+.sync-etat{display:flex;align-items:center;gap:7px}
+.pastille{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(49,208,170,.15);flex:none}
+
+.main{flex:1;min-width:0;padding:28px 34px 70px;max-width:1180px}
+.page-head{margin-bottom:22px}
+.page-head h2{margin:0 0 4px;font-size:24px;letter-spacing:-.01em;text-wrap:balance}
+.page-head p{margin:0;color:var(--txt-dim);font-size:14px;max-width:70ch}
+h3{font-size:16px;margin:26px 0 12px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-faint);margin-bottom:6px}
+
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.stat .n{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt-faint);margin-top:3px}
+.stat.amber .n{color:var(--amber)} .stat.blue .n{color:var(--blue)} .stat.violet .n{color:var(--violet)}
+
+.bar{height:7px;background:var(--bg);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));border-radius:99px;transition:width .5s}
+.bar.amber i{background:linear-gradient(90deg,#9c6f10,var(--amber))}
+.bar.red i{background:linear-gradient(90deg,#8f2e2c,var(--red))}
+.dom-row{margin-bottom:15px}
+.dom-row .top{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:5px}
+.dom-row .top b{font-weight:600}
+.dom-row .top span{font-family:var(--mono);color:var(--txt-dim);font-size:12px}
+
+.btn{background:var(--accent);color:#06231c;border:0;border-radius:7px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:none;border:1px solid var(--line-2);color:var(--txt);font-weight:500}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.amber{background:var(--amber);color:#2e1f00}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select{background:var(--bg);border:1px solid var(--line-2);color:var(--txt);border-radius:7px;padding:9px 12px;font-family:var(--sans);font-size:14px}
+
+.cli{font-family:var(--mono);background:#05080b;border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:13px;color:#b9d4c8;white-space:pre;overflow-x:auto;line-height:1.5;margin:0 0 16px}
+code{font-family:var(--mono);background:var(--bg-3);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px;color:var(--accent)}
+
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line-2);color:var(--txt-dim);white-space:nowrap}
+.badge.ok{border-color:var(--accent-2);color:var(--accent)}
+.badge.mid{border-color:#9c6f10;color:var(--amber)}
+.badge.ko{border-color:#8f2e2c;color:var(--red)}
+
+/* QCM */
+.q-stem{font-size:16px;margin:0 0 16px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:11px;align-items:flex-start;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;padding:11px 14px;cursor:pointer;font-size:14.5px;text-align:left;color:var(--txt);width:100%}
+.opt:hover{border-color:var(--line-2)}
+.opt .k{font-family:var(--mono);font-weight:700;color:var(--txt-faint);flex:none}
+.opt.sel{border-color:var(--blue);background:#14243a}.opt.sel .k{color:var(--blue)}
+.opt.good{border-color:var(--accent);background:#0f2b25}.opt.good .k{color:var(--accent)}
+.opt.bad{border-color:var(--red);background:#2c1615}.opt.bad .k{color:var(--red)}
+.opt.lock{cursor:default}
+.explain{margin-top:14px;border-left:3px solid var(--accent);background:var(--bg-3);padding:12px 15px;border-radius:0 8px 8px 0;font-size:14px}
+.explain.bad{border-left-color:var(--red)}
+.explain b{color:var(--accent)}.explain.bad b{color:var(--red)}
+.timer{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums}
+.timer.low{color:var(--red)}
+
+/* Flashcards */
+.fcard{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--bg-2);border:1px solid var(--line-2);border-radius:14px;padding:32px 28px;cursor:pointer;width:100%;color:var(--txt)}
+.fcard .front{font-size:20px;font-weight:600}
+.fcard .back{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line-2);color:var(--accent);font-size:17px;width:100%;font-family:var(--mono)}
+.fcard .hint{color:var(--txt-faint);font-size:12px;margin-top:16px}
+
+/* Listes de missions */
+.mcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:9px;padding:13px 16px;margin-bottom:8px;cursor:pointer;color:var(--txt)}
+.mcard:hover{border-color:var(--accent);transform:translateX(2px)}
+.mcard .num{font-family:var(--mono);font-weight:700;color:var(--txt-faint);flex:0 0 40px}
+.mcard .txt{flex:1;min-width:0}
+.mcard .txt b{display:block;font-size:15px}
+.mcard .txt small{color:var(--txt-dim);font-size:12.5px;display:block}
+.mcard.done{border-color:var(--accent-2)}
+.mcard.done .txt b{color:var(--accent)}
+.jour-titre{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-faint);margin:22px 0 10px}
+
+/* Lecteur */
+.lecteur-tete{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.lecteur-tete .num{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--accent)}
+.lecteur-tete h2{margin:0;font-size:22px}
+.lecteur-tete .sous{color:var(--txt-dim);font-size:13.5px;margin:2px 0 0}
+.lead{font-size:16px;color:var(--txt);border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:0 0 20px;max-width:72ch}
+.volets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
+.volets button{background:var(--bg-2);border:1px solid var(--line);color:var(--txt-dim);border-radius:7px;padding:8px 15px;font-size:13.5px;cursor:pointer}
+.volets button:hover{border-color:var(--line-2);color:var(--txt)}
+.volets button.on{background:var(--accent);border-color:var(--accent);color:#06231c;font-weight:650}
+.pied-lecteur{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:34px;padding-top:20px;border-top:1px solid var(--line)}
+.pied-lecteur .sp{flex:1}
+
+/* Contenu des cours */
+.prose{max-width:76ch;font-size:15.5px;line-height:1.68}
+.prose>*:first-child{margin-top:0}
+.prose h3{font-size:17.5px;margin:28px 0 10px;color:var(--accent)}
+.prose p{margin:0 0 14px}
+.prose b,.prose strong{color:#fff;font-weight:650}
+.prose ul,.prose ol{margin:0 0 14px;padding-left:22px}
+.prose li{margin-bottom:5px}
+.prose li::marker{color:var(--txt-faint)}
+.prose .tbl,.table-wrap{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:9px}
+.prose table,table.t{width:100%;border-collapse:collapse;font-size:14px}
+.prose th,.prose td,table.t th,table.t td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+.prose tr:last-child td,table.t tr:last-child td{border-bottom:0}
+.prose th,table.t th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-faint);font-weight:600;background:var(--bg-3);white-space:nowrap}
+.prose .num{font-variant-numeric:tabular-nums}
+table.t td.k{font-family:var(--mono);color:var(--accent);white-space:nowrap;font-size:13px}
+.prose .caption{color:var(--txt-dim);font-size:13.5px;margin-top:-6px}
+.prose .formula{font-family:var(--mono);background:var(--bg-3);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:0 0 14px;color:var(--accent);overflow-x:auto}
+.prose .keep{background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:12px 16px;margin:0 0 16px}
+.prose .keep b:first-child{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.prose .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 16px}
+.prose .cards .card{padding:12px 14px;font-size:14px}
+.prose .cards .card b{display:block;color:var(--accent);margin-bottom:2px}
+.prose .cta{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+.prose .cta .btn{color:#06231c}
+.cite{margin:0 0 18px;padding:14px 18px;background:var(--bg-2);border-left:3px solid var(--amber);border-radius:0 9px 9px 0}
+.cite b.t{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+.cite ul{margin:0;padding-left:20px}
+.cite li{margin-bottom:6px}
+.checklist{list-style:none;padding:0!important}
+.checklist li{display:flex;gap:11px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
+.checklist li:last-child{border-bottom:0}
+.checklist input{accent-color:var(--accent);width:17px;height:17px;margin-top:4px;flex:none}
+details.plis{border:1px solid var(--line-2);border-radius:9px;background:var(--bg-2);padding:0 16px;margin:0 0 16px}
+details.plis summary{cursor:pointer;padding:13px 0;font-weight:600;color:var(--amber);list-style:none}
+details.plis summary::-webkit-details-marker{display:none}
+details.plis summary::before{content:"▸ ";display:inline-block}
+details.plis[open] summary::before{transform:rotate(90deg)}
+details.plis[open]{padding-bottom:6px}
+
+.jour{display:grid;gap:14px}
+.jour-tete{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.serie{display:flex;align-items:baseline;gap:10px}
+.serie .n{font-family:var(--mono);font-size:40px;font-weight:700;line-height:1;color:var(--amber);font-variant-numeric:tabular-nums}
+.serie .l{font-size:13px;color:var(--txt-dim)}
+.serie.zero .n{color:var(--txt-faint)}
+.frise{display:grid;grid-template-columns:repeat(14,14px);gap:4px}
+.frise i{display:block;width:14px;height:14px;border-radius:3px;background:var(--bg);border:1px solid var(--line-2)}
+.frise i.part{background:#5a4412;border-color:#9c6f10}
+.frise i.ok{background:var(--amber);border-color:var(--amber)}
+.frise i.auj{outline:2px solid var(--txt-faint);outline-offset:1px}
+.frise i.auj.ok{outline-color:var(--amber)}
+.objectifs{display:grid;gap:10px}
+.objectif{display:grid;grid-template-columns:minmax(160px,1.1fr) 2fr auto;align-items:center;gap:14px}
+.objectif .obj-txt{display:flex;flex-direction:column}
+.objectif .obj-txt b{font-size:14px}
+.objectif .obj-txt span{font-family:var(--mono);font-size:12px;color:var(--txt-dim);font-variant-numeric:tabular-nums}
+.objectif.fini .obj-txt b{color:var(--accent)}
+.jour-note{margin:0;font-size:12.5px;color:var(--txt-faint)}
+.pastille.off{background:var(--txt-faint);box-shadow:none}
+.pastille.ko{background:var(--amber);box-shadow:none}
+.muted{color:var(--txt-dim)} .mt{margin-top:18px} .mb{margin-bottom:18px}
+.toast{position:fixed;bottom:26px;right:26px;background:var(--bg-3);border:1px solid var(--accent-2);color:var(--accent);padding:12px 18px;border-radius:9px;font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:none}
+
+.tabbar,.feuille,.voile,.entete-mobile{display:none}
+@media (max-width:860px){.main{padding:22px 18px 60px}.sidebar{width:210px;flex-basis:210px}}
+@media (max-width:620px){
+  .sidebar{display:none}
+  .shell{display:block}
+  .main{padding:0 16px calc(88px + env(safe-area-inset-bottom,0px))}
+  .entete-mobile{display:flex;align-items:center;justify-content:space-between;margin:0 -16px 16px;padding:12px 16px;background:var(--bg-2);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:40}
+  .entete-mobile b{font-family:var(--mono);color:var(--accent);letter-spacing:.06em}
+  .entete-mobile span{font:11.5px var(--mono);color:var(--txt-faint)}
+  .page-head h2{font-size:20px}
+  .lecteur-tete h2{font-size:19px}.lecteur-tete .num{font-size:20px}
+  .prose{font-size:15.5px;line-height:1.62}
+  .prose td,.prose th{padding:8px 10px;font-size:13.5px}
+  .cli{font-size:12px;padding:12px 13px}
+  .grid.g4,.grid.g3{grid-template-columns:repeat(2,1fr)}
+  .stat .n{font-size:25px}.stat .l{font-size:10px}
+  .card{padding:15px 16px}
+  .mcard{padding:11px 13px;gap:10px}.mcard .num{flex:0 0 32px;font-size:13px}
+  .btn{padding:12px 16px}.btn.sm{padding:10px 14px}
+  .opt{padding:13px 14px}
+  .volets{overflow-x:auto;flex-wrap:nowrap}
+  .volets button{padding:11px 15px;white-space:nowrap}
+  .pied-lecteur .btn{flex:1 1 45%;justify-content:center}
+  .pied-lecteur .sp{display:none}
+  .fcard{min-height:180px;padding:26px 20px}.fcard .front{font-size:18px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--bg-2);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;background:none;border:0;border-top:2px solid transparent;color:var(--txt-dim);font-size:10.5px;cursor:pointer}
+  .tabbar button .ic{font-size:16px;line-height:1}
+  .tabbar button.on{color:var(--accent);border-top-color:var(--accent);font-weight:600}
+  .voile:not([hidden]){display:block;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55)}
+  .feuille:not([hidden]){display:flex;flex-direction:column;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--bg-2);border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;padding:8px 12px calc(14px + env(safe-area-inset-bottom,0px))}
+  .feuille .poignee{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:4px auto 10px}
+  .feuille button[data-v]{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px;background:none;border:0;border-radius:9px;color:var(--txt);font-size:15px;text-align:left;cursor:pointer}
+  .feuille button[data-v].on{background:var(--bg-3);color:var(--accent)}
+  .feuille-pied{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:12px 12px 0;border-top:1px solid var(--line);font-size:12px;color:var(--txt-faint)}
+  .feuille-pied .raz{padding:10px 12px;margin:0}
+  .serie .n{font-size:34px}
+  .frise{grid-template-columns:repeat(14,1fr);width:100%}
+  .frise i{width:auto;height:auto;aspect-ratio:1}
+  .objectif{grid-template-columns:1fr auto;gap:6px 12px}
+  .objectif .obj-txt{grid-column:1;grid-row:1}
+  .objectif .btn{grid-column:2;grid-row:1}
+  .objectif .bar{grid-column:1/-1;grid-row:2}
+  .toast{left:14px;right:14px;bottom:calc(74px + env(safe-area-inset-bottom,0px));text-align:center}
+}
+@media (prefers-reduced-motion:reduce){.bar i,.toast{transition:none}.mcard:hover{transform:none}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><h1>AV/IP</h1><small>Formation réseau audio-vidéo</small></div>
+    <nav class="nav" aria-label="Navigation principale">
+      <button data-v="bord"><span class="ic">▣</span>Tableau de bord</button>
+      <button data-v="plan"><span class="ic">▤</span>Programme</button>
+      <button data-v="modules"><span class="ic">▥</span>Modules<span class="cnt" id="cnt-mod"></span></button>
+      <button data-v="cartes"><span class="ic">▧</span>Flashcards<span class="cnt" id="cnt-cartes"></span></button>
+      <button data-v="quiz"><span class="ic">▩</span>Quiz &amp; examen</button>
+      <button data-v="panne"><span class="ic">▲</span>Salle de panne<span class="cnt" id="cnt-panne"></span></button>
+      <button data-v="ressources"><span class="ic">◈</span>Ressources</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sync-etat"><span class="pastille off"></span><span class="sync-txt">Sur cet appareil</span></div>
+      <button class="raz" type="button">Réinitialiser</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="entete-mobile"><b>AV/IP</b><span id="mob-sous">Formation réseau AV</span></header>
+    <div id="vue"></div>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <button data-v="bord"><span class="ic">▣</span><span>Accueil</span></button>
+  <button data-v="modules"><span class="ic">▥</span><span>Modules</span></button>
+  <button data-v="quiz"><span class="ic">▩</span><span>Quiz</span></button>
+  <button data-v="cartes"><span class="ic">▧</span><span>Cartes</span></button>
+  <button data-plus type="button" aria-haspopup="dialog"><span class="ic">⋯</span><span>Plus</span></button>
+</nav>
+<div class="voile" id="voile" hidden></div>
+<div class="feuille" id="feuille" role="dialog" aria-label="Autres sections" hidden>
+  <div class="poignee"></div>
+  <button data-v="plan"><span class="ic">▤</span>Programme</button>
+  <button data-v="panne"><span class="ic">▲</span>Salle de panne</button>
+  <button data-v="ressources"><span class="ic">◈</span>Ressources</button>
+  <div class="feuille-pied"><div class="sync-etat"><span class="pastille off"></span><span class="sync-txt">Sur cet appareil</span></div><button class="raz" type="button">Réinitialiser</button></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const DOMAINES=[
+  {id:'fond',nom:'Fondations réseau',mods:['m1','m2']},
+  {id:'mc',nom:'Multicast et horloge',mods:['m3','m4']},
+  {id:'media',nom:'Audio, vidéo et streaming',mods:['m5','m6','m7']},
+  {id:'conc',nom:'Conception et contrôle',mods:['m8','m9']},
+  {id:'expl',nom:'Configuration, dépannage, sécurité',mods:['m10','m11','m12']}
+];
+const MODS=[
+  {id:'m1',jour:1},{id:'m2',jour:1},{id:'m3',jour:2},{id:'m4',jour:2},{id:'m5',jour:3},{id:'m6',jour:3},
+  {id:'m7',jour:4},{id:'m8',jour:4},{id:'m9',jour:4},{id:'m10',jour:5},{id:'m11',jour:5},{id:'m12',jour:5},
+  {id:'cas',jour:5},{id:'big',jour:5}
+];
+const DIAG={
+m3:`Émetteur ── flux 239.255.1.1 ──▶ Switch (snooping)
+
+Récepteur ── IGMP Join ────────▶ Switch
+                                   └─▶ le flux sort sur CE port uniquement
+
+Querier ─── Query (60 à 125 s) ──▶ tous les ports
+Récepteur ── Report ───────────▶ Switch   (abonnement renouvelé)
+
+Récepteur ── IGMP Leave ───────▶ Switch
+                                   └─▶ flux coupé sur ce port`,
+m4:`          Grandmaster (GPS ou console)
+                      │
+          Switch cœur · boundary clock
+             ┌────────┴─────────┐
+      Switch scène         Switch régie
+   transparent clock    transparent clock
+             │             ┌────┴────┐
+         Stagebox       Console   Caméra`,
+m9:`                 Internet
+                     │
+             Routeur pare-feu
+                     │
+       Switch cœur 10G · querier + PTP
+     ┌─────────┬─────┴──────┬──────────┐
+   Scène     Régie   Caméras PoE++   Salle`,
+m11:`  1  Symptôme précis
+  │
+  2  Couche 1 · LED, câble, erreurs CRC
+  │
+  3  Couche 2 · VLAN, port, trunk
+  │
+  4  Couche 3 · IP, masque, ping
+  │
+  5  Multicast · IGMP, querier, PTP
+  │
+  6  Application · routage Dante, format`,
+big:`  STADE · 45 caméras
+     │  passerelles ST 2110 + JPEG XS
+     ├── chemin A · 100G ──┐
+     └── chemin B · 100G ──┤
+                           ▼
+            IBC · cœur rouge / bleu
+            PTP sur GPS + NMOS
+                    │
+             Régies centrales
+           ┌────────┴────────┐
+      Diffuseurs        Hub Londres`
+};
+const PIEGES_EXTRA={
+  m9:['Acheter les switchs avant d’avoir calculé la charge des liens montants.','Un seul switch cœur sans onduleur.','Réseaux Dante primaire et secondaire reliés entre eux.','Aucune documentation : personne ne sait ce qui est branché où.'],
+  m10:['Oublier write memory : tout est perdu au redémarrage.','Interface vlan créée mais laissée en shutdown.','Querier configuré sur plusieurs switchs du même VLAN.','PortFast activé sur un lien entre switchs.'],
+  m11:['Changer plusieurs réglages à la fois : on ne sait plus lequel a réparé.','Accuser le logiciel avant d’avoir vérifié le câble.','PC de Dante Controller branché sur la mauvaise carte réseau.'],
+  m12:['Mots de passe d’usine sur les caméras et les switchs.','Interface web d’un switch ouverte sur Internet.','Wi-Fi invités dans le même VLAN que le son.']
+};
+const ANTI={
+m1:[['/24','254 adresses utilisables'],['Port access','1 VLAN non tagué, pour un appareil'],['Port trunk','Plusieurs VLAN tagués, entre switchs'],['169.254.x.x','Adresse automatique sans DHCP (link-local)'],['mDNS','224.0.0.251, port 5353 : découverte Dante/NDI'],['UDP','Son et image temps réel ; TCP pour le contrôle']],
+m2:[['Cat6','1 Gb/s à 100 m (10G jusqu’à ~55 m)'],['Cat6A','10 Gb/s à 100 m'],['OM4','10 Gb/s à 400 m'],['OS2','10 km et plus'],['PoE / PoE+ / PoE++','15,4 W / 30 W / 60–90 W'],['EEE','Toujours désactivé en AV']],
+m3:[['Multicast AV','239.x.x.x'],['Dante / AES67','239.255.x.x / 239.69.x.x'],['PTP / mDNS','224.0.1.129 / 224.0.0.251'],['Querier','Un seul par VLAN, sur le cœur'],['DSCP Dante','PTP 56 (CS7) · audio 46 (EF)'],['File','Priorité stricte, trust DSCP']],
+m4:[['PTP','IEEE 1588, ports UDP 319/320'],['BMCA','Priority1 plus petit = prioritaire'],['Domaine AES67','0'],['Domaine ST 2059','127'],['AVB / Milan','gPTP 802.1AS'],['Dante','Preferred Leader sur l’appareil stable']],
+m5:[['Canal Dante 48k/24','~1,5 Mb/s'],['64 canaux 48 kHz','~100 Mb/s'],['Latence Dante','0,25 · 0,5 · 1 · 2 · 5 ms'],['Flux unicast','4 canaux par flux'],['Primaire / secondaire','Deux réseaux jamais reliés'],['Milan','2 ms garantis, switchs certifiés']],
+m6:[['ST 2110-20 1080p60','~2,6 Gb/s'],['JPEG XS','~150–300 Mb/s'],['NDI plein débit','~125–150 Mb/s'],['NDI HX','~10–50 Mb/s'],['Par lien 1G','5 à 6 NDI plein débit max'],['ST 2022-7','Double chemin rouge / bleu']],
+m7:[['RTMP(S)','Vers YouTube, Facebook'],['SRT','Contribution entre sites'],['Latence SRT','≥ 4 × RTT'],['1080p30','4,5–6 Mb/s vidéo'],['Montant','1,5 à 2 × le débit du flux'],['Audio','48 kHz partout']],
+m8:[['VISCA over IP','UDP 52381'],['sACN','UDP 5568, multicast'],['Art-Net','UDP 6454'],['NMOS IS-04','Découverte'],['NMOS IS-05','Connexion'],['LLDP','Qui est branché où']],
+m9:[['Charge max d’un lien','70 %'],['VLAN type','10 audio · 20 vidéo · 30 contrôle · 40 stream · 99 admin'],['Adresses /24','.1 passerelle · .2–.19 switchs · .20–.99 fixes'],['Redondance AV','Dante primaire/secondaire, ST 2022-7'],['LACP','2 câbles = 1 lien plus rapide et secouru'],['PortFast','Sur les ports d’appareils']],
+m10:[['Entrer en config','enable · configure terminal'],['Port appareil','switchport mode access · switchport access vlan 10'],['Trunk','switchport trunk allowed vlan 10,20,30,99'],['IGMP','ip igmp snooping · ip igmp snooping querier'],['QoS','mls qos · mls qos trust dscp'],['Sauver','write memory']],
+m11:[['Méthode','Couche 1 → 7, une chose à la fois'],['Coupure après 3–5 min','Querier absent'],['Clics','Horloge, EEE, latence trop basse'],['Débit réel','iperf3 -s / iperf3 -c'],['Wireshark','igmp · ptp · mdns'],['Avant chaque événement','Check-list de 7 points']],
+m12:[['Séparer','AV isolé du bureau et du public'],['Accès','SSH/HTTPS, jamais Telnet/HTTP'],['Distant','VPN uniquement'],['Ports','Désactiver ceux qui ne servent pas'],['Dante','Domain Manager, Device Lock'],['NDI','Access Manager']]
+};
+const PRATIQUE={
+m1:{tp:['TP 1 · Adresser 4 appareils en /24 et les pinger','TP 2 · Créer 2 VLAN et prouver l’isolation'],lab:'Missions 1 à 3 du simulateur'},
+m2:{tp:['TP 3 · Sertir et tester un câble, lire les erreurs d’un port'],lab:null},
+m3:{tp:['TP 4 · Observer l’inondation multicast puis la corriger','TP 5 · Supprimer le querier et observer la coupure'],lab:'Mission 5 du simulateur'},
+m4:{tp:['TP 6 · Élire un leader PTP, provoquer une bascule'],lab:null},
+m5:{tp:['TP 7 · Router 32 canaux Dante et enregistrer','TP 8 · Échanger un flux AES67'],lab:null},
+m6:{tp:['TP 9 · Diffuser une source NDI et mesurer son débit'],lab:null},
+m7:{tp:['TP 10 · Envoyer un flux SRT à 4 × RTT'],lab:null},
+m8:{tp:[],lab:null},
+m9:{tp:['Exercice · Dessiner le réseau de votre lieu : VLAN, plan IP, charge du lien le plus chargé'],lab:null},
+m10:{tp:['TP 11 · Configurer un switch complet'],lab:'Missions 1 à 6 du simulateur'},
+m11:{tp:['TP 12 · Résoudre 5 pannes cachées en 60 minutes'],lab:'Mission 7 du simulateur · Salle de panne'},
+m12:{tp:[],lab:null},
+cas:{tp:['Refaire la conception pour votre propre lieu'],lab:null},
+big:{tp:['Redessiner une conception de référence à votre échelle'],lab:null}
+};
+const QCM=[
+{id:'q1',m:'m1',q:'Combien d’adresses utilisables contient un sous-réseau /24 ?',o:['254','256','255','128'],e:'256 adresses moins l’adresse réseau et le broadcast.'},
+{id:'q2',m:'m1',q:'Sur quel type de port branche-t-on une console Dante ?',o:['Access','Trunk','Routé','Miroir'],e:'Un appareil se branche en access, dans un seul VLAN non tagué.'},
+{id:'q3',m:'m1',q:'Sans serveur DHCP, un appareil Dante prend une adresse en…',o:['169.254.x.x','192.168.1.x','10.0.0.x','127.0.0.x'],e:'C’est la plage link-local, attribuée automatiquement.'},
+{id:'q4',m:'m1',q:'Quel protocole Dante et NDI utilisent-ils pour se découvrir ?',o:['mDNS','SNMP','LLDP','DHCP'],e:'mDNS (224.0.0.251, port 5353), limité au sous-réseau.'},
+{id:'q5',m:'m2',q:'Distance maximale d’un lien 10G en Cat6A ?',o:['100 m','55 m','300 m','10 km'],e:'Cat6A tient 10 Gb/s sur 100 m ; le Cat6 seulement ~55 m.'},
+{id:'q6',m:'m2',q:'Quelle norme PoE fournit 60 W au switch ?',o:['802.3bt Type 3','802.3at','802.3af','802.3bt Type 4'],e:'af 15,4 W · at 30 W · bt Type 3 60 W · bt Type 4 90 W.'},
+{id:'q7',m:'m2',q:'Quelle fonction du switch provoque des coupures Dante ?',o:['EEE (802.3az)','IGMP snooping','LLDP','QoS'],e:'L’économie d’énergie met les ports en veille entre les paquets.'},
+{id:'q8',m:'m2',q:'Pour relier deux bâtiments à 2 km en 10G, on choisit…',o:['Fibre monomode OS2','Fibre multimode OM3','Cuivre Cat6A','Cuivre Cat8'],e:'Seule la monomode dépasse quelques centaines de mètres.'},
+{id:'q9',m:'m3',q:'Sans IGMP snooping, un flux multicast est envoyé…',o:['Sur tous les ports du VLAN','Uniquement aux abonnés','Au routeur seulement','Nulle part'],e:'Le switch le traite comme du broadcast.'},
+{id:'q10',m:'m3',q:'Snooping actif mais aucun querier : que se passe-t-il ?',o:['Les abonnements expirent et les flux s’arrêtent au bout de quelques minutes','Rien du tout','Le switch redémarre','L’horloge PTP s’arrête'],e:'Sans query, personne ne renouvelle les abonnements.'},
+{id:'q11',m:'m3',q:'Combien de queriers par VLAN ?',o:['Un seul','Un par switch','Deux obligatoirement','Aucun'],e:'Un seul, idéalement sur le switch cœur.'},
+{id:'q12',m:'m3',q:'Quel DSCP Dante utilise-t-il pour l’audio ?',o:['46 (EF)','56 (CS7)','34 (AF41)','0 (BE)'],e:'56 pour le PTP, 46 pour l’audio.'},
+{id:'q13',m:'m3',q:'Quel mode de file d’attente choisir pour l’AV ?',o:['Priorité stricte','Round robin pondéré','Une seule file FIFO','Aléatoire'],e:'Le temps réel doit toujours passer en premier.'},
+{id:'q14',m:'m4',q:'Domaine PTP par défaut de SMPTE ST 2059-2 ?',o:['127','0','1','24'],e:'AES67 utilise 0, ST 2059-2 utilise 127.'},
+{id:'q15',m:'m4',q:'Pour imposer un grandmaster, on baisse sa valeur…',o:['Priority1','de domaine','DSCP','de VLAN'],e:'Le BMCA choisit la plus petite Priority1.'},
+{id:'q16',m:'m4',q:'Un switch qui devient maître PTP pour l’aval est une…',o:['Boundary clock','Transparent clock','Querier','Passerelle'],e:'La transparent clock se contente de corriger le temps de transit.'},
+{id:'q17',m:'m5',q:'Débit d’un canal Dante 48 kHz / 24 bits avec en-têtes ?',o:['~1,5 Mb/s','~150 kb/s','~15 Mb/s','~48 Mb/s'],e:'48 000 × 24 = 1,15 Mb/s, plus les en-têtes.'},
+{id:'q18',m:'m5',q:'Peut-on relier les réseaux Dante primaire et secondaire ?',o:['Non, jamais','Oui par un trunk','Oui dans le même VLAN','Oui en fibre'],e:'Ils doivent rester physiquement séparés.'},
+{id:'q19',m:'m5',q:'Plage multicast des flux AES67 créés par Dante ?',o:['239.69.x.x','239.255.x.x','224.0.1.129','169.254.x.x'],e:'239.255.x.x est le multicast Dante natif.'},
+{id:'q20',m:'m5',q:'Latence Dante conseillée jusqu’à ~10 sauts gigabit ?',o:['1 ms','0,25 ms','5 ms','10 ms'],e:'0,25 ms sur un seul switch, 1 ms jusqu’à ~10 sauts.'},
+{id:'q21',m:'m6',q:'Débit d’un flux ST 2110-20 1080p60 4:2:2 10 bits ?',o:['~2,6 Gb/s','~150 Mb/s','~10 Gb/s','~1 Gb/s'],e:'1920 × 1080 × 20 × 60 = 2,49 Gb/s + en-têtes.'},
+{id:'q22',m:'m6',q:'Débit d’un flux NDI plein débit 1080p60 ?',o:['~125–150 Mb/s','~10 Mb/s','~1 Gb/s','~2,6 Gb/s'],e:'NDI HX descend à 10–50 Mb/s.'},
+{id:'q23',m:'m6',q:'Pour voir des sources NDI dans d’autres sous-réseaux ?',o:['NDI Discovery Server','Un querier IGMP','Un grandmaster PTP','Un flux SRT'],e:'mDNS ne traverse pas les VLAN.'},
+{id:'q24',m:'m6',q:'Norme de redondance à double chemin en ST 2110 ?',o:['ST 2022-7','ST 2059-2','ST 2110-40','802.1AS'],e:'Chaque paquet voyage sur les réseaux rouge et bleu.'},
+{id:'q25',m:'m7',q:'Latence SRT minimale pour un RTT de 40 ms ?',o:['160 ms','40 ms','80 ms','1 s'],e:'Au moins 4 × le RTT.'},
+{id:'q26',m:'m7',q:'Protocole le plus courant pour envoyer vers YouTube ou Facebook ?',o:['RTMP(S)','NDI','AES67','sACN'],e:'RTMP ou RTMPS, en TCP.'},
+{id:'q27',m:'m7',q:'Montant Internet conseillé pour un flux à 6 Mb/s ?',o:['9 à 12 Mb/s','6 Mb/s','3 Mb/s','100 Mb/s obligatoires'],e:'1,5 à 2 fois le débit du flux.'},
+{id:'q28',m:'m8',q:'Spécification NMOS de connexion émetteur-récepteur ?',o:['IS-05','IS-04','IS-07','BCP-003'],e:'IS-04 découvre, IS-05 connecte.'},
+{id:'q29',m:'m8',q:'Port UDP de VISCA over IP ?',o:['52381','5568','6454','5353'],e:'5568 sACN, 6454 Art-Net, 5353 mDNS.'},
+{id:'q30',m:'m9',q:'Quelle charge maximale viser sur un lien ?',o:['70 %','100 %','90 %','30 %'],e:'Au-delà, les pics saturent le lien.'},
+{id:'q31',m:'m9',q:'64 canaux Dante + 4 NDI plein débit ≈ 705 Mb/s sur un lien 1G. Que faire ?',o:['Passer en 10G ou mettre des caméras en NDI HX','Rien, ça passe','Baisser la latence Dante','Désactiver la QoS'],e:'705 Mb/s = 70 % : aucune marge.'},
+{id:'q32',m:'m10',q:'Quelle commande montre qui est querier ?',o:['show ip igmp snooping querier','show vlan brief','show mls qos','show lldp neighbors'],e:'Elle liste le querier de chaque VLAN.'},
+{id:'q33',m:'m10',q:'Une interface vlan 99 nouvellement créée est…',o:['En shutdown : il faut taper no shutdown','Active immédiatement','Supprimée au redémarrage','Un trunk'],e:'Sur Cisco, une SVI naît éteinte.'},
+{id:'q34',m:'m11',q:'Le son se coupe toutes les 3 à 5 minutes. Cause la plus probable ?',o:['Pas de querier IGMP','Câble défectueux','Mauvais DSCP','Latence trop haute'],e:'Les abonnements expirent faute de query.'},
+{id:'q35',m:'m11',q:'Par quelle couche commence un dépannage ?',o:['Couche 1, physique','Couche 7, application','Couche 3, réseau','Couche 4, transport'],e:'On part du câble.'},
+{id:'q36',m:'m12',q:'Accès distant recommandé à un réseau AV ?',o:['VPN (WireGuard, Tailscale)','Redirection de port vers l’interface web','Telnet','Le Wi-Fi public'],e:'Jamais d’interface d’administration exposée.'}
+];
+const CARTES=[
+['m1','Adresses utilisables dans un /24','254'],['m1','Plage link-local','169.254.0.0/16'],['m1','Port access ou trunk pour une caméra ?','Access'],
+['m2','Distance d’un Cat6A en 10G','100 m'],['m2','PoE++ Type 3','60 W'],['m2','Fibre jaune','Monomode OS2, 10 km et plus'],
+['m3','Querier : combien par VLAN ?','Un seul'],['m3','DSCP du PTP Dante','56 (CS7)'],['m3','DSCP de l’audio Dante','46 (EF)'],['m3','Multicast Dante natif','239.255.x.x'],
+['m4','Domaine PTP ST 2059-2','127'],['m4','Domaine PTP AES67','0'],['m4','Ports UDP du PTP','319 et 320'],
+['m5','Canaux par flux unicast Dante','4'],['m5','Débit d’un canal Dante 48 kHz','~1,5 Mb/s'],['m5','Latence garantie Milan','2 ms'],
+['m6','ST 2110-20 1080p60','~2,6 Gb/s'],['m6','NDI plein débit 1080p60','~125–150 Mb/s'],['m6','Redondance rouge/bleu ST 2110','ST 2022-7'],
+['m7','Latence SRT minimale','4 × RTT'],['m7','Montant pour un flux de 6 Mb/s','9 à 12 Mb/s'],
+['m8','Port sACN','UDP 5568'],['m8','NMOS de connexion','IS-05'],
+['m9','Charge max d’un lien','70 %'],['m9','Adresse .1 d’un /24','La passerelle'],
+['m10','Sauvegarder la configuration','write memory'],['m10','Autoriser des VLAN sur un trunk','switchport trunk allowed vlan 10,20,30'],['m10','Faire confiance au marquage','mls qos trust dscp'],
+['m11','Son coupé après 3–5 min','Querier absent'],['m11','Mesurer le débit réel','iperf3'],
+['m12','Accès distant sûr','VPN'],['m12','Protocole d’administration à bannir','Telnet (et HTTP)']
+].map((c,i)=>({id:'c'+(i+1),m:c[0],f:c[1],b:c[2]}));
+const PANNES=[
+{id:'p1',m:'m3',titre:'Le son se coupe toutes les quatre minutes',symptome:'Depuis l’ajout du nouveau switch de régie, le son Dante de la stagebox se coupe environ toutes les quatre minutes, puis revient après un « re-routage » dans Dante Controller.',
+ cmds:[['show ip igmp snooping','IGMP snooping              : Enabled\nQuerier                    : Disabled\n\nVlan 10:\n--------\nIGMP snooping              : Enabled'],
+       ['show ip igmp snooping querier','Vlan      IP Address      IGMP Version   Port\n-------------------------------------------------'],
+       ['show interfaces status','Port      Name       Status       Vlan  Duplex  Speed\nGi1/0/1   CONSOLE    connected    10    a-full  a-1000\nTe1/1/1   COEUR      connected    trunk a-full  a-10G'],
+       ['show mls qos','QoS is enabled']],
+ causes:['Aucun querier IGMP dans le VLAN 10','Un câble défectueux','La QoS est désactivée','Le port de la console est en half duplex'],
+ fix:'configure terminal\nip igmp snooping querier\nend\nwrite memory',
+ explique:'Le snooping est actif mais la liste des queriers est vide : personne ne renouvelle les abonnements, qui expirent au bout de quelques minutes.'},
+{id:'p2',m:'m11',titre:'La stagebox a disparu de Dante Controller',symptome:'Ce matin, la stagebox n’apparaît plus du tout dans Dante Controller. Sa LED réseau est éteinte. Personne ne se souvient d’avoir touché au switch.',
+ cmds:[['show interfaces status','Port      Name       Status       Vlan\nGi1/0/1   STAGEBOX   disabled     10\nGi1/0/2   AMPLI      connected    10'],
+       ['show lldp neighbors','Device ID     Local Intf   Capability\nAMPLI         Gi1/0/2      O\nSW-REGIE      Te1/1/1      B'],
+       ['show running-config interface gi1/0/1','interface GigabitEthernet1/0/1\n description STAGEBOX\n switchport access vlan 10\n switchport mode access\n shutdown']],
+ causes:['Le port de la stagebox est en shutdown','La stagebox est dans le mauvais VLAN','Le querier est absent','Le trunk ne transporte pas le VLAN 10'],
+ fix:'configure terminal\ninterface gi1/0/1\n no shutdown\nend\nwrite memory',
+ explique:'Le port est « disabled » et la configuration contient shutdown : il a été désactivé à la main.'},
+{id:'p3',m:'m2',titre:'Des clics sur les voies de la console',symptome:'Des petits clics réguliers apparaissent sur toutes les voies qui viennent du PC multipiste. L’horloge Dante est stable, aucun appareil n’a changé de leader.',
+ cmds:[['show running-config interface gi1/0/2','interface GigabitEthernet1/0/2\n description PC-MULTI\n switchport access vlan 10\n switchport mode access\n mls qos trust dscp\n spanning-tree portfast'],
+       ['show interfaces counters errors','Port       Align-Err  FCS-Err  Rcv-Err\nGi1/0/2    0          0        0'],
+       ['show power efficient-ethernet','Interface  EEE     Status\nGi1/0/1    Disabled\nGi1/0/2    Enabled  active']],
+ causes:['EEE est actif sur le port du PC multipiste','Le câble du PC est abîmé','Le PC est dans le mauvais VLAN','La QoS n’est pas activée'],
+ fix:'configure terminal\ninterface gi1/0/2\n no power efficient-ethernet\nend\nwrite memory',
+ explique:'Aucune erreur de câble, mais EEE est actif sur Gi1/0/2 : le port se met en veille entre les paquets.'},
+{id:'p4',m:'m10',titre:'Plus de son entre la régie et la scène',symptome:'La lumière et les caméras fonctionnent, mais aucun canal Dante ne passe plus entre la console (régie) et la stagebox (scène).',
+ cmds:[['show interfaces trunk','Port      Mode  Status     Native vlan\nTe1/1/1   on    trunking   1\n\nPort      Vlans allowed on trunk\nTe1/1/1   20,30,99'],
+       ['show vlan brief','VLAN Name       Ports\n10   AUDIO      Gi1/0/1, Gi1/0/2\n20   VIDEO      Gi1/0/5, Gi1/0/6, Gi1/0/7\n30   CONTROLE   Gi1/0/9'],
+       ['ping 192.168.99.1','!!!!!\nSuccess rate is 100 percent (5/5)']],
+ causes:['Le VLAN 10 n’est plus autorisé sur le trunk','Le port de la console est éteint','Le switch cœur est en panne','Le PTP a changé de domaine'],
+ fix:'configure terminal\ninterface te1/1/1\n switchport trunk allowed vlan add 10\nend\nwrite memory',
+ explique:'Le trunk ne transporte que 20, 30 et 99 : le VLAN 10 (audio) a été retiré.'},
+{id:'p5',m:'m6',titre:'La caméra PTZ 2 a disparu de vMix',symptome:'La PTZ 2 n’apparaît plus dans la liste des sources NDI de vMix. La PTZ 1, branchée sur le même switch, fonctionne.',
+ cmds:[['show vlan brief','VLAN Name       Ports\n20   VIDEO      Gi1/0/5, Gi1/0/7\n30   CONTROLE   Gi1/0/6, Gi1/0/9'],
+       ['show interfaces status','Port      Name   Status     Vlan\nGi1/0/5   CAM1   connected  20\nGi1/0/6   CAM2   connected  30'],
+       ['show lldp neighbors','Device ID   Local Intf\nCAM1        Gi1/0/5\nCAM2        Gi1/0/6']],
+ causes:['Le port de la PTZ 2 est dans le VLAN 30','La PTZ 2 est débranchée','NDI Discovery Server est arrêté','Le querier du VLAN 20 est absent'],
+ fix:'configure terminal\ninterface gi1/0/6\n switchport access vlan 20\nend\nwrite memory',
+ explique:'La caméra est bien branchée (LLDP la voit) mais son port est dans le VLAN 30 : elle n’est plus dans le même réseau que vMix.'},
+{id:'p6',m:'m3',titre:'Tout ralentit dès que les caméras démarrent',symptome:'Quand les 4 caméras NDI démarrent, les tablettes de contrôle et le Companion deviennent très lents, et une interface Dante 100 Mb/s perd le son.',
+ cmds:[['show ip igmp snooping','IGMP snooping              : Disabled'],
+       ['show interfaces gi1/0/20 counters','Port      OutOctets     OutDiscards\nGi1/0/20  4120938811    18234'],
+       ['show interfaces status','Port      Name        Status     Vlan  Speed\nGi1/0/20  DANTE-100M  connected  20    a-100']],
+ causes:['L’IGMP snooping est désactivé : le multicast NDI inonde tous les ports','Le câble de Gi1/0/20 est abîmé','Les caméras sont en NDI HX','La QoS priorise trop la vidéo'],
+ fix:'configure terminal\nip igmp snooping\nip igmp snooping querier\nend\nwrite memory',
+ explique:'Snooping désactivé : chaque flux multicast sort sur tous les ports, et le port 100 Mb/s rejette des milliers de paquets.'},
+{id:'p7',m:'m7',titre:'Le direct YouTube décroche toutes les dix minutes',symptome:'Le direct du dimanche se coupe plusieurs fois. L’encodeur est réglé en 1080p30 à 6 Mb/s. Le Wi-Fi invités est très utilisé pendant le culte.',
+ cmds:[['Test de débit filaire depuis la régie','Descendant : 95 Mb/s\nMontant    : 7,2 Mb/s'],
+       ['Réglages de l’encodeur','Résolution : 1080p30\nDébit vidéo : 6 000 kb/s\nAudio : 160 kb/s AAC 48 kHz'],
+       ['Configuration du Wi-Fi invités','VLAN : 40 (le même que l’encodeur)\nLimite de débit : aucune']],
+ causes:['Montant trop juste et Wi-Fi invités non isolé ni limité','La clé de stream est erronée','L’audio est en 48 kHz','L’encodeur est en 1080p30'],
+ fix:'Passer le Wi-Fi invités dans le VLAN 50, le limiter à 20 Mb/s\nBaisser l’encodeur à 4 500 kb/s ou augmenter le montant (≥ 12 Mb/s)',
+ explique:'6,2 Mb/s sur 7,2 Mb/s de montant, partagés avec le Wi-Fi public : la moindre pointe fait décrocher le direct.'}
+];
+
+const SEC={"prog": {"t": "Programme", "n": 0, "lead": "À la fin, vous savez concevoir, configurer et dépanner seul un réseau AV de 10 à 200 appareils.", "body": "<div class=\"cards\">\n    <div class=\"card\"><b>Public<\/b>Techniciens son, vidéo, régie, lumière, intégrateurs AV, bénévoles techniques d'églises et de salles de spectacle.<\/div>\n    <div class=\"card\"><b>Prérequis<\/b>Savoir utiliser un ordinateur et brancher une console ou une caméra. Aucune connaissance réseau exigée.<\/div>\n    <div class=\"card\"><b>Matériel de pratique<\/b>2 switchs manageables, un PC avec Dante Controller, 2 appareils Dante ou AES67, 1 source NDI, câbles Cat6, Wireshark.<\/div>\n  <\/div>\n  <h3>Objectifs pédagogiques<\/h3>\n  <ol>\n    <li>Expliquer comment un paquet audio ou vidéo voyage d'un appareil à l'autre.<\/li>\n    <li>Construire un plan d'adressage IP et de VLAN pour une installation AV.<\/li>\n    <li>Choisir le bon protocole (Dante, AES67, NDI, ST 2110, SRT) selon le besoin.<\/li>\n    <li>Configurer un switch : VLAN, IGMP snooping, querier, QoS, PTP.<\/li>\n    <li>Calculer la bande passante et dimensionner les liens.<\/li>\n    <li>Diagnostiquer une panne avec une méthode et des outils.<\/li>\n    <li>Sécuriser le réseau AV.<\/li>\n  <\/ol>\n  <h3>Déroulé sur 5 jours<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Jour<\/th><th>Modules<\/th><th>Pratique<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>1<\/td><td>1 Fondamentaux · 2 Infrastructure physique<\/td><td>Câbler, adresser et pinger 4 appareils<\/td><\/tr>\n      <tr><td>2<\/td><td>3 Multicast et QoS · 4 Synchronisation PTP<\/td><td>Voir le multicast inonder un réseau, puis le corriger<\/td><\/tr>\n      <tr><td>3<\/td><td>5 Audio sur IP · 6 Vidéo sur IP<\/td><td>Router 32 canaux Dante, envoyer un flux NDI<\/td><\/tr>\n      <tr><td>4<\/td><td>7 Streaming · 8 Contrôle · 9 Conception<\/td><td>Diffuser en SRT, dessiner le réseau d'un site réel<\/td><\/tr>\n      <tr><td>5<\/td><td>10 Configuration · 11 Dépannage · 12 Sécurité · Cas pratique · Grands événements<\/td><td>Pannes à résoudre, quiz final<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Chaque module suit le même ordre : l'idée clé, la théorie utile, les chiffres à retenir, puis les pièges fréquents. Pour pratiquer les modules 1, 3 et 10 depuis un téléphone, utilisez le simulateur <a href=\"https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE\" target=\"_blank\" rel=\"noopener\">Régie IP Lab<\/a>.<\/p>", "trap": ""}, "m1": {"t": "Fondamentaux réseau", "n": 1, "lead": "Un réseau AV est un réseau informatique ordinaire, mais qui ne tolère ni perte ni retard : chaque paquet perdu s'entend ou se voit.", "body": "<h3>1.1 Le modèle OSI appliqué à l'AV<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Couche<\/th><th>Nom<\/th><th>Rôle<\/th><th>Exemple AV<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>7<\/td><td>Application<\/td><td>Le service utilisé<\/td><td>Dante Controller, NDI Studio Monitor, NMOS<\/td><\/tr>\n      <tr><td>4<\/td><td>Transport<\/td><td>Livraison entre programmes (ports)<\/td><td>UDP pour le son et l'image, TCP pour le contrôle<\/td><\/tr>\n      <tr><td>3<\/td><td>Réseau<\/td><td>Adresse IP, routage<\/td><td>192.168.10.21, multicast 239.x.x.x<\/td><\/tr>\n      <tr><td>2<\/td><td>Liaison<\/td><td>Adresse MAC, switchs, VLAN<\/td><td>Switch, VLAN 10 « Audio », AVB<\/td><\/tr>\n      <tr><td>1<\/td><td>Physique<\/td><td>Câble, fibre, signal<\/td><td>Cat6, fibre OM4, SFP+<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Règle pratique : on dépanne toujours de bas en haut. Un câble défectueux ressemble souvent à un problème de logiciel.<\/p>\n  <h3>1.2 Ethernet et adresses MAC<\/h3>\n  <ul>\n    <li>Chaque carte réseau a une adresse MAC unique de 48 bits, par exemple <code>00:1D:C1:0A:2B:3C<\/code>.<\/li>\n    <li>Le switch apprend quelle MAC se trouve sur quel port et n'envoie les trames qu'au bon port.<\/li>\n    <li>Vitesses : 100 Mb/s (contrôle), 1 Gb/s (Dante, NDI), 10/25 Gb/s et plus (ST 2110, liens entre switchs).<\/li>\n    <li>Full duplex obligatoire : un port en half duplex crée des collisions et des coupures audio.<\/li>\n  <\/ul>\n  <h3>1.3 Adressage IPv4<\/h3>\n  <p>Une adresse IPv4 = 4 octets (ex. <code>192.168.10.21<\/code>) + un masque qui indique la partie « réseau ».<\/p>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Notation<\/th><th>Masque<\/th><th class=\"num\">Adresses utilisables<\/th><th>Usage AV<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>/30<\/td><td>255.255.255.252<\/td><td class=\"num\">2<\/td><td>Lien point à point entre routeurs<\/td><\/tr>\n      <tr><td>/27<\/td><td>255.255.255.224<\/td><td class=\"num\">30<\/td><td>Petit VLAN de contrôle<\/td><\/tr>\n      <tr><td>/24<\/td><td>255.255.255.0<\/td><td class=\"num\">254<\/td><td>VLAN audio ou vidéo standard<\/td><\/tr>\n      <tr><td>/23<\/td><td>255.255.254.0<\/td><td class=\"num\">510<\/td><td>Gros système Dante<\/td><\/tr>\n      <tr><td>/16<\/td><td>255.255.0.0<\/td><td class=\"num\">65 534<\/td><td>Link-local 169.254.0.0/16 (Dante sans DHCP)<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <ul>\n    <li><b>Plages privées :<\/b> 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16.<\/li>\n    <li><b>Passerelle :<\/b> l'adresse du routeur qui permet de sortir du réseau local.<\/li>\n    <li><b>Fixe ou DHCP ?<\/b> Fixe (ou réservation DHCP) pour consoles, stageboxes, encodeurs, caméras. DHCP pour ordinateurs et tablettes.<\/li>\n    <li><b>Link-local 169.254.x.x :<\/b> un appareil Dante sans DHCP s'attribue seul une adresse. Pratique en petit système isolé, à éviter dès qu'il y a un routeur ou des VLAN.<\/li>\n  <\/ul>\n  <h3>1.4 Unicast, broadcast, multicast<\/h3>\n  <ul>\n    <li><b>Unicast :<\/b> un émetteur vers un récepteur.<\/li>\n    <li><b>Broadcast :<\/b> un émetteur vers tout le réseau (ARP, DHCP). À limiter.<\/li>\n    <li><b>Multicast :<\/b> un émetteur vers un groupe d'abonnés (239.x.x.x). La base de l'AV sur IP, détaillée au module 3.<\/li>\n  <\/ul>\n  <h3>1.5 TCP ou UDP<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th><\/th><th>TCP<\/th><th>UDP<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Fiabilité<\/td><td>Renvoie les paquets perdus<\/td><td>Aucun renvoi<\/td><\/tr>\n      <tr><td>Latence<\/td><td>Variable<\/td><td>Minimale<\/td><\/tr>\n      <tr><td>Usage AV<\/td><td>Contrôle, web, NMOS, RTMP<\/td><td>Son et image temps réel, PTP, SRT<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>1.6 Les VLAN<\/h3>\n  <p>Un VLAN découpe un switch physique en plusieurs réseaux logiques isolés (IEEE 802.1Q, jusqu'à 4094 VLAN).<\/p>\n  <ul>\n    <li><b>Port access :<\/b> un seul VLAN, non tagué. On y branche les appareils.<\/li>\n    <li><b>Port trunk :<\/b> plusieurs VLAN tagués, entre switchs.<\/li>\n    <li><b>Plan type :<\/b> VLAN 10 Audio, 20 Vidéo, 30 Contrôle et lumière, 40 Streaming, 99 Administration.<\/li>\n    <li>Passer d'un VLAN à l'autre demande un routeur ou un switch de niveau 3.<\/li>\n  <\/ul>\n  <h3>1.7 Services indispensables<\/h3>\n  <ul>\n    <li><b>ARP :<\/b> trouve la MAC d'une adresse IP.<\/li>\n    <li><b>DNS et mDNS :<\/b> traduisent un nom en adresse. Dante, NDI et AES67 se découvrent par mDNS (224.0.0.251, port 5353), qui ne traverse pas les VLAN sans configuration spéciale.<\/li>\n    <li><b>DHCP :<\/b> distribue les adresses automatiquement.<\/li>\n  <\/ul>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Deux appareils avec la même IP.<\/li><li>Un masque différent entre deux appareils du même réseau.<\/li><li>Un appareil dans le mauvais VLAN.<\/li><li>Deux serveurs DHCP sur le même réseau.<\/li><\/ul><\/div>"}, "m2": {"t": "Infrastructure physique", "n": 2, "lead": "La majorité des pannes AV sur IP viennent du câblage et du choix du switch, pas du protocole.", "body": "<h3>2.1 Câbles cuivre<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Catégorie<\/th><th>Débit max<\/th><th>Distance max<\/th><th>Usage AV<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Cat5e<\/td><td>1 Gb/s<\/td><td>100 m<\/td><td>Dante, contrôle (minimum acceptable)<\/td><\/tr>\n      <tr><td>Cat6<\/td><td>1 Gb/s (10 Gb/s jusqu'à ~55 m)<\/td><td>100 m<\/td><td>Standard pour Dante, NDI, PoE<\/td><\/tr>\n      <tr><td>Cat6A<\/td><td>10 Gb/s<\/td><td>100 m<\/td><td>HDBaseT, SDVoE, liens 10G, PoE++<\/td><\/tr>\n      <tr><td>Cat7 / Cat8<\/td><td>10 à 40 Gb/s<\/td><td>30 à 100 m<\/td><td>Rarement utile en AV<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <ul>\n    <li>100 m = 90 m de câble fixe + 10 m de cordons au total.<\/li>\n    <li>Scène et tournée : câble blindé S/FTP avec connecteurs verrouillables etherCON.<\/li>\n    <li>Toujours tester chaque câble (8 fils, ordre T568B).<\/li>\n  <\/ul>\n  <h3>2.2 Fibre optique<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Type<\/th><th>Gaine<\/th><th>Distance à 10 Gb/s<\/th><th>Usage<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Multimode OM3<\/td><td>Aqua<\/td><td>300 m<\/td><td>Dans un bâtiment<\/td><\/tr>\n      <tr><td>Multimode OM4<\/td><td>Aqua ou violet<\/td><td>400 m<\/td><td>Dans un bâtiment, 25/40G<\/td><\/tr>\n      <tr><td>Monomode OS2<\/td><td>Jaune<\/td><td>10 km et plus<\/td><td>Entre bâtiments, grands sites, tournée<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>La fibre porte loin, ignore les interférences et isole les masses (fini le buzz entre bâtiments). Connecteurs courants : LC, SC. Gardez les bouchons et nettoyez les connecteurs.<\/p>\n  <h3>2.3 Modules SFP<\/h3>\n  <ul>\n    <li>SFP 1 Gb/s · SFP+ 10 Gb/s · SFP28 25 Gb/s · QSFP28 100 Gb/s.<\/li>\n    <li>Le module doit correspondre à la fibre (SR multimode, LR monomode) et être identique aux deux bouts.<\/li>\n    <li>Certains switchs refusent les modules d'autres marques.<\/li>\n  <\/ul>\n  <h3>2.4 PoE<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Norme<\/th><th>Nom<\/th><th class=\"num\">Puissance au switch<\/th><th>Appareils AV<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>802.3af<\/td><td>PoE<\/td><td class=\"num\">15,4 W<\/td><td>Micros de plafond, boîtiers Dante 2 canaux<\/td><\/tr>\n      <tr><td>802.3at<\/td><td>PoE+<\/td><td class=\"num\">30 W<\/td><td>Petites PTZ, encodeurs, interfaces Dante<\/td><\/tr>\n      <tr><td>802.3bt Type 3<\/td><td>PoE++<\/td><td class=\"num\">60 W<\/td><td>Caméras PTZ, écrans tactiles<\/td><\/tr>\n      <tr><td>802.3bt Type 4<\/td><td>PoE++<\/td><td class=\"num\">90 W<\/td><td>Grosses PTZ, petits écrans<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Vérifiez le budget PoE total : 8 ports à 30 W = 240 W, souvent plus que ce que le switch fournit. Gardez 20 % de marge.<\/p>\n  <h3>2.5 Choisir un switch pour l'AV<\/h3>\n  <p>Un switch non manageable suffit pour une console et une stagebox Dante. Dès qu'il y a du multicast, plusieurs flux ou de la vidéo, il faut un switch manageable.<\/p>\n  <div class=\"keep\"><b>Fonctions indispensables<\/b><ul style=\"margin:6px 0 0\"><li>Gigabit partout, 10G entre switchs si vidéo.<\/li><li>IGMP snooping v2/v3 + querier.<\/li><li>QoS DSCP avec 4 files minimum en priorité stricte.<\/li><li>VLAN 802.1Q.<\/li><li>EEE (802.3az) désactivable.<\/li><li>Commutation non bloquante et gros buffers.<\/li><\/ul><\/div>\n  <p>Utiles : PTP transparent ou boundary clock (obligatoire en ST 2110), profils AV préconfigurés, PoE++. Gammes pensées pour l'AV : Netgear M4250/M4350, Luminex GigaCore, Yamaha SWP, Cisco Catalyst/Nexus, Arista, Extreme, Aruba CX.<\/p>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Câbles « maison » mal sertis, fibre sale.<\/li><li>EEE activé : coupures Dante.<\/li><li>Switch grand public qui transforme le multicast en broadcast.<\/li><li>Budget PoE dépassé.<\/li><\/ul><\/div>"}, "m3": {"t": "Multicast, IGMP et QoS", "n": 3, "lead": "Sans IGMP snooping ni QoS, un seul flux vidéo multicast peut saturer tous les ports et couper le son de toute l'installation.", "body": "<h3>3.1 Pourquoi le multicast<\/h3>\n  <p>Une caméra NDI regardée par 6 écrans en unicast envoie 6 copies (6 × 125 Mb/s = 750 Mb/s). En multicast, elle envoie une seule copie et le réseau la duplique seulement là où il faut.<\/p>\n  <ul>\n    <li>Adresses multicast : 224.0.0.0 à 239.255.255.255 ; l'AV utilise la plage privée 239.x.x.x.<\/li>\n    <li>Dante multicast : 239.255.x.x. Flux AES67 de Dante : 239.69.x.x.<\/li>\n    <li>PTP : 224.0.1.129. mDNS : 224.0.0.251.<\/li>\n  <\/ul>\n  <h3>3.2 Le problème<\/h3>\n  <p>Sans IGMP snooping, le switch envoie chaque flux multicast sur <b>tous<\/b> les ports. Un appareil de contrôle en 100 Mb/s reçoit alors 500 Mb/s de vidéo et tombe.<\/p>\n  <h3>3.3 IGMP : s'abonner à un flux<\/h3>\n  <pre class=\"cli\">Émetteur ── flux 239.255.1.1 ──▶ Switch (snooping)\n\nRécepteur ── IGMP Join ────────▶ Switch\n                                   └─▶ le flux sort sur CE port uniquement\n\nQuerier ─── Query (60 à 125 s) ──▶ tous les ports\nRécepteur ── Report ───────────▶ Switch   (abonnement renouvelé)\n\nRécepteur ── IGMP Leave ───────▶ Switch\n                                   └─▶ flux coupé sur ce port<\/pre>\n  <p class=\"caption\">Le récepteur s'abonne, le switch n'envoie le flux qu'aux ports abonnés, et le querier vérifie régulièrement qui l'est encore.<\/p>\n  <ul>\n    <li><b>IGMP snooping :<\/b> le switch écoute les Join et Leave et construit sa table de distribution.<\/li>\n    <li><b>Querier :<\/b> un seul par VLAN, idéalement sur le switch cœur. Sans querier, les abonnements expirent et les flux s'arrêtent au bout de quelques minutes.<\/li>\n    <li><b>IGMPv2<\/b> suffit pour Dante et NDI ; <b>IGMPv3<\/b> (filtrage par source) est recommandé en ST 2110.<\/li>\n    <li>Filtrer le multicast non demandé (« drop unregistered »), en laissant passer PTP et mDNS.<\/li>\n  <\/ul>\n  <h3>3.4 QoS : priorité au temps réel<\/h3>\n  <p>La QoS vide d'abord les files prioritaires selon le marquage DSCP. Elle n'agit que quand un lien est chargé, exactement le moment où le son se coupe.<\/p>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Trafic Dante<\/th><th>DSCP<\/th><th class=\"num\">Valeur<\/th><th>File<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>PTP (horloge)<\/td><td>CS7<\/td><td class=\"num\">56<\/td><td>Haute, priorité stricte<\/td><\/tr>\n      <tr><td>Audio<\/td><td>EF<\/td><td class=\"num\">46<\/td><td>Moyenne-haute<\/td><\/tr>\n      <tr><td>Réservé<\/td><td>CS1<\/td><td class=\"num\">8<\/td><td>Basse<\/td><\/tr>\n      <tr><td>Tout le reste<\/td><td>BE<\/td><td class=\"num\">0<\/td><td>Normale<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>AES67 et RAVENNA marquent par défaut PTP en EF (46) et l'audio en AF41 (34) : en système mixte, alignez les marquages. Mode de file en priorité stricte, et switch en « trust DSCP ».<\/p>\n  <h3>3.5 Multicast entre VLAN<\/h3>\n  <p>Le multicast ne traverse pas un routeur par défaut : il faut du routage multicast (PIM) ou une passerelle (Dante Domain Manager, NDI Discovery Server, NDI Bridge). Dans 90 % des installations, émetteurs et récepteurs restent dans le même VLAN.<\/p>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Snooping activé sans querier.<\/li><li>Deux queriers en conflit.<\/li><li>Snooping activé sur un switch et pas sur l'autre.<\/li><li>QoS en round robin.<\/li><li>Multicast Dante reçu par des appareils 100 Mb/s.<\/li><\/ul><\/div>"}, "m4": {"t": "Synchronisation PTP", "n": 4, "lead": "Tous les appareils sur IP doivent partager la même horloge à la microseconde près, sinon on entend des clics ou on voit des sauts d'image.", "body": "<h3>4.1 Pourquoi une horloge commune<\/h3>\n  <p>En analogique ou en AES/SDI, l'horloge voyage avec le signal. Sur IP, les paquets arrivent de façon irrégulière : chaque appareil reconstruit le signal à partir d'une horloge réseau commune.<\/p>\n  <h3>4.2 PTP (IEEE 1588)<\/h3>\n  <pre class=\"cli\">          Grandmaster (GPS ou console)\n                      │\n          Switch cœur · boundary clock\n             ┌────────┴─────────┐\n      Switch scène         Switch régie\n   transparent clock    transparent clock\n             │             ┌────┴────┐\n         Stagebox       Console   Caméra<\/pre>\n  <p class=\"caption\">Le grandmaster donne l'heure, les switchs la relaient en corrigeant leur propre délai, et chaque appareil se cale dessus.<\/p>\n  <ul>\n    <li><b>BMCA :<\/b> élit le meilleur grandmaster (Priority1, classe, précision, Priority2, identité). On force le choix avec Priority1 : plus petit = prioritaire.<\/li>\n    <li><b>Messages :<\/b> Sync et Follow_Up, Delay_Req et Delay_Resp. Ports UDP 319 et 320.<\/li>\n    <li><b>Transparent clock :<\/b> le switch ajoute le temps passé en lui. <b>Boundary clock :<\/b> le switch devient maître pour l'aval.<\/li>\n  <\/ul>\n  <h3>4.3 Versions et profils<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Profil<\/th><th>Version<\/th><th class=\"num\">Domaine<\/th><th>Utilisé par<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>IEEE 1588-2002<\/td><td>PTPv1<\/td><td class=\"num\">—<\/td><td>Dante (natif)<\/td><\/tr>\n      <tr><td>AES67 media profile<\/td><td>PTPv2<\/td><td class=\"num\">0<\/td><td>AES67, RAVENNA, Dante en mode AES67<\/td><\/tr>\n      <tr><td>SMPTE ST 2059-2<\/td><td>PTPv2<\/td><td class=\"num\">127<\/td><td>ST 2110<\/td><\/tr>\n      <tr><td>IEEE 802.1AS (gPTP)<\/td><td>PTPv2, couche 2<\/td><td class=\"num\">0<\/td><td>AVB, Milan<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Deux profils sur des domaines différents ne se voient pas : vérifiez le numéro de domaine partout.<\/p>\n  <h3>4.4 Bonnes pratiques<\/h3>\n  <ol>\n    <li>Un grandmaster principal et un de secours (Priority1 plus élevée).<\/li>\n    <li>Site broadcast ou multi-bâtiments : grandmaster dédié avec GPS.<\/li>\n    <li>Petite installation Dante : cochez « Preferred Leader » sur l'appareil le plus stable.<\/li>\n    <li>PTP en priorité QoS la plus haute (DSCP 56 pour Dante).<\/li>\n    <li>EEE désactivé sur tous les ports.<\/li>\n    <li>Surveillez le Clock Status dans Dante Controller.<\/li>\n  <\/ol>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Deux leaders qui s'alternent.<\/li><li>Word clock externe sur un appareil qui n'est pas leader.<\/li><li>Mauvais domaine PTP.<\/li><li>Fréquences différentes (44,1 kHz contre 48 kHz).<\/li><\/ul><\/div>"}, "m5": {"t": "Audio sur IP", "n": 5, "lead": "Dante domine le live et l'installation ; AES67 fait parler Dante, RAVENNA et ST 2110-30 entre eux ; Milan (AVB) garantit la bande passante au niveau du switch.", "body": "<h3>5.1 Comparatif<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Protocole<\/th><th>Couche<\/th><th>Horloge<\/th><th>Latence<\/th><th>Points forts<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Dante<\/td><td>3 (IP)<\/td><td>PTPv1 (+v2)<\/td><td>0,25 à 5 ms<\/td><td>Simple, très répandu, mode AES67<\/td><\/tr>\n      <tr><td>AES67<\/td><td>3 (IP)<\/td><td>PTPv2<\/td><td>1 ms<\/td><td>Standard ouvert, pont entre systèmes<\/td><\/tr>\n      <tr><td>RAVENNA<\/td><td>3 (IP)<\/td><td>PTPv2<\/td><td>&lt; 1 ms possible<\/td><td>Broadcast, haute résolution<\/td><\/tr>\n      <tr><td>ST 2110-30/31<\/td><td>3 (IP)<\/td><td>PTPv2 ST 2059<\/td><td>1 ms ou 125 µs<\/td><td>Studios broadcast<\/td><\/tr>\n      <tr><td>AVB / Milan<\/td><td>2 (Ethernet)<\/td><td>gPTP<\/td><td>2 ms garantis<\/td><td>Bande passante réservée<\/td><\/tr>\n      <tr><td>NDI (audio)<\/td><td>3 (IP)<\/td><td>Aucun PTP<\/td><td>Plusieurs images<\/td><td>Son joint à l'image<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>5.2 Dante en détail<\/h3>\n  <ul>\n    <li><b>Dante Controller :<\/b> logiciel gratuit pour router les canaux, régler latence, horloge et adresses.<\/li>\n    <li><b>Flux :<\/b> en unicast, un flux porte jusqu'à 4 canaux vers un récepteur ; chaque appareil a un nombre limité de flux. Passez en multicast quand plusieurs récepteurs veulent les mêmes canaux.<\/li>\n    <li><b>Latence :<\/b> 0,25 ms sur un seul switch gigabit ; 1 ms jusqu'à ~10 sauts ; 2 ou 5 ms avec des appareils 100 Mb/s.<\/li>\n    <li><b>Redondance :<\/b> port primaire et secondaire sur deux réseaux physiquement séparés, jamais reliés.<\/li>\n    <li><b>Mode switché :<\/b> ne jamais brancher les deux ports au même switch (boucle).<\/li>\n    <li><b>Dante Virtual Soundcard / Via :<\/b> un ordinateur devient un appareil Dante.<\/li>\n    <li><b>Dante Domain Manager :<\/b> sécurité, utilisateurs, passage entre sous-réseaux.<\/li>\n    <li><b>Ports :<\/b> UDP 319/320, 4440, 4444, 4455, 8700–8708, 14336–14591, mDNS 5353.<\/li>\n  <\/ul>\n  <h3>5.3 Bande passante audio<\/h3>\n  <div class=\"formula\">Débit (b/s) = Fréquence × Bits × Canaux<\/div>\n  <p>48 000 × 24 bits = 1,15 Mb/s par canal, soit environ 1,5 Mb/s avec les en-têtes.<\/p>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Configuration<\/th><th class=\"num\">Débit<\/th><th>Lien<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>1 flux de 4 canaux 48 kHz / 24 bits<\/td><td class=\"num\">~6 Mb/s<\/td><td>100 Mb/s<\/td><\/tr>\n      <tr><td>64 canaux 48 kHz<\/td><td class=\"num\">~100 Mb/s<\/td><td>1 Gb/s<\/td><\/tr>\n      <tr><td>64 canaux 96 kHz<\/td><td class=\"num\">~200 Mb/s<\/td><td>1 Gb/s<\/td><\/tr>\n      <tr><td>512 canaux 48 kHz<\/td><td class=\"num\">~750 Mb/s<\/td><td>1 Gb/s dédié<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>5.4 Faire cohabiter Dante et AES67<\/h3>\n  <ol>\n    <li>Activez le mode AES67 sur l'appareil Dante (Device View, AES67 Config), redémarrez.<\/li>\n    <li>Alignez 48 kHz et le domaine PTPv2 (0).<\/li>\n    <li>Créez un flux multicast AES67 (239.69.x.x) côté Dante.<\/li>\n    <li>Côté AES67, déclarez le flux par fichier SDP ou SAP.<\/li>\n    <li>Harmonisez la QoS des deux mondes.<\/li>\n  <\/ol>\n  <h3>5.5 Milan / AVB<\/h3>\n  <p>Le switch réserve la bande passante de chaque flux et garantit 2 ms de latence. Tous les switchs du chemin doivent être certifiés AVB/Milan. Répandu chez L-Acoustics, d&amp;b, Meyer Sound, MOTU, Avid.<\/p>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Fréquences différentes.<\/li><li>Latence trop basse.<\/li><li>Limite de flux atteinte.<\/li><li>Réseaux primaire et secondaire reliés.<\/li><\/ul><\/div>"}, "m6": {"t": "Vidéo sur IP", "n": 6, "lead": "Trois critères décident : compression, latence et bande passante. NDI convient à la plupart des églises et productions sur un réseau gigabit ; ST 2110 est réservé au broadcast en 10/25/100G.", "body": "<h3>6.1 Comparatif<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Technologie<\/th><th>Compression<\/th><th class=\"num\">Débit 1080p60<\/th><th>Latence<\/th><th>Usage<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>ST 2110-20<\/td><td>Aucune<\/td><td class=\"num\">~2,6 Gb/s<\/td><td>Quelques lignes<\/td><td>Studio, car régie<\/td><\/tr>\n      <tr><td>ST 2110-22 (JPEG XS)<\/td><td>Légère<\/td><td class=\"num\">~150–300 Mb/s<\/td><td>&lt; 1 ms<\/td><td>Broadcast, UHD sur 10G<\/td><\/tr>\n      <tr><td>SDVoE<\/td><td>Aucune ou très légère<\/td><td class=\"num\">≤ 10 Gb/s<\/td><td>&lt; 0,1 ms<\/td><td>Matrices AV<\/td><\/tr>\n      <tr><td>IPMX<\/td><td>Aucune à moyenne<\/td><td class=\"num\">Variable<\/td><td>Faible<\/td><td>Pro AV ouvert, HDCP<\/td><\/tr>\n      <tr><td>NDI plein débit<\/td><td>Moyenne<\/td><td class=\"num\">~125–150 Mb/s<\/td><td>~1 image<\/td><td>Églises, streaming<\/td><\/tr>\n      <tr><td>NDI HX2 / HX3<\/td><td>Forte<\/td><td class=\"num\">~10–50 Mb/s<\/td><td>2+ images<\/td><td>PTZ, smartphones<\/td><\/tr>\n      <tr><td>Dante AV<\/td><td>Moyenne<\/td><td class=\"num\">~20–800 Mb/s<\/td><td>Faible<\/td><td>Pro AV + audio Dante<\/td><\/tr>\n      <tr><td>HDBaseT<\/td><td>Légère<\/td><td class=\"num\">Point à point<\/td><td>Quasi nulle<\/td><td>Projecteur à 100 m<\/td><\/tr>\n      <tr><td>H.264/H.265 (SRT, RTSP)<\/td><td>Forte<\/td><td class=\"num\">3–20 Mb/s<\/td><td>100 ms à s<\/td><td>Streaming, distance<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>6.2 SMPTE ST 2110<\/h3>\n  <ul>\n    <li><b>-10<\/b> architecture et horloge · <b>-20<\/b> vidéo non compressée · <b>-22<\/b> JPEG XS · <b>-30/-31<\/b> audio · <b>-40<\/b> données.<\/li>\n    <li><b>ST 2022-7 :<\/b> double chemin rouge et bleu, reconstruction sans coupure.<\/li>\n    <li>Chaque essence est un flux multicast séparé ; contrôle par NMOS.<\/li>\n  <\/ul>\n  <h3>6.3 NDI en pratique<\/h3>\n  <ul>\n    <li><b>Découverte :<\/b> mDNS sur un même sous-réseau ; au-delà, un NDI Discovery Server.<\/li>\n    <li><b>Transport :<\/b> unicast par défaut, multicast activable dans NDI Access Manager.<\/li>\n    <li><b>Outils gratuits :<\/b> NDI Tools (Studio Monitor, Screen Capture, Router, Bridge).<\/li>\n    <li><b>Règle :<\/b> au maximum 5 à 6 flux NDI 1080p60 par lien gigabit, avec 30 % de marge.<\/li>\n  <\/ul>\n  <h3>6.4 Matrices AV sur IP<\/h3>\n  <p>Un encodeur par source, un décodeur par écran : le switch remplace la matrice HDMI. Changer de source = changer d'abonnement multicast, d'où l'importance d'un IGMP rapide (« fast leave »).<\/p>\n  <h3>6.5 Débit vidéo non compressé<\/h3>\n  <div class=\"formula\">Débit = Largeur × Hauteur × Bits par pixel × Images/s<\/div>\n  <p>1080p60 en 4:2:2 10 bits : 1920 × 1080 × 20 × 60 = 2,49 Gb/s, ~2,6 Gb/s avec les en-têtes. En 2160p60 : ~10,4 Gb/s, donc un lien 25G.<\/p>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>NDI plein débit sur des liens 100 Mb/s.<\/li><li>Trop de flux sur le lien montant.<\/li><li>NDI dans plusieurs VLAN sans Discovery Server.<\/li><li>Décalage son/image entre flux compressés et non compressés.<\/li><\/ul><\/div>"}, "m7": {"t": "Streaming et contribution", "n": 7, "lead": "Vers YouTube ou Facebook : RTMP. Entre deux sites par Internet, avec une image de qualité : SRT.", "body": "<div class=\"tbl\"><table>\n    <thead><tr><th>Protocole<\/th><th>Transport<\/th><th>Latence<\/th><th>Usage<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>RTMP / RTMPS<\/td><td>TCP 1935 / 443<\/td><td>2–30 s spectateur<\/td><td>YouTube, Facebook, Vimeo<\/td><\/tr>\n      <tr><td>SRT<\/td><td>UDP + retransmission<\/td><td>120 ms à quelques s<\/td><td>Contribution entre sites<\/td><\/tr>\n      <tr><td>RIST<\/td><td>UDP + retransmission<\/td><td>Faible<\/td><td>Broadcast<\/td><\/tr>\n      <tr><td>WebRTC / WHIP<\/td><td>UDP<\/td><td>&lt; 0,5 s<\/td><td>Invités à distance<\/td><\/tr>\n      <tr><td>HLS / DASH<\/td><td>HTTP<\/td><td>6–30 s<\/td><td>Distribution aux spectateurs<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>7.2 SRT en pratique<\/h3>\n  <ul>\n    <li>Modes caller, listener, rendezvous. Le récepteur est souvent listener avec un port ouvert.<\/li>\n    <li>Latence SRT : au moins 4 × le RTT. Ping de 30 ms → 120 ms ; en 4G instable, 1 000 ms et plus.<\/li>\n    <li>Chiffrement AES par passphrase ; prévoir 25 % de débit en plus.<\/li>\n  <\/ul>\n  <h3>7.3 Débits recommandés (H.264)<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Résolution<\/th><th class=\"num\">Vidéo<\/th><th class=\"num\">Audio<\/th><th class=\"num\">Montant conseillé<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>720p30<\/td><td class=\"num\">3–4 Mb/s<\/td><td class=\"num\">128 kb/s<\/td><td class=\"num\">6 Mb/s<\/td><\/tr>\n      <tr><td>1080p30<\/td><td class=\"num\">4,5–6 Mb/s<\/td><td class=\"num\">160 kb/s<\/td><td class=\"num\">10 Mb/s<\/td><\/tr>\n      <tr><td>1080p60<\/td><td class=\"num\">6–9 Mb/s<\/td><td class=\"num\">192 kb/s<\/td><td class=\"num\">15 Mb/s<\/td><\/tr>\n      <tr><td>2160p30<\/td><td class=\"num\">13–20 Mb/s<\/td><td class=\"num\">192 kb/s<\/td><td class=\"num\">30 Mb/s<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>La connexion montante doit valoir 1,5 à 2 fois le débit du flux, mesurée en filaire.<\/p>\n  <h3>7.4 Architecture conseillée<\/h3>\n  <ul><li>Encodeur dans un VLAN « Streaming » avec accès Internet.<\/li><li>Connexion dédiée ou QoS pour que le Wi-Fi des visiteurs ne mange pas le débit.<\/li><li>Secours 4G/5G ou agrégation.<\/li><li>Wi-Fi public sur un VLAN séparé, limité.<\/li><\/ul>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>Encodeur en Wi-Fi.<\/li><li>Débit trop proche de la capacité montante.<\/li><li>Clé de stream publiée.<\/li><li>Audio en 44,1 kHz quand tout le reste est en 48 kHz.<\/li><\/ul><\/div>"}, "m8": {"t": "Contrôle et supervision", "n": 8, "lead": "Le contrôle pèse peu en débit mais doit rester joignable : il a son propre VLAN.", "body": "<div class=\"tbl\"><table>\n    <thead><tr><th>Domaine<\/th><th>Protocole<\/th><th>Transport<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Caméras PTZ<\/td><td>VISCA over IP<\/td><td>UDP 52381<\/td><\/tr>\n      <tr><td>Caméras PTZ<\/td><td>NDI, ONVIF, HTTP-CGI<\/td><td>TCP 80 / 5960+<\/td><\/tr>\n      <tr><td>Lumière<\/td><td>sACN (E1.31)<\/td><td>UDP 5568, multicast 239.255.x.x<\/td><\/tr>\n      <tr><td>Lumière<\/td><td>Art-Net<\/td><td>UDP 6454<\/td><\/tr>\n      <tr><td>Consoles<\/td><td>OSC<\/td><td>UDP<\/td><\/tr>\n      <tr><td>Automatisation<\/td><td>TCP brut, API REST<\/td><td>TCP<\/td><\/tr>\n      <tr><td>Show control<\/td><td>rtpMIDI, Companion<\/td><td>UDP 5004 / TCP<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Bitfocus Companion avec un Stream Deck pilote à lui seul ATEM, vMix, OBS, PTZ, ProPresenter et consoles.<\/p>\n  <h3>8.2 NMOS<\/h3>\n  <ul><li><b>IS-04 :<\/b> découverte et enregistrement.<\/li><li><b>IS-05 :<\/b> connexion émetteur-récepteur.<\/li><li><b>IS-07 :<\/b> événements, tally. <b>IS-08 :<\/b> mapping audio.<\/li><li><b>BCP-003 :<\/b> sécurité.<\/li><\/ul>\n  <h3>8.3 Supervision<\/h3>\n  <ul><li><b>SNMPv3<\/b> pour surveiller les switchs, <b>Syslog<\/b> pour centraliser les journaux.<\/li><li><b>LLDP<\/b> : chaque appareil annonce son nom et son port.<\/li><li>Outils : Dante Controller, interface web du switch, PRTG, Zabbix, LibreNMS.<\/li><\/ul>", "trap": "<div class=\"trap\"><b>Pièges fréquents<\/b><ul><li>sACN et Dante dans le même VLAN sans IGMP.<\/li><li>Contrôle PTZ bloqué par un pare-feu.<\/li><li>Mots de passe par défaut sur les caméras.<\/li><\/ul><\/div>"}, "m9": {"t": "Concevoir un réseau AV", "n": 9, "lead": "Un bon réseau AV se dessine sur papier avant d'acheter : topologie, plan IP et VLAN, bande passante par lien, redondance.", "body": "<h3>9.1 Topologies<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Topologie<\/th><th>Principe<\/th><th>Avantage<\/th><th>Limite<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Étoile<\/td><td>Tout sur un switch<\/td><td>Simple<\/td><td>Point unique de panne<\/td><\/tr>\n      <tr><td>Arbre<\/td><td>Cœur + switchs de zone<\/td><td>Standard pour salles<\/td><td>Liens montants à surveiller<\/td><\/tr>\n      <tr><td>Rouge / bleu<\/td><td>Deux réseaux séparés<\/td><td>Redondance Dante, ST 2022-7<\/td><td>Double coût<\/td><\/tr>\n      <tr><td>Spine-leaf<\/td><td>Chaque leaf relié à chaque spine<\/td><td>Très grands systèmes<\/td><td>Complexe<\/td><\/tr>\n      <tr><td>Anneau<\/td><td>Boucle protégée<\/td><td>Résiste à une coupure<\/td><td>RSTP/ERPS à bien régler<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>9.2 Architecture type<\/h3>\n  <pre class=\"cli\">                 Internet\n                     │\n             Routeur pare-feu\n                     │\n       Switch cœur 10G · querier + PTP\n     ┌─────────┬─────┴──────┬──────────┐\n   Scène     Régie   Caméras PoE++   Salle<\/pre>\n  <p class=\"caption\">Le cœur porte le querier IGMP et la référence PTP ; chaque zone a son switch relié en 10G.<\/p>\n  <h3>9.3 Plan d'adressage type<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th class=\"num\">VLAN<\/th><th>Nom<\/th><th>Sous-réseau<\/th><th>Contenu<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td class=\"num\">10<\/td><td>AUDIO<\/td><td>192.168.10.0/24<\/td><td>Dante, AES67 (sans passerelle)<\/td><\/tr>\n      <tr><td class=\"num\">11<\/td><td>AUDIO-SEC<\/td><td>192.168.11.0/24<\/td><td>Dante secondaire, switchs séparés<\/td><\/tr>\n      <tr><td class=\"num\">20<\/td><td>VIDEO<\/td><td>192.168.20.0/24<\/td><td>NDI, encodeurs, PTZ<\/td><\/tr>\n      <tr><td class=\"num\">30<\/td><td>CONTROLE<\/td><td>192.168.30.0/24<\/td><td>Companion, sACN, tablettes<\/td><\/tr>\n      <tr><td class=\"num\">40<\/td><td>STREAMING<\/td><td>192.168.40.0/24<\/td><td>Encodeur vers Internet<\/td><\/tr>\n      <tr><td class=\"num\">50<\/td><td>INVITES<\/td><td>192.168.50.0/24<\/td><td>Wi-Fi public isolé<\/td><\/tr>\n      <tr><td class=\"num\">99<\/td><td>ADMIN<\/td><td>192.168.99.0/24<\/td><td>Gestion des switchs<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Dans chaque /24 : .1 passerelle, .2–.19 switchs, .20–.99 appareils fixes, .100–.199 DHCP, .200–.254 réserve.<\/p>\n  <h3>9.4 Bande passante d'un lien<\/h3>\n  <p>Listez les flux du lien (dans les deux sens), additionnez, et ne dépassez pas <b>70 %<\/b> de la capacité. Exemple : 64 canaux Dante (~100 Mb/s) + 4 NDI plein débit (600 Mb/s) + contrôle = ~705 Mb/s, soit 70 % d'un gigabit : passez en 10G ou en NDI HX.<\/p>\n  <h3>9.5 Redondance et boucles<\/h3>\n  <ul><li><b>RSTP/MSTP<\/b> contre les boucles ; PortFast sur les ports d'appareils.<\/li><li><b>LACP :<\/b> 2 câbles entre switchs = plus de débit et un secours.<\/li><li><b>Dante primaire/secondaire<\/b> ou <b>ST 2022-7<\/b> : la vraie redondance AV.<\/li><li>Onduleur sur les switchs cœur et régie.<\/li><\/ul>\n  <div class=\"keep\"><b>À documenter<\/b><p style=\"margin:4px 0 0\">Schéma de topologie, tableau des ports, plan IP, sauvegardes des configurations, étiquettes aux deux bouts de chaque câble.<\/p><\/div>", "trap": ""}, "m10": {"t": "Configurer un switch", "n": 10, "lead": "L'exemple utilise la syntaxe Cisco IOS, la plus répandue ; les menus web des autres marques suivent la même logique.", "body": "<h3>10.1 Ordre des opérations<\/h3>\n  <ol><li>Firmware à jour, nom, mot de passe.<\/li><li>VLAN et IP d'administration (VLAN 99).<\/li><li>Ports access et trunk.<\/li><li>IGMP snooping + un querier par VLAN.<\/li><li>QoS DSCP en priorité stricte.<\/li><li>EEE désactivé, PortFast sur les ports d'appareils.<\/li><li>Sauvegarder et documenter.<\/li><\/ol>\n  <h3>10.2 Configuration exemple<\/h3>\n<pre class=\"cli\">enable\nconfigure terminal\nhostname SW-REGIE\n!\nvlan 10\n name AUDIO\nvlan 20\n name VIDEO\nvlan 30\n name CONTROLE\nvlan 99\n name ADMIN\n!\ninterface vlan 99\n ip address 192.168.99.2 255.255.255.0\n no shutdown\n!\ninterface range gigabitEthernet1/0/1 - 12\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n no power efficient-ethernet\n!\ninterface range gigabitEthernet1/0/13 - 20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\n!\ninterface tenGigabitEthernet1/1/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,99\n!\nip igmp snooping\nip igmp snooping querier\n!\nmls qos\ninterface range gigabitEthernet1/0/1 - 24\n mls qos trust dscp\n!\nend\nwrite memory<\/pre>\n  <h3>10.3 Vérifier<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Commande<\/th><th>Ce qu'elle montre<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td><code>show vlan brief<\/code><\/td><td>VLAN et ports<\/td><\/tr>\n      <tr><td><code>show interfaces status<\/code><\/td><td>État, vitesse, duplex<\/td><\/tr>\n      <tr><td><code>show ip igmp snooping groups<\/code><\/td><td>Groupes multicast et abonnés<\/td><\/tr>\n      <tr><td><code>show ip igmp snooping querier<\/code><\/td><td>Querier par VLAN<\/td><\/tr>\n      <tr><td><code>show interfaces counters errors<\/code><\/td><td>Erreurs CRC (câble)<\/td><\/tr>\n      <tr><td><code>show mls qos interface<\/code><\/td><td>QoS par port<\/td><\/tr>\n      <tr><td><code>show spanning-tree<\/code><\/td><td>Ports bloqués, racine<\/td><\/tr>\n      <tr><td><code>show lldp neighbors<\/code><\/td><td>Qui est branché où<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p>Netgear M4250/M4350, Luminex GigaCore, Yamaha SWP proposent des profils AV qui appliquent IGMP, QoS et EEE automatiquement. Vérifiez quand même le querier et les VLAN.<\/p>\n  <div class=\"cta\"><a class=\"btn primary\" href=\"https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE\" target=\"_blank\" rel=\"noopener\">S'entraîner dans Régie IP Lab<\/a><\/div>", "trap": ""}, "m11": {"t": "Dépannage et outils", "n": 11, "lead": "On dépanne avec une méthode : du câble vers l'application, en changeant une seule chose à la fois.", "body": "<pre class=\"cli\">  1  Symptôme précis\n  │\n  2  Couche 1 · LED, câble, erreurs CRC\n  │\n  3  Couche 2 · VLAN, port, trunk\n  │\n  4  Couche 3 · IP, masque, ping\n  │\n  5  Multicast · IGMP, querier, PTP\n  │\n  6  Application · routage Dante, format<\/pre>\n  <p class=\"caption\">Notez ce qui a changé depuis la dernière fois où tout marchait : c'est souvent la cause.<\/p>\n  <h3>11.2 Symptômes et causes<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Symptôme<\/th><th>Causes probables<\/th><th>Vérification<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Appareil Dante absent<\/td><td>Mauvais VLAN, mauvaise carte réseau sur le PC<\/td><td>Carte choisie dans Dante Controller<\/td><\/tr>\n      <tr><td>« Subnet mismatch »<\/td><td>IP dans un autre sous-réseau<\/td><td>Network Config<\/td><\/tr>\n      <tr><td>Clics, craquements<\/td><td>Horloge instable, EEE, latence trop basse<\/td><td>Clock Status, Latency<\/td><\/tr>\n      <tr><td>Son coupé après 3 à 5 min<\/td><td>Snooping sans querier<\/td><td><code>show ip igmp snooping querier<\/code><\/td><\/tr>\n      <tr><td>Tout ralentit avec la vidéo<\/td><td>Multicast inondé, lien saturé<\/td><td>Compteurs, snooping<\/td><\/tr>\n      <tr><td>NDI saccadé<\/td><td>Lien 100 Mb/s, Wi-Fi, CPU<\/td><td>Vitesse du port<\/td><\/tr>\n      <tr><td>Coupures aléatoires<\/td><td>Câble, duplex, boucle<\/td><td>Erreurs CRC, spanning-tree<\/td><\/tr>\n      <tr><td>Stream qui décroche<\/td><td>Montant insuffisant<\/td><td>Test filaire<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>11.3 Boîte à outils<\/h3>\n  <ul><li><b>ping, tracert, ipconfig, arp -a<\/b> : les bases.<\/li><li><b>iperf3<\/b> : débit réel entre deux PC (<code>iperf3 -s<\/code> puis <code>iperf3 -c 192.168.10.50<\/code>).<\/li><li><b>Wireshark<\/b> : filtres <code>igmp<\/code>, <code>ptp<\/code>, <code>mdns<\/code>, <code>udp.port==14336<\/code>.<\/li><li><b>Port mirroring<\/b> vers le PC de capture.<\/li><li>Dante Controller, NDI Studio Monitor, testeur de câble.<\/li><\/ul>\n  <h3>11.4 Check-list avant chaque événement<\/h3>\n  <ul class=\"checklist\" id=\"checklist\">\n    <li><input type=\"checkbox\" id=\"c1\"><label for=\"c1\">Tous les appareils visibles et verts dans Dante Controller<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c2\"><label for=\"c2\">Un seul leader d'horloge, celui prévu<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c3\"><label for=\"c3\">Aucune erreur sur les ports du switch<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c4\"><label for=\"c4\">Querier actif dans chaque VLAN multicast<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c5\"><label for=\"c5\">Liens montants sous 70 % de charge<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c6\"><label for=\"c6\">Test de débit Internet et stream de test privé<\/label><\/li>\n    <li><input type=\"checkbox\" id=\"c7\"><label for=\"c7\">Configuration des switchs sauvegardée<\/label><\/li>\n  <\/ul>", "trap": ""}, "m12": {"t": "Sécurité", "n": 12, "lead": "Les protocoles AV n'ont presque aucune sécurité : n'importe qui branché peut écouter ou re-router le son. La protection vient de la séparation et de l'accès physique.", "body": "<ol>\n    <li><b>Séparer<\/b> le réseau AV de la bureautique et du Wi-Fi public.<\/li>\n    <li><b>Filtrer<\/b> entre VLAN ; aucun port AV ouvert sur Internet, sauf SRT chiffré.<\/li>\n    <li><b>Verrouiller les ports<\/b> inutilisés ; port security ou 802.1X sur les prises publiques.<\/li>\n    <li><b>Mots de passe<\/b> changés partout ; SSH et HTTPS, jamais Telnet ni HTTP.<\/li>\n    <li><b>Wi-Fi régie<\/b> en WPA3 ou WPA2 fort, séparé du Wi-Fi invités.<\/li>\n    <li><b>Dante Domain Manager / Device Lock<\/b> contre le re-routage.<\/li>\n    <li><b>NDI Access Manager<\/b> pour limiter qui voit quelles sources.<\/li>\n    <li><b>Mises à jour<\/b> testées hors événement.<\/li>\n    <li><b>Accès distant<\/b> par VPN (WireGuard, Tailscale).<\/li>\n    <li><b>Sauvegardes<\/b> des switchs, presets Dante et scènes des consoles.<\/li>\n  <\/ol>", "trap": ""}, "cas": {"t": "Cas pratique : église", "n": 13, "lead": "Son Dante, 4 caméras PTZ NDI, retransmission YouTube, lumière sACN et Wi-Fi invités, sans qu'aucun système ne gêne l'autre.", "body": "<p><b>Inventaire :<\/b> console Dante 64 canaux, 2 stageboxes Dante, processeur de diffusion, 4 PTZ NDI HX3 en PoE++, PC vMix, PC ProPresenter (NDI), PC multipiste, console lumière sACN + 2 nœuds DMX, Stream Deck + Companion, 3 bornes Wi-Fi.<\/p>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Switch<\/th><th>Emplacement<\/th><th>Ports<\/th><th>Liaison<\/th><th>VLAN<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>SW-COEUR<\/td><td>Baie technique<\/td><td>24 × 1G + 4 × 10G<\/td><td>—<\/td><td>Tous, querier<\/td><\/tr>\n      <tr><td>SW-SCENE<\/td><td>Coulisse<\/td><td>16 × 1G<\/td><td>Fibre 10G<\/td><td>10, 30<\/td><\/tr>\n      <tr><td>SW-REGIE<\/td><td>Régie<\/td><td>24 × 1G<\/td><td>Fibre 10G<\/td><td>10, 20, 30, 40<\/td><\/tr>\n      <tr><td>SW-CAMERAS<\/td><td>Balcon<\/td><td>8 × PoE++ (480 W)<\/td><td>Cat6A 10G<\/td><td>20, 30<\/td><\/tr>\n      <tr><td>SW-DANTE-B<\/td><td>Régie + scène<\/td><td>16 × 1G<\/td><td>Isolé<\/td><td>11<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p><b>Lien régie → cœur :<\/b> 64 canaux Dante (~100 Mb/s) + 4 PTZ HX3 (~160 Mb/s) + ProPresenter NDI (~150 Mb/s) + contrôle (~10 Mb/s) = ~420 Mb/s, 4 % d'un lien 10G.<\/p>\n  <div class=\"keep\"><b>Réglages clés<\/b><ul style=\"margin:6px 0 0\"><li>Console en Preferred Leader, latence Dante 1 ms.<\/li><li>IGMP snooping sur VLAN 10, 20, 30 ; querier sur SW-COEUR uniquement.<\/li><li>QoS DSCP 56 / 46 en priorité stricte, EEE désactivé partout.<\/li><li>vMix avec deux cartes réseau : VLAN 20 (NDI) et VLAN 40 (Internet).<\/li><li>VLAN 50 invités limité à 20 Mb/s, isolé.<\/li><li>YouTube 1080p30 à 6 Mb/s sur une fibre de 50 Mb/s montants, secours 4G.<\/li><\/ul><\/div>\n  <p><b>Exercice :<\/b> refaites cette conception pour votre lieu : inventaire, tableau des switchs, plan IP, calcul du lien le plus chargé.<\/p>", "trap": ""}, "big": {"t": "Grands événements", "n": 14, "lead": "Les plus grands événements du monde reposent sur les mêmes briques que votre salle : VLAN, multicast, PTP, QoS, redondance, assemblées à très grande échelle.", "body": "<h3>Coupe du monde FIFA 2026 : le réseau devient la régie<\/h3>\n  <p>104 matchs, 16 stades, environ 45 caméras par match. Ralentis, graphismes, mixage audio et réglage des caméras sont centralisés dans un centre international de diffusion (IBC) à Dallas.<\/p>\n  <pre class=\"cli\">  STADE · 45 caméras\n     │  passerelles ST 2110 + JPEG XS\n     ├── chemin A · 100G ──┐\n     └── chemin B · 100G ──┤\n                           ▼\n            IBC · cœur rouge / bleu\n            PTP sur GPS + NMOS\n                    │\n             Régies centrales\n           ┌────────┴────────┐\n      Diffuseurs        Hub Londres<\/pre>\n  <p class=\"caption\">Chaque stade envoie ses signaux par deux chemins indépendants ; tout est produit à l'IBC puis redistribué.<\/p>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Couche<\/th><th>Choix<\/th><th>Pourquoi<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Transport<\/td><td>ST 2110 de bout en bout<\/td><td>Chaque signal routable partout<\/td><\/tr>\n      <tr><td>Compression<\/td><td>JPEG XS, ~10:1<\/td><td>Qualité visuellement sans perte, latence minime<\/td><\/tr>\n      <tr><td>Liaison<\/td><td>~600 Gb/s par stade, 2 chemins de 100 Gb/s, 3 routes de secours chacun<\/td><td>Aucune coupure pendant un match<\/td><\/tr>\n      <tr><td>Redondance<\/td><td>Réseaux rouge et bleu, ST 2022-7<\/td><td>La perte d'un réseau est invisible<\/td><\/tr>\n      <tr><td>Horloge<\/td><td>Grandmaster GPS par site, ST 2059<\/td><td>Même heure partout<\/td><\/tr>\n      <tr><td>Contrôle<\/td><td>NMOS IS-04 / IS-05 + orchestrateur<\/td><td>Des milliers de flux sans câble à déplacer<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>Coupe du monde 2022 : production à distance entre continents<\/h3>\n  <p>8 stades autour de Doha, environ 42 caméras par match. Des chaînes britanniques pilotaient depuis le Royaume-Uni des régies installées à Doha, avec plus de 20 flux en aller-retour sur fibres redondantes. La latence devient un paramètre de conception, comme la latence SRT du module 7.<\/p>\n  <h3>Jeux olympiques de Tokyo 2020 et Paris 2024 : publier une fois, s'abonner partout<\/h3>\n  <p>Tokyo 2020 : première plateforme ST 2110 complète pour tout l'UHD. Paris 2024 : IBC de 80 000 m² avec sept petits centres de données ; les diffuseurs reçoivent directement les signaux en multicast ST 2110 ; certaines régies sont virtualisées sur serveurs ; plus de 11 000 h de contenu. Un diffuseur qui s'abonne à un flux fait exactement ce que fait un récepteur Dante : un IGMP Join (module 3).<\/p>\n  <h3>Eurovision : un réseau temporaire de niveau permanent<\/h3>\n  <p>Environ 60 châssis de transport de signaux, plus de 80 switchs, plus de 11 km de fibre, et un intercom entièrement sur le réseau. Nœuds maillés pour que chaque signal ait deux chemins. Même pour une semaine : plan de VLAN, redondance, étiquetage et documentation.<\/p>\n  <h3>Super Bowl : le centre technique en palettes<\/h3>\n  <p>Des palettes pré-câblées reliées en fibre MPO transforment une salle vide en centre technique ST 2110 en environ cinq heures, capable de plus de 3 000 flux. La vitesse vient de la standardisation.<\/p>\n  <h3>Reprendre ces conceptions à votre échelle<\/h3>\n  <div class=\"tbl\"><table>\n    <thead><tr><th>Grands événements<\/th><th>Église ou salle<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>Réseaux rouge et bleu, ST 2022-7<\/td><td>Dante primaire et secondaire sur deux switchs<\/td><\/tr>\n      <tr><td>Grandmaster PTP GPS + secours<\/td><td>Console en Preferred Leader + secours<\/td><\/tr>\n      <tr><td>Multicast maîtrisé<\/td><td>IGMP snooping + un querier par VLAN<\/td><\/tr>\n      <tr><td>JPEG XS entre stades et IBC<\/td><td>SRT ou NDI Bridge entre deux sites<\/td><\/tr>\n      <tr><td>Production centralisée<\/td><td>Une régie qui pilote plusieurs salles<\/td><\/tr>\n      <tr><td>Nœuds maillés<\/td><td>Deux liens entre switchs (LACP)<\/td><\/tr>\n      <tr><td>Palettes pré-câblées<\/td><td>Racks mobiles et plan d'adressage identique<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <p><b>Exercice :<\/b> choisissez une de ces conceptions et redessinez-la pour votre lieu : schéma, VLAN, redondance, leader d'horloge, calcul du lien le plus chargé.<\/p>", "trap": ""}, "tp": {"t": "Travaux pratiques", "n": 15, "lead": "12 TP de 45 à 90 minutes, chacun avec un critère de réussite mesurable.", "body": "<div class=\"tbl\"><table>\n    <thead><tr><th class=\"num\">TP<\/th><th class=\"num\">Module<\/th><th>Objectif<\/th><th>Réussi si<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td class=\"num\">1<\/td><td class=\"num\">1<\/td><td>Adresser 4 appareils en /24 et les pinger<\/td><td>100 % des pings<\/td><\/tr>\n      <tr><td class=\"num\">2<\/td><td class=\"num\">1<\/td><td>Créer 2 VLAN et prouver l'isolation<\/td><td>Ping impossible entre VLAN<\/td><\/tr>\n      <tr><td class=\"num\">3<\/td><td class=\"num\">2<\/td><td>Sertir et tester un câble<\/td><td>0 erreur CRC<\/td><\/tr>\n      <tr><td class=\"num\">4<\/td><td class=\"num\">3<\/td><td>Observer l'inondation multicast puis la corriger<\/td><td>Flux sur les seuls ports abonnés<\/td><\/tr>\n      <tr><td class=\"num\">5<\/td><td class=\"num\">3<\/td><td>Supprimer le querier, observer la coupure<\/td><td>Diagnostic en moins de 10 min<\/td><\/tr>\n      <tr><td class=\"num\">6<\/td><td class=\"num\">4<\/td><td>Élire un leader PTP, provoquer une bascule<\/td><td>Bascule vue dans Clock Status<\/td><\/tr>\n      <tr><td class=\"num\">7<\/td><td class=\"num\">5<\/td><td>Router 32 canaux Dante, enregistrer<\/td><td>Enregistrement sans clic<\/td><\/tr>\n      <tr><td class=\"num\">8<\/td><td class=\"num\">5<\/td><td>Échanger un flux AES67<\/td><td>Son reçu des deux côtés<\/td><\/tr>\n      <tr><td class=\"num\">9<\/td><td class=\"num\">6<\/td><td>Diffuser une source NDI, mesurer son débit<\/td><td>Débit noté<\/td><\/tr>\n      <tr><td class=\"num\">10<\/td><td class=\"num\">7<\/td><td>Envoyer un flux SRT<\/td><td>Latence à 4 × RTT, image stable<\/td><\/tr>\n      <tr><td class=\"num\">11<\/td><td class=\"num\">10<\/td><td>Configurer un switch complet<\/td><td>Vérifications conformes<\/td><\/tr>\n      <tr><td class=\"num\">12<\/td><td class=\"num\">11<\/td><td>Résoudre 5 pannes cachées<\/td><td>5 pannes en 60 min<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>", "trap": ""}, "quiz": {"t": "Quiz final", "n": 16, "lead": "Répondez de tête, affichez la réponse, puis indiquez si vous la saviez. Objectif : 16 sur 20.", "body": "<div class=\"quiz\" id=\"quiz-list\"><\/div>\n  <div class=\"score\"><span id=\"score-t\">0 / 20 réponses notées<\/span><button type=\"button\" id=\"quiz-reset\">Recommencer<\/button><\/div>", "trap": ""}, "glo": {"t": "Glossaire et ressources", "n": 17, "lead": "", "body": "<div class=\"tbl\"><table>\n    <thead><tr><th>Terme<\/th><th>Définition<\/th><\/tr><\/thead>\n    <tbody>\n      <tr><td>AES67<\/td><td>Standard d'interopérabilité audio sur IP<\/td><\/tr>\n      <tr><td>AVB / Milan<\/td><td>Audio-vidéo sur Ethernet avec bande passante réservée<\/td><\/tr>\n      <tr><td>BMCA<\/td><td>Algorithme qui élit le grandmaster PTP<\/td><\/tr>\n      <tr><td>DSCP<\/td><td>Marquage de priorité dans l'en-tête IP<\/td><\/tr>\n      <tr><td>EEE<\/td><td>Économie d'énergie Ethernet, à désactiver en AV<\/td><\/tr>\n      <tr><td>IGMP<\/td><td>Abonnement aux groupes multicast<\/td><\/tr>\n      <tr><td>Jitter<\/td><td>Variation du délai d'arrivée des paquets<\/td><\/tr>\n      <tr><td>LACP<\/td><td>Plusieurs câbles en un lien logique<\/td><\/tr>\n      <tr><td>mDNS<\/td><td>Découverte des appareils par leur nom<\/td><\/tr>\n      <tr><td>NDI<\/td><td>Vidéo sur IP légèrement compressée<\/td><\/tr>\n      <tr><td>NMOS<\/td><td>Découverte et connexion ouvertes (AMWA)<\/td><\/tr>\n      <tr><td>PTP<\/td><td>Synchronisation d'horloge (IEEE 1588)<\/td><\/tr>\n      <tr><td>Querier<\/td><td>Appareil qui interroge les abonnés IGMP<\/td><\/tr>\n      <tr><td>RTT<\/td><td>Temps aller-retour d'un paquet<\/td><\/tr>\n      <tr><td>SDP<\/td><td>Fichier qui décrit un flux<\/td><\/tr>\n      <tr><td>SRT<\/td><td>Transport vidéo fiable et chiffré sur Internet<\/td><\/tr>\n      <tr><td>ST 2110<\/td><td>Vidéo, audio et données non compressées sur IP<\/td><\/tr>\n      <tr><td>Trunk<\/td><td>Lien qui transporte plusieurs VLAN<\/td><\/tr>\n      <tr><td>VLAN<\/td><td>Réseau logique isolé sur un switch partagé<\/td><\/tr>\n    <\/tbody>\n  <\/table><\/div>\n  <h3>Pour aller plus loin<\/h3>\n  <ul>\n    <li><a href=\"https://www.getdante.com/support/training/\" target=\"_blank\" rel=\"noopener\">Certification Dante<\/a> (niveaux 1 à 3, gratuits)<\/li>\n    <li><a href=\"https://docs.ndi.video/\" target=\"_blank\" rel=\"noopener\">Documentation NDI<\/a><\/li>\n    <li><a href=\"https://specs.amwa.tv/nmos/\" target=\"_blank\" rel=\"noopener\">Spécifications NMOS<\/a><\/li>\n    <li><a href=\"https://www.netacad.com/\" target=\"_blank\" rel=\"noopener\">Cisco Networking Academy<\/a> (cours CCNA gratuits)<\/li>\n  <\/ul>\n  <p>Certifications conseillées ensuite : Dante niveau 3, NDI Certified, AVIXA CTS, puis CCNA. Les débits indiqués sont des ordres de grandeur : vérifiez les fiches techniques de vos appareils.<\/p>", "trap": ""}};
+</script>
+<script>
+(function(){
+'use strict';
+const KEY='formation-reseau-av-v2';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const blank=()=>({read:{},quiz:{},exams:[],cards:{},pannes:{},check:{},days:{},best:0,t:0,v:'bord',mod:'m1',volet:'cours'});
+let S=blank();
+try{const r=JSON.parse(localStorage.getItem(KEY)||'null'); if(r&&r.read) S=Object.assign(S,r);}catch(e){}
+const local=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const save=()=>{S.t=Date.now(); local(); pushLater();};
+
+/* ---------- suivi quotidien ---------- */
+const OBJ=[{k:'c',nom:'Réviser des flashcards',cible:10,v:'cartes'},{k:'q',nom:'Répondre à des questions',cible:10,v:'quiz'},{k:'m',nom:'Terminer un module',cible:1,v:'modules'}];
+const dkey=d=>{d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const dayOf=k=>S.days[k]||{};
+const dayOk=k=>OBJ.every(o=>(dayOf(k)[o.k]||0)>=o.cible);
+const dayAny=k=>Object.values(dayOf(k)).some(n=>n>0);
+function serie(){let n=0;const d=new Date(); if(!dayOk(dkey(d))) d.setDate(d.getDate()-1); while(dayOk(dkey(d))){n++;d.setDate(d.getDate()-1);} return n;}
+function bump(k,n){const key=dkey(); const before=dayOk(key); const day=S.days[key]||(S.days[key]={}); day[k]=(day[k]||0)+(n||1);
+  const ks=Object.keys(S.days).sort(); if(ks.length>90) ks.slice(0,ks.length-90).forEach(x=>delete S.days[x]);
+  if(!before&&dayOk(key)){S.best=Math.max(S.best||0,serie()); setTimeout(()=>toast('Objectifs du jour atteints · série de '+serie()+' jour'+(serie()>1?'s':'')),600);}}
+
+/* ---------- synchronisation entre appareils (db privé par personne) ---------- */
+let DB=null, REF=null, pushT=null, syncState='off';
+function setSync(st){syncState=st; const txt={off:'Sur cet appareil',on:'Synchronisé sur vos appareils',ko:'Synchro en pause'}[st];
+  document.querySelectorAll('.sync-txt').forEach(e=>e.textContent=txt);
+  document.querySelectorAll('.pastille').forEach(e=>{e.classList.toggle('off',st==='off');e.classList.toggle('ko',st==='ko');});}
+function pushLater(){ if(!REF) return; clearTimeout(pushT); pushT=setTimeout(push,1200); }
+async function push(){ if(!REF) return; const {v,mod,volet,...keep}=S;
+  try{ await REF.set({s:JSON.stringify(keep),t:S.t}); setSync('on'); }
+  catch(e){ if(e&&e.code==='unavailable'){ setTimeout(push,1500+Math.random()*1500); } else setSync('ko'); } }
+function adopt(d){ if(!d||typeof d.s!=='string'||!(d.t>S.t)) return false;
+  try{const r=JSON.parse(d.s); const keepView={v:S.v,mod:S.mod,volet:S.volet}; S=Object.assign(blank(),r,keepView,{t:d.t}); local(); return true;}catch(e){return false;} }
+async function initSync(){
+  try{
+    const w=window.claude; if(!w||!w.use) return;
+    const [db,user]=await Promise.all([w.use('db'),w.use('user')]);
+    if(!db||!user) return;
+    const uid=await user.id(); if(!uid) return;
+    DB=db; REF=db.doc('data/users/'+uid+'/progression');
+    const snap=await REF.get();
+    if(snap.exists&&adopt(snap.data())){ if(!(Qz&&Qz.mode==='exam'&&!Qz.done)) render(); toast('Progression récupérée depuis vos autres appareils'); }
+    else if(!snap.exists||S.t>((snap.data()||{}).t||0)){ await push(); }
+    setSync('on');
+    REF.onSnapshot(s=>{ if(s.exists&&adopt(s.data())&&!(Qz&&Qz.mode==='exam'&&!Qz.done)) render(); },e=>{ setSync('ko'); });
+  }catch(e){ setSync('ko'); }
+}
+let toastT; const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2400);};
+
+const NUM=['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'];
+const modNum=id=>NUM.includes(id)?String(NUM.indexOf(id)+1).padStart(2,'0'):(id==='cas'?'EX':'GE');
+const modTitle=id=>SEC[id].t;
+const modJour=id=>(MODS.find(m=>m.id===id)||{}).jour;
+const domOf=id=>DOMAINES.find(d=>d.mods.includes(id));
+const INT=[0,10*60e3,24*3600e3,3*24*3600e3,21*24*3600e3];
+const card=id=>S.cards[id]||{box:0,due:0};
+
+/* ---------- mesures ---------- */
+function stats(){
+  const modsDone=NUM.filter(m=>S.read[m]).length;
+  const ans=QCM.filter(q=>S.quiz[q.id]), ok=ans.filter(q=>S.quiz[q.id].last).length;
+  const maitr=CARTES.filter(c=>card(c.id).box>=3).length;
+  const due=CARTES.filter(c=>card(c.id).due<=Date.now()).length;
+  const pan=PANNES.filter(p=>S.pannes[p.id]).length;
+  const err=QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last).length;
+  return {modsDone,ans:ans.length,ok,taux:ans.length?Math.round(ok/ans.length*100):0,maitr,due,pan,err};
+}
+function maitrise(d){
+  const read=d.mods.filter(m=>S.read[m]).length/d.mods.length;
+  const qs=QCM.filter(q=>d.mods.includes(q.m)), qv=qs.length?qs.filter(q=>S.quiz[q.id]&&S.quiz[q.id].last).length/qs.length:0;
+  const cs=CARTES.filter(c=>d.mods.includes(c.m)), cv=cs.length?cs.filter(c=>card(c.id).box>=2).length/cs.length:0;
+  return Math.round((read*.3+qv*.5+cv*.2)*100);
+}
+const nextMod=()=>NUM.find(m=>!S.read[m]);
+
+/* ---------- navigation ---------- */
+let timer=null;
+function go(v,opts){
+  if(timer){clearInterval(timer);timer=null;}
+  S.v=v; if(opts&&opts.mod){S.mod=opts.mod;S.volet=opts.volet||'cours';}
+  save(); closeSheet(); render(); window.scrollTo(0,0);
+}
+function navState(){
+  const base=S.v==='lecture'?'modules':S.v;
+  document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===base));
+  const plus=document.querySelector('[data-plus]'); plus.classList.toggle('on',['plan','panne','ressources'].includes(base));
+  const st=stats();
+  $('cnt-mod').textContent=st.modsDone+'/12'; $('cnt-cartes').textContent=st.due?st.due:''; $('cnt-panne').textContent=st.pan+'/'+PANNES.length;
+  $('mob-sous').textContent=({bord:'Tableau de bord',plan:'Programme',modules:'Modules',lecture:S.v==='lecture'?(NUM.includes(S.mod)?'Module '+(NUM.indexOf(S.mod)+1):modTitle(S.mod)):'',cartes:'Flashcards',quiz:'Quiz & examen',panne:'Salle de panne',ressources:'Ressources'})[S.v]||'';
+}
+function render(){
+  const v=S.v, el=$('vue');
+  ({bord:vBord,plan:vPlan,modules:vModules,lecture:vLecture,cartes:vCartes,quiz:vQuiz,panne:vPanne,ressources:vRess}[v]||vBord)(el);
+  navState();
+}
+const head=(t,p)=>`<div class="page-head"><h2>${t}</h2>${p?`<p>${p}</p>`:''}</div>`;
+const mcard=(id,sub)=>`<button class="mcard${S.read[id]?' done':''}" type="button" data-open="${id}"><span class="num">${modNum(id)}</span><span class="txt"><b>${esc(modTitle(id))}</b><small>${esc(sub)}</small></span>${S.read[id]?'<span class="badge ok">Terminé</span>':''}</button>`;
+
+/* ---------- tableau de bord ---------- */
+function vBord(el){
+  const st=stats(), nm=nextMod();
+  let conseil;
+  if(!st.modsDone) conseil='Commencez par le module 1 : tout le reste s’appuie sur l’adressage IP et les VLAN.';
+  else if(st.err>=3) conseil=`Vous avez ${st.err} questions ratées. Reprenez-les dans <b>Quiz → Mes erreurs</b> avant d’avancer.`;
+  else if(st.due>=5) conseil=`${st.due} flashcards attendent une révision : cinq minutes suffisent.`;
+  else if(nm){const w=DOMAINES.map(d=>[d,maitrise(d)]).sort((a,b)=>a[1]-b[1])[0]; conseil=`Votre domaine le plus faible est <b>${esc(w[0].nom)}</b> (${w[1]} %). Continuez avec le module ${NUM.indexOf(nm)+1}.`;}
+  else if(!S.exams.length) conseil='Tous les modules sont lus. Passez un examen blanc de 20 questions pour vous situer.';
+  else conseil='Entraînez-vous dans la Salle de panne : c’est l’exercice le plus proche du terrain.';
+  const exams=S.exams.slice(-5).reverse();
+  const k=dkey(), td=dayOf(k), sr=serie(), days=[]; for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(dkey(d));}
+  const jour=`<div class="card mb jour"><div class="jour-tete"><div class="serie${sr?'':' zero'}"><span class="n">${sr}</span><span class="l">jour${sr>1?'s':''} de suite${S.best?` · record ${Math.max(S.best,sr)}`:''}</span></div>
+    <div class="frise" aria-label="14 derniers jours">${days.map(x=>`<i class="${dayOk(x)?'ok':dayAny(x)?'part':''}${x===k?' auj':''}" title="${x}${dayOk(x)?' · objectifs atteints':dayAny(x)?' · commencé':''}"></i>`).join('')}</div></div>
+    <p class="eyebrow">Objectifs du jour</p>
+    <div class="objectifs">${OBJ.map(o=>{const n=Math.min(td[o.k]||0,o.cible),p=Math.round(n/o.cible*100);return `<div class="objectif${n>=o.cible?' fini':''}"><div class="obj-txt"><b>${o.nom}</b><span>${td[o.k]||0} / ${o.cible}</span></div><div class="bar${n>=o.cible?'':' amber'}"><i style="width:${p}%"></i></div><button class="btn ${n>=o.cible?'ghost ':''}sm" type="button" data-v="${o.v}">${n>=o.cible?'Fait':'Y aller'}</button></div>`;}).join('')}</div>
+    <p class="jour-note">Les trois objectifs atteints valident la journée et prolongent la série.${td.p?` Aujourd’hui : ${td.p} panne${td.p>1?'s':''} résolue${td.p>1?'s':''} en bonus.`:''}</p></div>`;
+  el.innerHTML=head('Tableau de bord','Où vous en êtes, et où mettre la prochaine heure.')+jour+
+  `<div class="card mb"><div class="eyebrow">Reprendre</div>${nm?`<div class="row" style="justify-content:space-between"><div><b style="font-size:17px">Module ${NUM.indexOf(nm)+1} · ${esc(modTitle(nm))}</b><div class="muted" style="font-size:13.5px">Jour ${modJour(nm)} · ${esc(domOf(nm).nom)}</div></div><button class="btn" type="button" data-open="${nm}">Continuer</button></div>`:`<div class="row" style="justify-content:space-between"><b style="font-size:17px">Les 12 modules sont terminés</b><button class="btn" type="button" data-go="quiz" data-mode="exam">Passer un examen blanc</button></div>`}</div>`+
+  `<div class="grid g4 mb">
+    <div class="card stat"><div class="n">${st.modsDone}/12</div><div class="l">Modules terminés</div></div>
+    <div class="card stat blue"><div class="n">${st.ans?st.taux+' %':'—'}</div><div class="l">Réussite aux quiz</div></div>
+    <div class="card stat violet"><div class="n">${st.maitr}/${CARTES.length}</div><div class="l">Cartes maîtrisées</div></div>
+    <div class="card stat amber"><div class="n">${st.pan}/${PANNES.length}</div><div class="l">Pannes résolues</div></div>
+  </div>`+
+  `<div class="card mb"><div class="eyebrow">Le conseil du moment</div><p style="margin:0">${conseil}</p></div>`+
+  `<div class="grid g2"><div class="card"><div class="eyebrow">Maîtrise par domaine</div><div class="mt">${DOMAINES.map(d=>{const p=maitrise(d);return `<div class="dom-row"><div class="top"><b>${esc(d.nom)}</b><span>${p} %</span></div><div class="bar${p<34?' red':p<67?' amber':''}"><i style="width:${p}%"></i></div></div>`;}).join('')}</div><p class="muted" style="font-size:12.5px;margin:6px 0 0">Le pourcentage mêle modules lus (30 %), réussite aux quiz (50 %) et flashcards retenues (20 %).</p></div>
+  <div class="card"><div class="eyebrow">Examens blancs</div>${exams.length?`<table class="t mt"><thead><tr><th>Date</th><th>Score</th><th>Résultat</th></tr></thead><tbody>${exams.map(x=>`<tr><td>${new Date(x.d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</td><td style="font-family:var(--mono)">${x.s}/${x.t}</td><td><span class="badge ${x.s/x.t>=.8?'ok':'ko'}">${x.s/x.t>=.8?'Réussi':'À retravailler'}</span></td></tr>`).join('')}</tbody></table>`:`<p class="muted mt">Aucun examen blanc pour l’instant. 20 questions, 20 minutes, réussite à 80 %.</p><button class="btn ghost sm" type="button" data-go="quiz" data-mode="exam">Lancer un examen blanc</button>`}</div></div>`;
+}
+
+/* ---------- programme ---------- */
+function vPlan(el){
+  const jours={1:'Fondations',2:'Multicast et horloge',3:'Audio et vidéo sur IP',4:'Streaming, contrôle, conception',5:'Exploitation et études de cas'};
+  el.innerHTML=head('Programme','5 jours, 35 heures, 40 % de pratique. Chaque module terminé fait avancer votre tableau de bord.')+
+  `<details class="plis"><summary>Objectifs, public et matériel</summary><div class="prose">${SEC.prog.body}</div></details>`+
+  [1,2,3,4,5].map(j=>{const ms=MODS.filter(m=>m.jour===j).map(m=>m.id); const d=ms.filter(m=>S.read[m]).length;
+    return `<div class="jour-titre">Jour ${j} · ${jours[j]} · ${d}/${ms.length}</div>`+ms.map(m=>mcard(m,(PRATIQUE[m].tp[0]||SEC[m].lead.replace(/<[^>]+>/g,'')).slice(0,110))).join('');}).join('');
+}
+
+/* ---------- modules ---------- */
+function vModules(el){
+  el.innerHTML=head('Modules','Chaque module se lit en quatre volets : le cours, l’antisèche, les pièges et la pratique.')+
+  [1,2,3,4,5].map(j=>`<div class="jour-titre">Jour ${j}</div>`+MODS.filter(m=>m.jour===j&&NUM.includes(m.id)).map(m=>mcard(m.id,SEC[m.id].lead.replace(/<[^>]+>/g,''))).join('')).join('')+
+  `<div class="jour-titre">Études de conception</div>`+mcard('cas',SEC.cas.lead.replace(/<[^>]+>/g,''))+mcard('big',SEC.big.lead.replace(/<[^>]+>/g,''));
+}
+const ORDER=NUM.concat(['cas','big']);
+function vLecture(el){
+  const id=S.mod, s=SEC[id], i=ORDER.indexOf(id);
+  const pieges=s.trap?s.trap.replace(/<div class="trap"><b>Pièges fréquents<\/b>/,'').replace(/<\/div>$/,''):(PIEGES_EXTRA[id]?'<ul>'+PIEGES_EXTRA[id].map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'');
+  const vol=[['cours','Cours']].concat(ANTI[id]?[['anti','Antisèche']]:[]).concat(pieges?[['pieges','Pièges']]:[]).concat([['pratique','Pratique']]);
+  if(!vol.some(v=>v[0]===S.volet)) S.volet='cours';
+  let body='';
+  if(S.volet==='cours') body=(s.lead?`<p class="lead">${s.lead}</p>`:'')+s.body;
+  else if(S.volet==='anti') body=`<div class="table-wrap"><table class="t"><tbody>${ANTI[id].map(r=>`<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table></div><p class="muted" style="font-size:13.5px">Les chiffres à connaître par cœur. Ils reviennent dans les flashcards et le quiz.</p>`;
+  else if(S.volet==='pieges') body=`<div class="cite"><b class="t">Pièges fréquents</b>${pieges}</div>`;
+  else{
+    const p=PRATIQUE[id], nq=QCM.filter(q=>q.m===id).length, nc=CARTES.filter(c=>c.m===id).length, pn=PANNES.filter(x=>x.m===id);
+    body=(p.tp.length?`<h3>Travaux pratiques</h3><ul>${p.tp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'')+
+      (p.lab?`<h3>Simulateur</h3><p>${esc(p.lab)} : configurez un vrai switch en syntaxe Cisco depuis votre téléphone.</p><p><a class="btn ghost sm" href="https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE" target="_blank" rel="noopener">Ouvrir Régie IP Lab</a></p>`:'')+
+      `<h3>S’entraîner sur ce module</h3><div class="row">${nq?`<button class="btn sm" type="button" data-train="${id}">Quiz du module · ${nq} questions</button>`:''}${nc?`<button class="btn ghost sm" type="button" data-cards="${id}">Flashcards · ${nc}</button>`:''}</div>`+
+      (pn.length?`<h3>Salle de panne</h3>${pn.map(x=>`<button class="mcard${S.pannes[x.id]?' done':''}" type="button" data-panne="${x.id}"><span class="num">▲</span><span class="txt"><b>${esc(x.titre)}</b><small>${S.pannes[x.id]?'Résolue':'À résoudre'}</small></span></button>`).join('')}`:'');
+  }
+  const sous=NUM.includes(id)?`Jour ${modJour(id)} · ${esc(domOf(id).nom)}`:'Étude de conception · jour 5';
+  el.innerHTML=`<div class="lecteur-tete"><span class="num">${modNum(id)}</span><div><h2>${esc(s.t)}</h2><p class="sous">${sous}</p></div></div>
+  <div class="volets" role="tablist">${vol.map(v=>`<button type="button" role="tab" data-volet="${v[0]}" class="${S.volet===v[0]?'on':''}" aria-selected="${S.volet===v[0]}">${v[1]}</button>`).join('')}</div>
+  <div class="prose">${body}</div>
+  <div class="pied-lecteur">
+    <button class="btn ghost" type="button" data-open="${ORDER[i-1]||''}" ${i>0?'':'disabled'}>← Précédent</button>
+    <span class="sp"></span>
+    <button class="btn ${S.read[id]?'ghost':''}" type="button" data-done="${id}">${S.read[id]?'✓ Terminé':'Marquer comme terminé'}</button>
+    <button class="btn ghost" type="button" data-open="${ORDER[i+1]||''}" ${i<ORDER.length-1?'':'disabled'}>Suivant →</button>
+  </div>`;
+  el.querySelectorAll('.checklist input').forEach(c=>{c.checked=!!S.check[c.id];});
+}
+
+/* ---------- quiz ---------- */
+let Qz=null;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prep(q){const o=shuffle(q.o.map((t,k)=>({t,ok:k===0})));return {q,o};}
+function startTrain(filter,list){
+  const src=list||QCM.filter(q=>filter==='all'||q.m===filter);
+  Qz={mode:'train',filter,items:shuffle(src).map(prep),i:0,pick:null};
+}
+function startExam(){Qz={mode:'exam',items:shuffle(QCM).slice(0,20).map(prep),i:0,ans:{},end:Date.now()+20*60e3,done:false};}
+function vQuiz(el){
+  if(!Qz){startTrain('all');}
+  const st=stats();
+  const tabs=`<div class="volets" role="tablist"><button type="button" data-qmode="train" class="${Qz.mode==='train'&&Qz.filter!=='err'?'on':''}">Entraînement</button><button type="button" data-qmode="exam" class="${Qz.mode==='exam'?'on':''}">Examen blanc</button><button type="button" data-qmode="err" class="${Qz.filter==='err'?'on':''}">Mes erreurs · ${st.err}</button></div>`;
+  let body='';
+  if(Qz.mode==='train'){
+    if(!Qz.items.length){body=`<div class="card"><p style="margin:0">${Qz.filter==='err'?'Aucune erreur à reprendre. Bravo.':'Aucune question pour ce filtre.'}</p></div>`;}
+    else{
+      const it=Qz.items[Qz.i%Qz.items.length], q=it.q, picked=Qz.pick;
+      const filt=Qz.filter==='err'?'':`<div class="row mb"><label class="muted" for="qf" style="font-size:13px">Module</label><select id="qf"><option value="all">Tous les modules</option>${NUM.map(m=>`<option value="${m}" ${Qz.filter===m?'selected':''}>${NUM.indexOf(m)+1} · ${esc(modTitle(m))}</option>`).join('')}</select></div>`;
+      body=filt+`<div class="card"><div class="row mb" style="justify-content:space-between"><span class="badge">Question ${Qz.i%Qz.items.length+1}/${Qz.items.length}</span><span class="badge">Module ${NUM.indexOf(q.m)+1}</span></div>
+        <p class="q-stem">${esc(q.q)}</p><div class="opts">${it.o.map((o,k)=>{let c='opt'; if(picked!==null){c+=' lock'; if(o.ok)c+=' good'; else if(k===picked)c+=' bad';} return `<button type="button" class="${c}" data-pick="${k}" ${picked!==null?'disabled':''}><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`;}).join('')}</div>
+        ${picked!==null?`<div class="explain${it.o[picked].ok?'':' bad'}"><b>${it.o[picked].ok?'Bonne réponse.':'Pas tout à fait.'}</b> ${esc(q.e)}</div><div class="row mt"><button class="btn" type="button" data-qnext>Question suivante</button><button class="btn ghost sm" type="button" data-open="${q.m}">Revoir le module</button></div>`:''}</div>`;
+    }
+  } else if(!Qz.done){
+    const it=Qz.items[Qz.i], a=Qz.ans[Qz.i];
+    body=`<div class="card"><div class="row mb" style="justify-content:space-between"><span class="badge">Question ${Qz.i+1}/20 · ${Object.keys(Qz.ans).length} répondues</span><span class="timer" id="ex-timer">20:00</span></div>
+      <p class="q-stem">${esc(it.q.q)}</p><div class="opts">${it.o.map((o,k)=>`<button type="button" class="opt${a===k?' sel':''}" data-xpick="${k}"><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`).join('')}</div>
+      <div class="row mt"><button class="btn ghost" type="button" data-xnav="-1" ${Qz.i?'':'disabled'}>← Précédente</button>${Qz.i<19?`<button class="btn" type="button" data-xnav="1">Suivante →</button>`:''}<button class="btn amber" type="button" data-xend style="margin-left:auto">Terminer l’examen</button></div></div>
+      <p class="muted mt" style="font-size:12.5px">Pas de correction pendant l’examen. Réussite à 16/20.</p>`;
+  } else {
+    const sc=Qz.items.filter((it,k)=>Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok).length;
+    const wrong=Qz.items.map((it,k)=>[it,k]).filter(([it,k])=>!(Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok));
+    body=`<div class="grid g3 mb"><div class="card stat${sc>=16?'':' amber'}"><div class="n">${sc}/20</div><div class="l">Score</div></div><div class="card stat blue"><div class="n">${Math.round(sc/20*100)} %</div><div class="l">Réussite</div></div><div class="card stat"><div class="n">${sc>=16?'OK':'—'}</div><div class="l">${sc>=16?'Examen réussi':'Objectif 16/20'}</div></div></div>
+      ${wrong.length?`<div class="card"><div class="eyebrow">À revoir · ${wrong.length} questions</div>${wrong.map(([it,k])=>`<div class="explain bad"><b>${esc(it.q.q)}</b><br>Réponse : ${esc(it.q.o[0])}. ${esc(it.q.e)}</div>`).join('')}</div>`:''}
+      <div class="row mt"><button class="btn" type="button" data-qmode="exam">Nouvel examen</button><button class="btn ghost" type="button" data-go="bord">Tableau de bord</button></div>`;
+  }
+  el.innerHTML=head('Quiz & examen blanc','Trois modes : apprendre avec correction immédiate, se tester en conditions réelles, ou reprendre ses erreurs.')+tabs+body;
+  if(Qz.mode==='exam'&&!Qz.done){
+    const tick=()=>{const r=Math.max(0,Qz.end-Date.now()),t=$('ex-timer'); if(t){t.textContent=String(Math.floor(r/60000)).padStart(2,'0')+':'+String(Math.floor(r/1000)%60).padStart(2,'0'); t.classList.toggle('low',r<120000);} if(r<=0) finishExam();};
+    tick(); if(!timer) timer=setInterval(tick,1000);
+  }
+}
+function finishExam(){
+  if(timer){clearInterval(timer);timer=null;}
+  Qz.items.forEach((it,k)=>{const ok=Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok; const r=S.quiz[it.q.id]||{ok:0,ko:0}; r[ok?'ok':'ko']++; r.last=ok; S.quiz[it.q.id]=r;});
+  const sc=Qz.items.filter((it,k)=>Qz.ans[k]!==undefined&&it.o[Qz.ans[k]].ok).length;
+  S.exams.push({d:Date.now(),s:sc,t:20}); bump('q',Object.keys(Qz.ans).length); Qz.done=true; save(); render(); window.scrollTo(0,0);
+}
+
+/* ---------- flashcards ---------- */
+let Fc={filter:'all',cur:null,flip:false};
+function vCartes(el){
+  const pool=CARTES.filter(c=>Fc.filter==='all'||c.m===Fc.filter), now=Date.now();
+  const due=pool.filter(c=>card(c.id).due<=now).sort((a,b)=>card(a.id).due-card(b.id).due);
+  const appr=pool.filter(c=>{const b=card(c.id).box;return b>0&&b<3;}).length, maitr=pool.filter(c=>card(c.id).box>=3).length;
+  if(!Fc.cur||!pool.includes(Fc.cur)){Fc.cur=due[0]||null;Fc.flip=false;}
+  const next=pool.filter(c=>card(c.id).due>now).sort((a,b)=>card(a.id).due-card(b.id).due)[0];
+  let zone;
+  if(Fc.cur){const c=Fc.cur;
+    zone=`<button class="fcard" type="button" data-flip><span class="badge" style="margin-bottom:14px">Module ${NUM.indexOf(c.m)+1} · ${esc(modTitle(c.m))}</span><span class="front">${esc(c.f)}</span>${Fc.flip?`<span class="back">${esc(c.b)}</span>`:`<span class="hint">Touchez pour voir la réponse</span>`}</button>
+    ${Fc.flip?`<div class="row mt" style="justify-content:center"><button class="btn ghost" type="button" data-fc="0">À revoir</button><button class="btn" type="button" data-fc="1">Je savais</button></div>`:''}`;}
+  else zone=`<div class="card"><p style="margin:0 0 12px">Rien à réviser pour l’instant.${next?' Prochaine carte '+rel(card(next.id).due-now)+'.':''}</p><button class="btn ghost sm" type="button" data-fcany>Réviser quand même</button></div>`;
+  el.innerHTML=head('Flashcards','Répétition espacée : une carte que vous savez revient dans quelques jours, une carte ratée revient dans la minute.')+
+  `<div class="grid g3 mb"><div class="card stat amber"><div class="n">${due.length}</div><div class="l">À réviser maintenant</div></div><div class="card stat blue"><div class="n">${appr}</div><div class="l">En apprentissage</div></div><div class="card stat"><div class="n">${maitr}</div><div class="l">Maîtrisées</div></div></div>
+  <div class="row mb"><label class="muted" for="ff" style="font-size:13px">Module</label><select id="ff"><option value="all">Tous les modules</option>${NUM.filter(m=>CARTES.some(c=>c.m===m)).map(m=>`<option value="${m}" ${Fc.filter===m?'selected':''}>${NUM.indexOf(m)+1} · ${esc(modTitle(m))}</option>`).join('')}</select></div>`+zone;
+}
+function rel(ms){const m=Math.round(ms/60000); if(m<60) return 'dans '+Math.max(1,m)+' min'; const h=Math.round(m/60); if(h<24) return 'dans '+h+' h'; return 'dans '+Math.round(h/24)+' j';}
+
+/* ---------- salle de panne ---------- */
+let Pn={id:null,shown:[],pick:null};
+function vPanne(el){
+  if(!Pn.id){
+    el.innerHTML=head('Salle de panne','Un symptôme, des commandes de diagnostic, une cause à trouver. C’est l’exercice du terrain.')+
+    PANNES.map(p=>`<button class="mcard${S.pannes[p.id]?' done':''}" type="button" data-panne="${p.id}"><span class="num">▲</span><span class="txt"><b>${esc(p.titre)}</b><small>Module ${NUM.indexOf(p.m)+1} · ${S.pannes[p.id]?'Résolue':'À résoudre'}</small></span>${S.pannes[p.id]?'<span class="badge ok">Résolue</span>':''}</button>`).join('');
+    return;
+  }
+  const p=PANNES.find(x=>x.id===Pn.id);
+  if(!Pn.order) Pn.order=shuffle(p.causes.map((t,k)=>({t,ok:k===0})));
+  el.innerHTML=`<div class="lecteur-tete"><span class="num">▲</span><div><h2>${esc(p.titre)}</h2><p class="sous">Module ${NUM.indexOf(p.m)+1} · ${esc(modTitle(p.m))}</p></div></div>
+  <div class="card mb"><div class="eyebrow">Symptôme signalé</div><p style="margin:0">${esc(p.symptome)}</p></div>
+  <div class="eyebrow">Diagnostic · lancez les vérifications</div>
+  <div class="row mb">${p.cmds.map((c,k)=>`<button class="btn ghost sm" type="button" data-cmd="${k}" ${Pn.shown.includes(k)?'disabled':''}>${esc(c[0])}</button>`).join('')}</div>
+  ${Pn.shown.map(k=>`<pre class="cli">${esc((p.cmds[k][0].startsWith('show')||p.cmds[k][0].startsWith('ping')?'SW# '+p.cmds[k][0]+'\n':'» '+p.cmds[k][0]+'\n')+p.cmds[k][1])}</pre>`).join('')}
+  <div class="card"><div class="eyebrow">Quelle est la cause ?</div><div class="opts">${Pn.order.map((o,k)=>{let c='opt';if(Pn.pick!==null){c+=' lock';if(o.ok)c+=' good';else if(k===Pn.pick)c+=' bad';}return `<button type="button" class="${c}" data-cause="${k}" ${Pn.pick!==null?'disabled':''}><span class="k">${'ABCD'[k]}</span><span>${esc(o.t)}</span></button>`;}).join('')}</div>
+  ${Pn.pick!==null?`<div class="explain${Pn.order[Pn.pick].ok?'':' bad'}"><b>${Pn.order[Pn.pick].ok?'Panne trouvée.':'Ce n’est pas la cause.'}</b> ${esc(p.explique)}</div><div class="eyebrow mt">Réparation</div><pre class="cli">${esc(p.fix)}</pre>`:''}</div>
+  <div class="pied-lecteur"><button class="btn ghost" type="button" data-pback>← Toutes les pannes</button><span class="sp"></span>${Pn.pick!==null?`<button class="btn ghost" type="button" data-panne="${p.id}">Recommencer</button>`:''}</div>`;
+}
+
+/* ---------- ressources ---------- */
+function vRess(el){
+  el.innerHTML=head('Ressources','Glossaire, check-list d’exploitation, travaux pratiques et liens utiles.')+
+  `<div class="card mb"><div class="eyebrow">Simulateur</div><div class="row" style="justify-content:space-between"><p style="margin:0">Régie IP Lab : 7 missions sur deux switchs en syntaxe Cisco, depuis un téléphone.</p><a class="btn sm" href="https://claude.ai/artifact/YFkf6jVmNth2steH57bQQE" target="_blank" rel="noopener">Ouvrir</a></div></div>`+
+  `<details class="plis"><summary>Check-list avant chaque événement</summary><div class="prose">${(SEC.m11.body.match(/<ul class="checklist"[\s\S]*?<\/ul>/)||[''])[0]}</div></details>`+
+  `<details class="plis"><summary>Les 12 travaux pratiques</summary><div class="prose">${SEC.tp.body}</div></details>`+
+  `<div class="prose">${SEC.glo.body}</div>`;
+  el.querySelectorAll('.checklist input').forEach(c=>{c.checked=!!S.check[c.id];});
+}
+
+/* ---------- événements ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,[data-go]'); if(!b) return;
+  const d=b.dataset;
+  if(d.v){ if(d.v==='panne') Pn={id:null,shown:[],pick:null}; go(d.v); return;}
+  if(b.hasAttribute('data-plus')){openSheet();return;}
+  if(d.go){ if(d.mode==='exam'){startExam();} go(d.go); return;}
+  if(d.open){go('lecture',{mod:d.open});return;}
+  if(d.volet){S.volet=d.volet;save();render();return;}
+  if(d.done){S.read[d.done]=!S.read[d.done]; if(S.read[d.done]) bump('m'); save();render();toast(S.read[d.done]?'Module terminé':'Module marqué non terminé');return;}
+  if(d.train){startTrain(d.train);go('quiz');return;}
+  if(d.cards){Fc={filter:d.cards,cur:null,flip:false};go('cartes');return;}
+  if(d.panne){Pn={id:d.panne,shown:[],pick:null};go('panne');return;}
+  if(b.hasAttribute('data-pback')){Pn={id:null,shown:[],pick:null};render();window.scrollTo(0,0);return;}
+  if(d.cmd!==undefined){Pn.shown.push(+d.cmd);render();return;}
+  if(d.cause!==undefined){Pn.pick=+d.cause; if(Pn.order[Pn.pick].ok){ if(!S.pannes[Pn.id]) bump('p'); S.pannes[Pn.id]=true;save();toast('Panne résolue');} render();return;}
+  if(d.qmode){ if(d.qmode==='exam') startExam(); else if(d.qmode==='err') {startTrain('err',QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last));} else startTrain('all'); render();return;}
+  if(d.pick!==undefined){const it=Qz.items[Qz.i%Qz.items.length]; Qz.pick=+d.pick; const ok=it.o[Qz.pick].ok; const r=S.quiz[it.q.id]||{ok:0,ko:0}; r[ok?'ok':'ko']++; r.last=ok; S.quiz[it.q.id]=r; bump('q'); save(); render(); return;}
+  if(b.hasAttribute('data-qnext')){Qz.i++;Qz.pick=null; if(Qz.filter==='err'){startTrain('err',QCM.filter(q=>S.quiz[q.id]&&!S.quiz[q.id].last));} render();return;}
+  if(d.xpick!==undefined){Qz.ans[Qz.i]=+d.xpick;render();return;}
+  if(d.xnav){Qz.i=Math.max(0,Math.min(19,Qz.i+(+d.xnav)));render();return;}
+  if(b.hasAttribute('data-xend')){finishExam();return;}
+  if(b.hasAttribute('data-flip')){Fc.flip=!Fc.flip;render();return;}
+  if(d.fc!==undefined){const c=Fc.cur,st=card(c.id); if(d.fc==='1'){st.box=Math.min(st.box+1,4);st.due=Date.now()+INT[st.box];} else {st.box=0;st.due=Date.now()+60e3;} S.cards[c.id]=st; bump('c'); save(); Fc.cur=null; render(); return;}
+  if(b.hasAttribute('data-fcany')){const pool=CARTES.filter(c=>Fc.filter==='all'||c.m===Fc.filter);Fc.cur=pool[Math.floor(Math.random()*pool.length)];Fc.flip=false;render();return;}
+  if(b.classList.contains('raz')){ if(!b.classList.contains('arme')){document.querySelectorAll('.raz').forEach(x=>{x.classList.add('arme');x.textContent='Confirmer';}); setTimeout(()=>document.querySelectorAll('.raz').forEach(x=>{x.classList.remove('arme');x.textContent='Réinitialiser';}),4000); return;}
+    S=blank(); Qz=null; save(); document.querySelectorAll('.raz').forEach(x=>{x.classList.remove('arme');x.textContent='Réinitialiser';}); go('bord'); toast('Progression effacée'); return;}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='qf'){startTrain(t.value);render();}
+  else if(t.id==='ff'){Fc={filter:t.value,cur:null,flip:false};render();}
+  else if(t.closest&&t.closest('.checklist')){S.check[t.id]=t.checked;save();}
+});
+function openSheet(){$('feuille').hidden=false;$('voile').hidden=false;}
+function closeSheet(){$('feuille').hidden=true;$('voile').hidden=true;}
+$('voile').addEventListener('click',closeSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
+
+render();
+initSync();
+})();
+</script>
+
+</body>
+</html>
