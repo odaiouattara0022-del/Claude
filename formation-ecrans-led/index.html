@@ -314,6 +314,41 @@ footer{max-width:1180px;margin:40px auto 0;color:var(--muted);font-size:.85rem}
   dl.glos{grid-template-columns:1fr;gap:2px}
   .wall{padding:22px 18px 26px}
 }
+
+/* HDPlayer */
+.hdscreen{--sx:1;--sy:1;position:relative;aspect-ratio:2/1;background:#050505;border:4px solid #2A313A;overflow:hidden}
+.hdscreen > *{position:absolute;left:0;top:0}
+.hdvid{width:calc(100% * var(--sx));height:calc(100% * var(--sy));display:grid;place-items:center;font-family:var(--display);font-weight:800;font-stretch:75%;font-size:1.8rem;color:#fff;background:linear-gradient(135deg,#1b3bd6,#c21d7a 60%,#f39b1a)}
+.hdbar{width:calc(100% * var(--sx));height:calc(22% * var(--sy));background:#000;color:#FFD23F;font-family:var(--mono);font-size:.9rem;display:flex;align-items:center;overflow:hidden;white-space:nowrap;top:calc(100% * var(--sy) - 22% * var(--sy))}
+.hdbar span{display:inline-block;padding-left:100%;animation:marq 9s linear infinite}
+@keyframes marq{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.hdbar span{animation:none;padding-left:8px}}
+.hdclock{top:6%;background:rgba(0,0,0,.6);color:#fff;font-family:var(--mono);padding:2px 8px;left:calc(100% * var(--sx) - 70px)}
+.hdscreen.withbar .hdvid{height:calc(78% * var(--sy))}
+.hdscreen.err{outline:3px dashed var(--bad);outline-offset:3px}
+/* Devis */
+.dv{display:flex;flex-direction:column;gap:6px}
+.dvrow{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 100px 48px;gap:10px;align-items:center;font-size:.9rem}
+.dvbar{height:10px;background:var(--surface);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.dvbar i{display:block;height:100%;background:var(--accent)}
+.dvrow b{font-family:var(--mono);font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.dvp{font-family:var(--mono);font-size:.78rem;color:var(--muted);text-align:right}
+/* Suivi */
+.me{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:14px 20px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.me p{font-size:.92rem;color:var(--muted)}
+.me input{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);width:100%}
+.me label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.sync{display:inline-flex;align-items:center;gap:6px}
+.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync.on::before{background:var(--ok)}
+.fm td .pb{display:block;width:120px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.fm td .pb i{display:block;height:100%;background:var(--ok)}
+.missing{list-style:none;padding:0}
+.missing li{display:grid;grid-template-columns:20px 1fr;gap:6px}
+.missing li::before{content:"○";color:var(--bad)}
+.missing li.ok::before{content:"●";color:var(--ok)}
+#attCanvas{width:100%;max-width:820px;height:auto;border:1px solid var(--line);display:block;background:#fff}
+@media (max-width:640px){.me{grid-template-columns:1fr}.dvrow{grid-template-columns:1fr 90px;}.dvrow .dvbar,.dvrow .dvp{display:none}}
 .lab .row > label:not(.f){display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);min-width:0}
 .verdict{font-family:var(--mono);font-size:.9rem;padding:6px 10px;border-left:3px solid var(--accent);background:var(--bg)}
 .lab output{font-family:var(--mono);color:var(--ink)}
@@ -323,7 +358,7 @@ footer{max-width:1180px;margin:40px auto 0;color:var(--muted);font-size:.85rem}
 <div class="shell">
 <header class="topbar">
   <button class="brand" id="goHome" type="button"><span class="rgb" aria-hidden="true"><i style="background:#E0352A"></i><i style="background:#17A454"></i><i style="background:#2563EB"></i></span>Formation Écrans LED</button>
-  <div class="gp"><span id="gpTxt">0 / 13</span><div class="meter"><i id="gpBar"></i></div></div>
+  <div class="gp"><span id="gpTxt">0 / 15</span><div class="meter"><i id="gpBar"></i></div></div>
 </header>
 
 <div id="home">
@@ -335,9 +370,14 @@ footer{max-width:1180px;margin:40px auto 0;color:var(--muted);font-size:.85rem}
   </div>
   <div class="facts">
     <div><span class="label">Durée</span><b>35 h</b><span>5 jours</span></div>
-    <div><span class="label">Modules</span><b>14</b><span>découpés en étapes courtes</span></div>
-    <div><span class="label">Ateliers</span><b>13</b><span>simulateurs et jeux</span></div>
+    <div><span class="label">Modules</span><b>15</b><span>découpés en étapes courtes</span></div>
+    <div><span class="label">Ateliers</span><b>16</b><span>simulateurs et jeux</span></div>
     <div><span class="label">Validation</span><b>Quiz</b><span>à chaque module</span></div>
+  </div>
+  <div class="me">
+    <div><span class="label">Mon suivi</span><p id="meStatus" class="sync">Progression enregistrée sur cet appareil.</p></div>
+    <label for="meName">Nom pour l’attestation<input id="meName" type="text" maxlength="80" placeholder="Prénom Nom" autocomplete="name"></label>
+    <button class="btn" type="button" data-open="attest">Mon attestation</button>
   </div>
   <div id="days"></div>
 </div>
@@ -613,7 +653,7 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
 <div class="score"><b data-score="m3">0 / 3</b><button class="btn" type="button" data-retry="m3">Recommencer</button></div>
 </div>
 </section>
-<section class="mod" id="m4" data-title="Étude préalable et dimensionnement" data-dur="3 h" data-day="2" data-num="04" hidden>
+<section class="mod" id="m4" data-title="Étude préalable et dimensionnement" data-dur="2 h" data-day="2" data-num="04" hidden>
 <div class="step" data-kind="cours" data-title="Objectifs" hidden>
 <div class="objectifs"><strong>Objectifs</strong><ul><li>Mener une visite technique complète.</li><li>Calculer la résolution, le nombre de cabinets, de ports, la puissance, le poids.</li></ul></div>
 <h3>Au programme de ce module</h3>
@@ -1096,60 +1136,7 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
   <p>Ces processeurs se configurent aussi depuis la façade (molette + écran) ou le logiciel V-Can / l'interface web : entrées, couches (layers), PIP, mise à l'échelle, préréglages (presets). La configuration des cartes réceptrices reste faite dans NovaLCT, ou dans SmartLCT qui propose une vue graphique du mur.</p>
 </div>
 <div class="step" data-kind="atelier" data-title="Simulateur NovaLCT" hidden>
-<h3>Simulateur NovaLCT</h3><div class="lab" id="labNova">
-  <p class="intro">Mission : configurer un mur de 2 × 2 cabinets de zéro. Le câblage réel part du coin haut gauche vu de face, va à droite, descend, puis revient à gauche (serpentin). Suivez les objectifs.</p>
-  <div class="nova">
-    <div class="win">
-      <div class="tb"><span>NovaLCT · Screen Configuration</span><span id="nvUser">Utilisateur : invité</span></div>
-      <div class="tabs" role="tablist">
-        <button role="tab" id="nvT0" aria-selected="true" type="button">Connexion</button>
-        <button role="tab" id="nvT1" aria-selected="false" type="button" disabled>Carte émettrice</button>
-        <button role="tab" id="nvT2" aria-selected="false" type="button" disabled>Carte réceptrice</button>
-        <button role="tab" id="nvT3" aria-selected="false" type="button" disabled>Connexion écran</button>
-      </div>
-      <div class="pane" id="nvP0">
-        <p>Menu <kbd>User</kbd> → <kbd>Advanced Synchronous System User Login</kbd></p>
-        <label class="f" for="nvPwd">Mot de passe<input id="nvPwd" type="password" autocomplete="off" placeholder="mot de passe d'usine"></label>
-        <button class="btn primary" id="nvLogin" type="button">Se connecter</button>
-        <p class="msg" id="nvLoginMsg" hidden></p>
-      </div>
-      <div class="pane" id="nvP1" hidden>
-        <p><b>Carte émettrice détectée :</b> MCTRL300 · COM3</p>
-        <p class="label" style="text-transform:none;letter-spacing:0">Entrée HDMI · 1920 × 1080 à 60 Hz · 2 ports de sortie</p>
-        <p>Rien à changer ici pour cette mission. Passez à la carte réceptrice.</p>
-      </div>
-      <div class="pane" id="nvP2" hidden>
-        <p><b>Étiquette au dos d'un module :</b> <code>P2.6 · driver ICN2153 · scan 1/32 · cabinet 192×192</code></p>
-        <p>Choisissez le fichier fourni par le fabricant :</p>
-        <div class="files" id="nvFiles"></div>
-      </div>
-      <div class="pane" id="nvP3" hidden>
-        <p>Cliquez les cabinets dans l'ordre du câblage réel (vue de face).</p>
-        <div class="mapgrid" id="nvMap"></div>
-        <button class="btn" id="nvMapClear" type="button" style="width:max-content">Effacer le tracé</button>
-      </div>
-      <div class="act">
-        <button class="btn" id="nvSend" type="button" disabled>Send to HW</button>
-        <button class="btn" id="nvSave" type="button" disabled>Save</button>
-        <button class="btn" id="nvPower" type="button">Couper / rallumer l'écran</button>
-      </div>
-    </div>
-    <div class="screen">
-      <span class="label">Mur LED (vue de face)</span>
-      <div class="ledwall" id="nvWall"><div></div><div></div><div></div><div></div></div>
-      <p class="msg" id="nvMsg">Écran allumé, cartes non configurées.</p>
-      <span class="label">Objectifs</span>
-      <ul class="goals" id="nvGoals">
-        <li>Se connecter en utilisateur avancé</li>
-        <li>Choisir le bon fichier de carte réceptrice</li>
-        <li>Tracer la connexion comme le câblage réel</li>
-        <li>Envoyer au matériel : chaque cabinet affiche son numéro 1-2 / 3-4</li>
-        <li>Sauvegarder dans les cartes</li>
-        <li>Couper et rallumer : l'image revient correcte</li>
-      </ul>
-    </div>
-  </div>
-</div>
+<h3>Simulateur NovaLCT (NovaStar)</h3><div class="lab" data-sim="nova"></div>
 </div>
 <div class="step" data-kind="cours" data-title="LEDVISION pas à pas (Colorlight)" hidden>
 <h3>9.3 LEDVISION pas à pas (Colorlight)</h3>
@@ -1161,6 +1148,9 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li><div><strong>Onglet Sender</strong> Résolution de sortie du PC, fréquence, position de l'écran dans l'image.</div></li>
   </ol>
 </div>
+<div class="step" data-kind="atelier" data-title="Simulateur LEDVISION" hidden>
+<h3>Simulateur LEDVISION (Colorlight)</h3><div class="lab" data-sim="ledvision"></div>
+</div>
 <div class="step" data-kind="cours" data-title="Autres systèmes" hidden>
 <h3>9.4 Autres systèmes</h3>
   <ul>
@@ -1170,6 +1160,29 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
   </ul>
 
   <div class="note warn"><strong>Avant toute modification</strong><p>Faites une lecture et un enregistrement de la configuration existante (<kbd>Read from HW</kbd> puis <kbd>Save to File</kbd>). Un mauvais fichier de carte réceptrice peut donner un écran brouillé. Avec la sauvegarde, on revient en arrière en deux minutes.</p></div>
+</div>
+<div class="step" data-kind="cours" data-title="Processeurs VX et série H" hidden>
+<h3>Processeurs tout-en-un : VX et série H</h3>
+<p>Un processeur tout-en-un réunit la carte émettrice, la mise à l'échelle et le mélange de sources. C'est l'équipement type d'une église, d'une salle de conférence ou d'une scène.</p>
+<div class="tbl"><table>
+<thead><tr><th>Modèle</th><th>Ports Gigabit</th><th>Capacité</th><th>Usage type</th></tr></thead>
+<tbody>
+<tr><td>NovaStar VX400</td><td class="num">4</td><td class="num">≈ 2,6 M px</td><td>Écran de salle jusqu'à ≈ 20 m² en P2.6</td></tr>
+<tr><td>NovaStar VX600</td><td class="num">6</td><td class="num">≈ 3,9 M px</td><td>Écran d'auditorium, grande église</td></tr>
+<tr><td>NovaStar VX1000</td><td class="num">10</td><td class="num">≈ 6,5 M px</td><td>Scène, grands murs 4K</td></tr>
+<tr><td>NovaStar série H</td><td class="num">modulaire</td><td class="num">des dizaines de M px</td><td>Salles de contrôle, très grands murs, multi-fenêtres</td></tr>
+</tbody></table></div>
+<h4>Réglages depuis la façade (molette et écran)</h4>
+<ol class="steps">
+<li><div><strong>Configuration rapide de l'écran</strong> Nombre de cabinets en lignes et colonnes, taille d'un cabinet, sens du câblage de chaque port. Pour un mur complexe, préférez NovaLCT ou SmartLCT depuis un PC relié en Ethernet.</div></li>
+<li><div><strong>Entrées</strong> Choix de la source (HDMI, DP, SDI, DVI), EDID personnalisé à la résolution de l'écran pour que le PC sorte directement la bonne taille.</div></li>
+<li><div><strong>Couches (layers)</strong> Une couche principale plein écran et une ou plusieurs incrustations (PIP) : position, taille, source. Exemple : paroles en plein écran et caméra de l'orateur en PIP.</div></li>
+<li><div><strong>Préréglages (presets)</strong> Enregistrez une combinaison de couches par moment de l'événement (louange, prédication, annonces) et rappelez-la d'un bouton.</div></li>
+<li><div><strong>Secours d'entrée</strong> Déclarez une source de secours : si le PC principal perd le signal, le processeur bascule automatiquement.</div></li>
+<li><div><strong>Sortie</strong> Luminosité globale, synchronisation (genlock) si l'écran est filmé avec d'autres sources, mode faible latence.</div></li>
+<li><div><strong>Verrouillage</strong> Verrouillez la façade après réglage pour éviter les fausses manipulations.</div></li>
+</ol>
+<div class="note warn"><strong>Menus</strong><p>L'intitulé exact des menus change selon la version du firmware. Gardez le manuel de votre version à portée de main.</p></div>
 </div>
 <div class="step" data-kind="pratique" data-title="Exercice pratique" hidden>
 <h3>Exercice pratique</h3>
@@ -1183,7 +1196,7 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 <div class="score"><b data-score="m9">0 / 3</b><button class="btn" type="button" data-retry="m9">Recommencer</button></div>
 </div>
 </section>
-<section class="mod" id="m10" data-title="Programmation asynchrone" data-dur="3 h" data-day="4" data-num="10" hidden>
+<section class="mod" id="m10" data-title="Programmation asynchrone" data-dur="2 h" data-day="4" data-num="10" hidden>
 <div class="step" data-kind="cours" data-title="Objectifs" hidden>
 <div class="objectifs"><strong>Objectifs</strong><ul><li>Créer, planifier et publier un programme sur un lecteur autonome.</li><li>Gérer un parc d'écrans à distance.</li></ul></div>
 <h3>Au programme de ce module</h3>
@@ -1231,6 +1244,9 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li>Application mobile LEDArt / HD2020 pour les modifications rapides.</li>
   </ol>
 </div>
+<div class="step" data-kind="atelier" data-title="Simulateur HDPlayer" hidden>
+<h3>Simulateur HDPlayer (Huidu)</h3><div class="lab" data-sim="hdplayer"></div>
+</div>
 <div class="step" data-kind="cours" data-title="Colorlight (C-series)" hidden>
 <h3>10.3 Colorlight (C-series)</h3>
   <p>Logiciel PlayerMaster (ou LEDVISION pour certains modèles) et gestion cloud Colorlight. Même logique : programme → zones → planning → publication. Les C-series ont souvent une entrée HDMI pour passer en synchrone.</p>
@@ -1242,6 +1258,28 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li>Connexion 4G ou internet filaire, adresse IP fixe ou VPN pour la maintenance.</li>
     <li>Sécurité : changer tous les mots de passe par défaut, désactiver le point d'accès Wi-Fi s'il n'est pas utile, mettre à jour le firmware.</li>
   </ul>
+</div>
+<div class="step" data-kind="cours" data-title="VNNOX, 4G et mises à jour" hidden>
+<h3>VNNOX, 4G et mises à jour du firmware</h3>
+<h4>Relier un lecteur Taurus à VNNOX</h4>
+<ol class="steps">
+<li><div><strong>Créer le compte</strong> Sur la plateforme VNNOX, créez le compte de l'entreprise. Notez le nom d'utilisateur et l'adresse du serveur de votre région.</div></li>
+<li><div><strong>Lier le terminal</strong> Dans ViPlex Express ou ViPlex Handy, ouvrez les paramètres du terminal, rubrique VNNOX. Saisissez le serveur et le nom d'utilisateur, puis liez.</div></li>
+<li><div><strong>Vérifier</strong> Le terminal apparaît « en ligne » dans VNNOX. Vous pouvez publier des solutions, planifier, prendre des captures d'écran à distance et recevoir des alertes.</div></li>
+</ol>
+<h4>Connexion 4G</h4>
+<ul>
+<li>Carte SIM sans code PIN, forfait données adapté au volume de contenus (une vidéo 1080p de 30 s pèse souvent 20 à 60 Mo).</li>
+<li>Réglage de l'APN de l'opérateur dans ViPlex si la connexion ne monte pas seule. Vérifiez le niveau de signal avant de refermer le caisson.</li>
+<li>Préférez l'envoi des contenus lourds la nuit, et gardez le Wi-Fi du lecteur désactivé s'il n'est pas utile.</li>
+</ul>
+<h4>Mettre à jour le firmware</h4>
+<ul>
+<li>Téléchargez le firmware sur le site officiel, pour le modèle exact (TB40 ≠ TB40 Plus).</li>
+<li>Lecteurs : mise à jour depuis ViPlex. Cartes émettrices et réceptrices : fonction de chargement du programme de NovaLCT.</li>
+<li>Ne coupez jamais le courant pendant une mise à jour. Mettez toutes les cartes réceptrices d'un écran à la même version.</li>
+<li>Sauvegardez la configuration avant, notez les versions dans le dossier de l'écran après.</li>
+</ul>
 </div>
 <div class="step" data-kind="cours" data-title="Règles d&#x27;exploitation (affichage publicitaire extérieur)" hidden>
 <h3>10.5 Règles d'exploitation (affichage publicitaire extérieur)</h3>
@@ -1318,6 +1356,21 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 <div class="step" data-kind="cours" data-title="Mire de test pixel map" hidden>
 <h3>11.4 Mire de test pixel map</h3>
   <p>Créez une image à la résolution native avec : un contour de 1 px, une grille par cabinet, le numéro de chaque cabinet, un cercle (pour voir les déformations) et des dégradés. Elle permet de vérifier en une seconde que le mapping est juste.</p>
+</div>
+<div class="step" data-kind="cours" data-title="Écrans de forme spéciale" hidden>
+<h3>Écrans de forme spéciale : le plan de pixels</h3>
+<p>Colonne, cylindre, ruban, cube : l'image rectangulaire de l'ordinateur doit être découpée et placée sur des surfaces qui ne sont pas planes ni alignées. C'est le rôle du plan de pixels (pixel map).</p>
+<ol class="steps">
+<li><div><strong>Relever la géométrie</strong> Pour chaque face ou chaque rangée de modules : dimensions, position, orientation, ordre de câblage.</div></li>
+<li><div><strong>Placer les cartes dans le logiciel</strong> Dans NovaLCT (configuration d'écran complexe ou irrégulière) ou LEDVISION, positionnez chaque carte réceptrice à ses coordonnées X/Y dans l'image, avec rotation si besoin.</div></li>
+<li><div><strong>Produire l'image de plan de pixels</strong> Un canevas rectangulaire où toutes les faces sont « dépliées », avec leurs contours et numéros. C'est le gabarit des graphistes.</div></li>
+<li><div><strong>Mapper le contenu</strong> Pour une simple découpe : Resolume (Advanced Output). Pour une vraie scène 3D : un serveur média (disguise, Pixera, MadMapper) qui projette le contenu sur un modèle 3D de l'écran.</div></li>
+<li><div><strong>Tester la continuité</strong> Faites défiler une mire (ligne ou damier) : elle doit passer d'une face à l'autre sans saut ni décalage.</div></li>
+</ol>
+<div class="formula">Exemple : colonne cylindrique, diamètre 1 m, hauteur 3 m, modules flexibles P2.5
+Périmètre   = π × 1 000 mm = 3 142 mm  → 3 142 / 2,5 ≈ 1 257 px de large
+Hauteur     = 3 000 / 2,5             = 1 200 px
+Canevas     = 1 257 × 1 200 px, avec une jointure de fermeture à placer à l'arrière</div>
 </div>
 <div class="step" data-kind="pratique" data-title="Exercice pratique" hidden>
 <h3>Exercice pratique</h3>
@@ -1478,6 +1531,22 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li><div><strong>Contrôler</strong> avec les mires ; charger les coefficients de calibration si besoin.</div></li>
   </ol>
 </div>
+<div class="step" data-kind="cours" data-title="Réparer un module en atelier" hidden>
+<h3>Réparer un module en atelier</h3>
+<p>Remplacer quelques LED sur un module SMD est rentable et rapide avec le bon matériel. Les modules GOB et COB (résine ou puces nues) repartent en usine.</p>
+<div class="cols2">
+<div><h4>Matériel</h4><ul><li>Station à air chaud réglable, buse fine</li><li>Plaque de préchauffage</li><li>Brucelles antistatiques, bracelet et tapis ESD</li><li>Flux sans nettoyage, étain fin ou pâte à braser</li><li>Loupe ou microscope</li><li>LED de rechange de même référence et même classe de couleur (bin)</li></ul></div>
+<div><h4>Précautions</h4><ul><li>Suivez les températures du fabricant : trop chaud, les LED voisines et le plastique souffrent.</li><li>Respectez la polarité et l'orientation (repère sur la LED et le circuit).</li><li>Travaillez vite : quelques secondes de chauffe suffisent.</li><li>Notez chaque intervention (module, position, date).</li></ul></div>
+</div>
+<ol class="steps">
+<li><div><strong>Repérer</strong> Affichez les mires couleur, marquez la LED défectueuse au feutre au dos du module (position ligne/colonne).</div></li>
+<li><div><strong>Préchauffer</strong> Posez le module sur la plaque pour limiter le choc thermique.</div></li>
+<li><div><strong>Déposer</strong> Chauffez la LED à l'air chaud, débit faible, puis retirez-la aux brucelles dès que l'étain fond.</div></li>
+<li><div><strong>Préparer</strong> Nettoyez les pastilles, ajoutez un peu de flux et d'étain.</div></li>
+<li><div><strong>Poser</strong> Placez la LED neuve dans le bon sens, chauffez jusqu'à ce qu'elle se centre d'elle-même.</div></li>
+<li><div><strong>Tester</strong> Laissez refroidir, testez le module sur le banc avec les mires avant de le remonter.</div></li>
+</ol>
+</div>
 <div class="step" data-kind="pratique" data-title="Exercice pratique" hidden>
 <h3>Exercice pratique</h3>
 <div class="drill"><span class="label">Exercice pratique</span><ol><li>Le formateur crée cinq pannes sur le mur : câble réseau débranché au milieu d'une chaîne, nappe mal insérée, carte réceptrice avec mauvais fichier, deux câbles inversés, alimentation d'un module coupée.</li><li>Trouvez et corrigez chaque panne en moins de 10 minutes en appliquant la méthode 13.2.</li><li>Notez votre raisonnement pour chaque panne et présentez-le au groupe.</li></ol></div>
@@ -1490,12 +1559,96 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 <div class="score"><b data-score="m13">0 / 3</b><button class="btn" type="button" data-retry="m13">Recommencer</button></div>
 </div>
 </section>
-<section class="mod" id="eval" data-title="Évaluation finale" data-dur="1 h" data-num="✓" data-special="1" hidden>
+<section class="mod" id="m14" data-title="Chiffrage, contrats et logistique" data-dur="2 h" data-day="5" data-num="14" hidden>
+<div class="step" data-kind="cours" data-title="Objectifs" hidden>
+<div class="objectifs"><strong>Objectifs</strong><ul><li>Construire un devis complet et cohérent.</li><li>Proposer une garantie et un contrat de maintenance adaptés.</li><li>Organiser le transport, le stockage et le planning d'un chantier.</li></ul></div>
+<h3>Au programme de ce module</h3>
+<ol class="overview"></ol>
+</div>
+<div class="step" data-kind="cours" data-title="Construire un devis" hidden>
+<h3>Construire un devis</h3>
+<p>Un devis d'écran LED ne se limite pas au prix au mètre carré. Oublier un poste coûte souvent plus que la marge.</p>
+<div class="tbl"><table>
+<thead><tr><th>Poste</th><th>Ce qu'il comprend</th><th>À ne pas oublier</th></tr></thead>
+<tbody>
+<tr><td>Écran</td><td>Cabinets, modules de rechange, cartes réceptrices</td><td>3 à 5 % de modules de rechange du même lot</td></tr>
+<tr><td>Structure</td><td>Cadre, fixations, habillage, note de calcul</td><td>Bureau d'études et bureau de contrôle en extérieur</td></tr>
+<tr><td>Contrôle</td><td>Processeur ou lecteur, capteur, carte multifonction</td><td>Ports de réserve, secours</td></tr>
+<tr><td>Électricité et réseau</td><td>Tableau, câbles, parafoudre, fibre si besoin</td><td>Raccordement par un électricien habilité</td></tr>
+<tr><td>Installation</td><td>Jours × techniciens, nacelle ou échafaudage</td><td>Déplacements, hébergement, heures de nuit</td></tr>
+<tr><td>Mise en service</td><td>Configuration, calibration, recette, formation client</td><td>Burn-in de 24 à 72 h</td></tr>
+<tr><td>Logistique</td><td>Transport, déchargement, évacuation des emballages</td><td>Accès camion, hayon, stockage sur site</td></tr>
+<tr><td>Garantie et maintenance</td><td>Extension de garantie, contrat annuel</td><td>Délais d'intervention écrits</td></tr>
+</tbody></table></div>
+</div>
+<div class="step" data-kind="atelier" data-title="Atelier : chiffrer un chantier" hidden>
+<h3>Atelier : chiffrer un chantier</h3><div class="lab" data-sim="devis"></div>
+</div>
+<div class="step" data-kind="cours" data-title="Garanties et contrats de maintenance" hidden>
+<h3>Garanties et contrats de maintenance</h3>
+<ul>
+<li><b>Garantie constructeur :</b> souvent 2 à 3 ans sur les pièces. Lisez les exclusions : surtension, humidité, chocs, vandalisme, installation non conforme.</li>
+<li><b>Maintenance préventive :</b> visites planifiées (nettoyage, serrages, contrôles électriques, mises à jour, sauvegarde des configurations).</li>
+<li><b>Maintenance curative :</b> intervention sur panne avec un délai garanti d'intervention (GTI) et parfois de rétablissement (GTR).</li>
+<li><b>Télésurveillance :</b> alertes de température, de lecteur hors ligne ou de carte en défaut via VNNOX ou le cloud du fabricant.</li>
+</ul>
+<div class="tbl"><table>
+<thead><tr><th>Formule</th><th>Préventif</th><th>Délai d'intervention</th><th>Inclus</th></tr></thead>
+<tbody>
+<tr><td>Essentiel</td><td class="num">1 visite / an</td><td class="num">5 jours ouvrés</td><td>Main-d'œuvre, pièces facturées</td></tr>
+<tr><td>Confort</td><td class="num">2 visites / an</td><td class="num">48 h ouvrées</td><td>Télésurveillance, stock de rechange sur site</td></tr>
+<tr><td>Événement</td><td class="num">avant chaque date clé</td><td class="num">4 h, technicien d'astreinte</td><td>Présence lors des événements majeurs</td></tr>
+</tbody></table></div>
+<p class="label" style="text-transform:none;letter-spacing:0">Exemple de gamme à adapter à votre activité.</p>
+</div>
+<div class="step" data-kind="cours" data-title="Transport, stockage et planning" hidden>
+<h3>Transport, stockage et planning</h3>
+<div class="cols2">
+<div><h4>Transport et manutention</h4><ul><li>Flight cases dédiés (souvent 6 ou 8 cabinets 500 × 500), face LED protégée, sangles.</li><li>Respecter le sens indiqué et la hauteur d'empilage maximale.</li><li>Inventaire par numéro de série au départ et au retour.</li><li>Jamais un cabinet posé sur sa face LED.</li></ul></div>
+<div><h4>Stockage</h4><ul><li>Local sec et tempéré, sachets déshydratants dans les caisses.</li><li>Allumage régulier des écrans stockés longtemps, puis préchauffage progressif avant une date.</li><li>Modules de rechange rangés par lot, étiquetés.</li></ul></div>
+</div>
+<h4>Planning type d'un chantier fixe</h4>
+<ol class="steps">
+<li><div><strong>Étude</strong> Visite, dimensionnement, plans, note de calcul, validation du client.</div></li>
+<li><div><strong>Préparation</strong> Commande (délais de fabrication souvent de plusieurs semaines), contrôle à réception, test en atelier.</div></li>
+<li><div><strong>Travaux préalables</strong> Électricité et réseau par les corps d'état concernés, renforts éventuels.</div></li>
+<li><div><strong>Installation</strong> Structure, écran, câblage, configuration.</div></li>
+<li><div><strong>Mise en service</strong> Calibration, burn-in, recette, formation, remise du dossier.</div></li>
+</ol>
+</div>
+<div class="step" data-kind="pratique" data-title="Exercice pratique" hidden>
+<h3>Exercice pratique</h3>
+<div class="drill"><span class="label">Exercice pratique</span><ol><li>Chiffrez l'écran de l'église du module 4 avec l'atelier de chiffrage, en listant vos hypothèses.</li><li>Rédigez une proposition de contrat de maintenance d'une page pour ce client.</li><li>Préparez la liste de colisage (flight cases, câbles, outillage) pour une installation de 2 jours.</li></ol></div>
+<div class="keep"><span class="label">À retenir</span><ul><li>Chiffrer tous les postes, pas seulement le mètre carré d'écran.</li><li>Écrire les délais d'intervention et les exclusions de garantie.</li><li>Stocker au sec, inventorier par numéro de série.</li></ul></div>
+</div>
+<div class="step" data-kind="quiz" data-title="Quiz de validation" hidden>
+<h3>Quiz de validation</h3>
+<p>Répondez à toutes les questions. Avec au moins 2 bonnes réponses sur 3, le module est validé.</p>
+<div class="qs" data-quiz="m14"></div>
+<div class="score"><b data-score="m14">0 / 3</b><button class="btn" type="button" data-retry="m14">Recommencer</button></div>
+</div>
+</section>
+<section class="mod" id="eval" data-title="Évaluation finale" data-dur="1 h" data-num="20" data-special="1" hidden>
 <div class="step" data-kind="quiz" data-title="Évaluation finale" hidden>
 <h3>Évaluation finale</h3>
 <p>20 questions sur toute la formation. Seuil de validation : 16 / 20.</p>
 <div class="qs" id="quiz"></div>
 <div class="score"><b id="score">0 / 20</b><button class="btn" id="resetQuiz" type="button">Recommencer</button></div>
+</div>
+</section>
+<section class="mod" id="attest" data-title="Mon attestation" data-dur="à débloquer" data-num="✓" data-special="1" hidden>
+<div class="step" data-kind="pratique" data-title="Attestation" hidden>
+<h3>Attestation de formation</h3>
+<p>L’attestation se débloque quand tous les modules sont validés, que l’évaluation finale atteint 16 / 20 et que votre nom est saisi sur l’accueil.</p>
+<div id="attBox" style="display:flex;flex-direction:column;gap:14px"></div>
+</div>
+</section>
+<section class="mod" id="formateur" data-title="Espace formateur" data-dur="suivi des stagiaires" data-num="⚑" data-special="1" data-hide="1" hidden>
+<div class="step" data-kind="pratique" data-title="Résultats des stagiaires" hidden>
+<h3>Résultats des stagiaires</h3>
+<p>Chaque stagiaire qui ouvre la formation avec son compte apparaît ici en direct. Pour qu’un stagiaire puisse enregistrer sa progression, partagez la page avec lui en « Peut interagir ». Seuls les personnes qui peuvent modifier la page voient ce tableau.</p>
+<p class="msg" id="fmMsg">Chargement des résultats…</p>
+<div class="tbl fm"><table><thead><tr><th>Stagiaire</th><th>Progression</th><th>Modules</th><th>Évaluation</th><th>Statut</th><th>Activité</th></tr></thead><tbody id="fmBody"></tbody></table></div>
 </div>
 </section>
 <section class="mod" id="certif" data-title="Projet de certification" data-dur="½ journée" data-num="★" data-special="1" hidden>
@@ -1585,7 +1738,8 @@ function shuffle(a){ for (var i = a.length-1; i > 0; i--){ var j = Math.floor(Ma
 var KEY = 'formation-led-v3';
 var st = {seen:{}, quiz:{}, pos:{}, last:null};
 try { var raw = JSON.parse(localStorage.getItem(KEY) || 'null'); if (raw) st = Object.assign(st, raw); } catch(e){}
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} if (TR && TR.ref) schedulePush(); }
+var TR;
 
 var sections = $$('#sections > section.mod');
 var mods = sections.filter(function(s){ return !s.dataset.special; });
@@ -1612,7 +1766,7 @@ function buildHome(){
   var wrap = el('div');
   wrap.appendChild(el('div', {'class':'dayhead'}, [el('span', {'class':'label', text:'Évaluation et références'})]));
   var grid = el('div', {'class':'tiles'});
-  sections.filter(function(s){ return s.dataset.special; }).forEach(function(s){ grid.appendChild(tile(s, true)); });
+  sections.filter(function(s){ return s.dataset.special && !s.dataset.hide; }).forEach(function(s){ grid.appendChild(tile(s, true)); });
   wrap.appendChild(grid); days.appendChild(wrap);
   var done = mods.filter(isDone).length;
   $('gpTxt').textContent = done + ' / ' + mods.length + ' validés';
@@ -1679,6 +1833,7 @@ function show(k){
   var curBtn = $$('#stepNav button')[idx]; if (curBtn && curBtn.scrollIntoView && window.innerWidth < 900) curBtn.scrollIntoView({block:'nearest', inline:'center'});
   if (stp.dataset.init !== '1'){ stp.dataset.init = '1'; $$('[data-lazy]', stp).forEach(function(x){ var f = LAZY[x.dataset.lazy]; if (f) f(); }); }
   if (stp.querySelector('#pitchCanvas')) drawViz();
+  if (cur.id === 'attest') renderAttest();
   window.scrollTo(0, 0);
 }
 $('prev').addEventListener('click', function(){ show(idx - 1); window.scrollTo(0, 0); });
@@ -1748,6 +1903,9 @@ m11:[['Pour une image nette, le contenu doit être produit…',['en 1920 × 1080
 m12:[['Quelle mire révèle des pixels allumés en permanence ?',['Blanc 100 %','Noir','Rouge'],1,'Sur fond noir, un pixel bloqué allumé saute aux yeux.'],
     ['Avant la réception, on fait tourner l’écran…',['10 minutes','24 à 72 h (burn-in)','Jamais'],1,'Pour révéler les défauts de jeunesse.'],
     ['Température de couleur de référence en vidéo :',['3 200 K','6 500 K','9 300 K'],1,'Le blanc D65.']],
+m14:[['Dans un devis d\u2019écran LED, on oublie souvent…',['Le prix au mètre carré','Transport, levage, mise en service et rechanges','La TVA'],1,'Ces postes pèsent vite 10 à 20 % du total.'],
+    ['Un contrat de maintenance sérieux précise…',['Le délai d\u2019intervention et les exclusions','La couleur des cabinets','Le logiciel de montage'],0,'GTI, GTR, exclusions de garantie : par écrit.'],
+    ['Des cabinets restent 3 mois en entrepôt :',['Local sec, déshydratants, allumage régulier','Dehors sous bâche','Empilés face LED contre face LED'],0,'L\u2019humidité est l\u2019ennemie des LED.']],
 m13:[['Tous les cabinets après le n° 5 sont noirs :',['Câble entre 4 et 5 ou carte du 5','Le PC source','Le fichier vidéo'],0,'La chaîne est interrompue à cet endroit.'],
     ['Un module neuf est plus clair que les autres :',['Il est défectueux','Coefficients de calibration à charger','Câble réseau à changer'],1,'Autre lot, autre calibration.'],
     ['La méthode de diagnostic de base :',['Délimiter, remonter la chaîne, permuter','Tout remplacer','Redémarrer le PC'],0,'On isole l’élément en cause.']]
@@ -1811,6 +1969,7 @@ var FQ = [
 function runFinal(){
   renderQuiz($('quiz'), FQ, function(s, a, n){
     $('score').textContent = s + ' / ' + n + (a === n ? (s >= 16 ? ' · validé' : ' · à retravailler') : '');
+    if (a === n && s > (st.final || 0)){ st.final = s; save(); }
   });
 }
 $('resetQuiz').addEventListener('click', runFinal); runFinal();
@@ -2087,76 +2246,188 @@ if (cv){
   draw();
 })();
 
-/* ================= Simulateur NovaLCT ================= */
-(function(){
-  if (!$('labNova')) return;
-  var files = [['P2.6_ICN2153_32S_192x192.rcfgx', true], ['P2.6_MBI5153_16S_192x192.rcfgx', false], ['P3.91_ICN2153_16S_128x128.rcfgx', false]];
-  var REAL = [0, 1, 3, 2]; // ordre physique : HG, HD, BD, BG (index 0 HG,1 HD,2 BG,3 BD)
-  var sw = {file:null, map:[]}, hw = {file:null, map:null}, flash = {file:null, map:null};
-  var logged = false, power = true, goals = [false,false,false,false,false,false], sentOnce = false;
-  var tabs = [0,1,2,3].map(function(i){ return $('nvT' + i); }), panes = [0,1,2,3].map(function(i){ return $('nvP' + i); });
-  tabs.forEach(function(t, i){ t.addEventListener('click', function(){ tab(i); }); });
+/* ================= Simulateurs de configuration (NovaLCT, LEDVISION) ================= */
+var SIMS = {
+  nova: {app:'NovaLCT · Screen Configuration', tabs:['Connexion','Carte émettrice','Carte réceptrice','Connexion écran'],
+    login:'Menu <kbd>User</kbd> → <kbd>Advanced Synchronous System User Login</kbd>', pwds:['admin'], hint:'Indice : le mot de passe d’usine de NovaLCT figure dans le module (5 lettres).',
+    sender:'<p><b>Carte émettrice détectée :</b> MCTRL300 · COM3</p><p>Entrée HDMI · 1920 × 1080 à 60 Hz · 2 ports de sortie. Rien à changer ici pour cette mission.</p>',
+    label:'P2.6 · driver ICN2153 · scan 1/32 · cabinet 192×192',
+    files:[['P2.6_ICN2153_32S_192x192.rcfgx',true],['P2.6_MBI5153_16S_192x192.rcfgx',false],['P3.91_ICN2153_16S_128x128.rcfgx',false]],
+    cols:2, rows:2, real:[0,1,3,2], send:'Send to HW', save:'Save',
+    mission:'Configurer un mur de 2 × 2 cabinets de zéro. Le câblage réel part du coin haut gauche vu de face, va à droite, descend, puis revient à gauche (serpentin).'},
+  ledvision: {app:'LEDVISION · Display Setting', tabs:['Mot de passe','Sender','Receiver','Connection'],
+    login:'Menu <kbd>Settings</kbd> → <kbd>Display Setting</kbd>', pwds:['168','666'], hint:'Indice : 3 chiffres. Les valeurs d’usine les plus courantes sont 168 ou 666 selon la version.',
+    sender:'<p><b>Carte émettrice :</b> Colorlight S2 · USB</p><p>Sortie PC 1920 × 1080. Rien à changer ici pour cette mission.</p>',
+    label:'P3.91 · driver FM6363 · scan 1/16 · cabinet 128×128',
+    files:[['P3.91_FM6363_16S_128x128.rcvbp',true],['P3.91_FM6363_8S_128x128.rcvbp',false],['P2.6_ICN2153_32S_192x192.rcvbp',false]],
+    cols:3, rows:2, real:[3,0,1,4,5,2], send:'Send', save:'Save',
+    mission:'Configurer un mur de 3 × 2 cabinets. Attention, ici le câblage est vertical : il part du coin bas gauche vu de face, monte, passe à droite, redescend, passe à droite et remonte.'}
+};
+var PAL = ['#1d4ed8','#15803d','#b45309','#be123c','#7c3aed','#0e7490'];
+$$('[data-sim="nova"],[data-sim="ledvision"]').forEach(function(root){
+  var cfg = SIMS[root.dataset.sim], N = cfg.cols * cfg.rows;
+  root.innerHTML =
+    '<p class="intro"></p>' +
+    '<div class="nova"><div class="win"><div class="tb"><span></span><span class="who">Utilisateur : invité</span></div>' +
+    '<div class="tabs" role="tablist"></div>' +
+    '<div class="pane"><p>' + cfg.login + '</p><label class="f">Mot de passe<input type="password" autocomplete="off" class="pwd"></label><button class="btn primary login" type="button" style="width:max-content">Se connecter</button><p class="msg lmsg" hidden></p></div>' +
+    '<div class="pane" hidden>' + cfg.sender + '</div>' +
+    '<div class="pane" hidden><p><b>Étiquette au dos d’un module :</b> <code>' + cfg.label + '</code></p><p>Choisissez le fichier fourni par le fabricant :</p><div class="files"></div></div>' +
+    '<div class="pane" hidden><p>Cliquez les cabinets dans l’ordre du câblage réel (vue de face).</p><div class="mapgrid"></div><button class="btn mclear" type="button" style="width:max-content">Effacer le tracé</button></div>' +
+    '<div class="act"><button class="btn send" type="button" disabled></button><button class="btn save" type="button" disabled></button><button class="btn power" type="button">Couper / rallumer l’écran</button></div></div>' +
+    '<div class="screen"><span class="label">Mur LED (vue de face)</span><div class="ledwall"></div><p class="msg smsg">Écran allumé, cartes non configurées.</p><span class="label">Objectifs</span><ul class="goals"></ul></div></div>';
+  var q = function(s){ return root.querySelector(s); }, qa = function(s){ return [].slice.call(root.querySelectorAll(s)); };
+  q('.intro').textContent = 'Mission : ' + cfg.mission + ' Suivez les objectifs.';
+  q('.tb span').textContent = cfg.app;
+  q('.send').textContent = cfg.send; q('.save').textContent = cfg.save;
+  var tabs = cfg.tabs.map(function(t, i){ var b = el('button', {role:'tab', type:'button', 'aria-selected': i ? 'false' : 'true', text:t}); if (i) b.disabled = true; b.addEventListener('click', function(){ tab(i); }); q('.tabs').appendChild(b); return b; });
+  var panes = qa('.pane');
   function tab(i){ tabs.forEach(function(t, j){ t.setAttribute('aria-selected', j === i ? 'true' : 'false'); }); panes.forEach(function(p, j){ p.hidden = j !== i; }); }
-  function msg(t, k){ var m = $('nvMsg'); m.className = 'msg' + (k ? ' ' + k : ''); m.textContent = t; }
-  function goal(i){ goals[i] = true; $$('#nvGoals li')[i].classList.add('on'); if (goals.every(Boolean)) msg('Mission accomplie : l’écran est configuré, sauvegardé et résiste à une coupure.', 'ok'); }
-  $('nvLogin').addEventListener('click', function(){
-    var m = $('nvLoginMsg'); m.hidden = false;
-    if ($('nvPwd').value.trim().toLowerCase() === 'admin'){
-      logged = true; m.className = 'msg ok'; m.textContent = 'Connecté en mode avancé. Pensez à changer ce mot de passe en production.';
-      $('nvUser').textContent = 'Utilisateur : avancé'; tabs.forEach(function(t){ t.disabled = false; });
-      $('nvSend').disabled = false; $('nvSave').disabled = false; goal(0); tab(2);
-    } else { m.className = 'msg bad'; m.textContent = 'Mot de passe refusé. Indice : le mot de passe d’usine de NovaLCT figure dans le module (5 lettres).'; }
+  ['Se connecter en mode avancé','Choisir le bon fichier de carte réceptrice','Tracer la connexion comme le câblage réel','Envoyer : les cabinets affichent 1 à ' + N + ' dans l’ordre de lecture','Sauvegarder dans les cartes','Couper et rallumer : l’image revient correcte'].forEach(function(g){ q('.goals').appendChild(el('li', {text:g})); });
+  var goals = [], sw = {file:null, map:[]}, hw = {file:null, map:null}, flash = {file:null, map:null}, power = true, sent = false;
+  function msg(t, k){ var m = q('.smsg'); m.className = 'msg smsg' + (k ? ' ' + k : ''); m.textContent = t; }
+  function goal(i){ goals[i] = true; qa('.goals li')[i].classList.add('on'); if ([0,1,2,3,4,5].every(function(k){ return goals[k]; })) msg('Mission accomplie : écran configuré, sauvegardé et résistant à une coupure.', 'ok'); }
+  q('.login').addEventListener('click', function(){
+    var m = q('.lmsg'); m.hidden = false;
+    if (cfg.pwds.indexOf(q('.pwd').value.trim().toLowerCase()) >= 0){
+      m.className = 'msg lmsg ok'; m.textContent = 'Connecté. Pensez à changer ce mot de passe en production.';
+      q('.who').textContent = 'Utilisateur : avancé'; tabs.forEach(function(t){ t.disabled = false; });
+      q('.send').disabled = false; q('.save').disabled = false; goal(0); tab(2);
+    } else { m.className = 'msg lmsg bad'; m.textContent = 'Mot de passe refusé. ' + cfg.hint; }
   });
-  var fb = $('nvFiles');
-  files.forEach(function(f, i){
-    var inp = el('input', {type:'radio', name:'nvf', value:String(i)});
-    inp.addEventListener('change', function(){ sw.file = i; if (files[i][1]) goal(1); });
-    fb.appendChild(el('label', null, [inp, f[0]]));
+  var nm = 'f' + Math.random().toString(36).slice(2);
+  cfg.files.forEach(function(f, i){
+    var inp = el('input', {type:'radio', name:nm});
+    inp.addEventListener('change', function(){ sw.file = i; if (f[1]) goal(1); });
+    q('.files').appendChild(el('label', null, [inp, f[0]]));
   });
-  var mg = $('nvMap');
-  [0,1,2,3].forEach(function(i){ mg.appendChild(el('button', {type:'button', onclick:function(){ mapClick(i); }})); });
-  function drawMap(){ $$('button', mg).forEach(function(b, i){ var k = sw.map.indexOf(i); b.textContent = k >= 0 ? '#' + (k+1) : ''; b.classList.toggle('set', k >= 0); }); }
-  function mapClick(i){ if (sw.map.indexOf(i) >= 0 || sw.map.length >= 4) return; sw.map.push(i); drawMap(); if (sw.map.length === 4) goal(2); }
-  $('nvMapClear').addEventListener('click', function(){ sw.map = []; drawMap(); });
-  drawMap();
+  var mg = q('.mapgrid'), wall = q('.ledwall');
+  mg.style.gridTemplateColumns = 'repeat(' + cfg.cols + ',64px)';
+  wall.style.gridTemplateColumns = 'repeat(' + cfg.cols + ',1fr)';
+  wall.style.aspectRatio = (cfg.cols * 1.25) + '/' + (cfg.rows);
+  for (var i = 0; i < N; i++){ (function(i){ mg.appendChild(el('button', {type:'button', onclick:function(){ if (sw.map.indexOf(i) >= 0 || sw.map.length >= N) return; sw.map.push(i); drawMap(); if (sw.map.length === N) goal(2); }})); wall.appendChild(el('div')); })(i); }
+  function drawMap(){ qa('.mapgrid button').forEach(function(b, i){ var k = sw.map.indexOf(i); b.textContent = k >= 0 ? '#' + (k+1) : ''; b.classList.toggle('set', k >= 0); }); }
+  q('.mclear').addEventListener('click', function(){ sw.map = []; drawMap(); });
+  function ok(){ return hw.file !== null && cfg.files[hw.file][1] && hw.map && hw.map.length === N && cfg.real.every(function(p, k){ return hw.map[k] === p; }); }
   function render(){
-    var cells = $$('#nvWall > div');
+    var cells = qa('.ledwall > div');
     cells.forEach(function(c){ c.className = ''; c.textContent = ''; c.style.background = ''; });
     if (!power) return;
-    var quadColor = ['#1d4ed8','#15803d','#b45309','#be123c'];
-    REAL.forEach(function(phys, k){
+    cfg.real.forEach(function(phys, k){
       var c = cells[phys];
-      if (hw.file === null || !files[hw.file][1]){ c.className = 'noise'; return; }
-      if (!hw.map || hw.map.length < 4){ c.style.background = '#050505'; return; }
-      var q = hw.map[k]; c.textContent = String(q + 1); c.style.background = quadColor[q];
+      if (hw.file === null || !cfg.files[hw.file][1]){ c.className = 'noise'; return; }
+      if (!hw.map || hw.map.length < N) return;
+      var pos = hw.map[k]; c.textContent = String(pos + 1); c.style.background = PAL[pos % PAL.length];
     });
   }
-  function correct(){ return hw.file !== null && files[hw.file][1] && hw.map && hw.map.length === 4 && REAL.every(function(p, k){ return hw.map[k] === p; }); }
-  $('nvSend').addEventListener('click', function(){
+  q('.send').addEventListener('click', function(){
     if (sw.file === null) return msg('Choisissez d’abord un fichier de carte réceptrice.', 'bad');
-    hw = {file: sw.file, map: sw.map.slice()}; sentOnce = true; render();
-    if (!files[hw.file][1]) return msg('Image brouillée : le fichier ne correspond pas au module (driver ou scan différent). Relisez l’étiquette.', 'bad');
-    if (hw.map.length < 4) return msg('Fichier correct, mais la connexion d’écran n’est pas tracée : les cabinets restent noirs.', 'bad');
-    if (!correct()) return msg('Les cabinets affichent des numéros dans le désordre : le tracé ne suit pas le câblage réel (serpentin). Corrigez le tracé et renvoyez.', 'bad');
-    goal(3); msg('Chaque cabinet affiche la bonne partie de l’image. Attention : rien n’est encore enregistré dans les cartes.', 'ok');
+    hw = {file: sw.file, map: sw.map.slice()}; sent = true; render();
+    if (!cfg.files[hw.file][1]) return msg('Image brouillée : le fichier ne correspond pas au module (driver ou scan différent). Relisez l’étiquette.', 'bad');
+    if (hw.map.length < N) return msg('Fichier correct, mais la connexion n’est pas tracée pour tous les cabinets.', 'bad');
+    if (!ok()) return msg('Les numéros sont dans le désordre : le tracé ne suit pas le câblage réel. Relisez la mission, corrigez et renvoyez.', 'bad');
+    goal(3); msg('Chaque cabinet affiche la bonne partie de l’image. Rien n’est encore enregistré dans les cartes.', 'ok');
   });
-  $('nvSave').addEventListener('click', function(){
-    if (!sentOnce) return msg('Rien à enregistrer : envoyez d’abord au matériel.', 'bad');
+  q('.save').addEventListener('click', function(){
+    if (!sent) return msg('Rien à enregistrer : envoyez d’abord.', 'bad');
     flash = {file: hw.file, map: hw.map ? hw.map.slice() : null};
-    if (correct()){ goal(4); msg('Configuration enregistrée dans les cartes réceptrices. Testez maintenant une coupure de courant.', 'ok'); }
-    else msg('Enregistré, mais la configuration actuelle n’est pas correcte.', 'bad');
+    if (ok()){ goal(4); msg('Configuration enregistrée dans les cartes. Testez une coupure de courant.', 'ok'); } else msg('Enregistré, mais la configuration actuelle n’est pas correcte.', 'bad');
   });
-  $('nvPower').addEventListener('click', function(){
+  q('.power').addEventListener('click', function(){
     power = false; render(); msg('Écran coupé…', '');
     setTimeout(function(){
       power = true; hw = {file: flash.file, map: flash.map ? flash.map.slice() : null}; render();
-      if (correct()){ goal(5); if (!goals.every(Boolean)) msg('Rallumé : l’image revient correcte grâce à la sauvegarde.', 'ok'); }
-      else if (flash.file === null) msg('Rallumé : tout est perdu ! Sans « Save », les cartes reprennent leur ancienne configuration.', 'bad');
+      if (ok()){ goal(5); if (!goals[4]) msg('Rallumé : image correcte.', 'ok'); else if (![0,1,2,3,4,5].every(function(k){ return goals[k]; })) msg('Rallumé : l’image revient grâce à la sauvegarde.', 'ok'); }
+      else if (flash.file === null) msg('Rallumé : tout est perdu ! Sans « ' + cfg.save + ' », les cartes reprennent leur ancienne configuration.', 'bad');
       else msg('Rallumé avec la configuration sauvegardée, qui n’est pas correcte.', 'bad');
     }, 900);
   });
   render();
-})();
+});
+
+/* ================= Simulateur HDPlayer (Huidu) ================= */
+$$('[data-sim="hdplayer"]').forEach(function(root){
+  root.innerHTML =
+    '<p class="intro">Mission : programmer l’écran d’une pharmacie piloté par un lecteur Huidu. Sur place, vous relevez : contrôleur <code>HD-A3</code>, écran de 6 × 6 modules P5, chaque module fait 64 × 32 pixels. Le client veut une vidéo avec un bandeau de texte défilant en bas.</p>' +
+    '<div class="nova"><div class="win"><div class="tb"><span>HDPlayer</span><span class="wst">Wi-Fi : non connecté</span></div><div class="tabs" role="tablist"></div>' +
+    '<div class="pane"><p>Réseaux Wi-Fi disponibles :</p><div class="files wifi"></div><label class="f">Mot de passe<input type="password" class="wpwd" autocomplete="off"></label><button class="btn primary wgo" type="button" style="width:max-content">Se connecter</button><p class="msg wmsg" hidden></p></div>' +
+    '<div class="pane" hidden><p><kbd>Fichier</kbd> → <kbd>Nouvel écran</kbd></p><div class="row"><label class="f">Contrôleur<select class="ctl"><option>HD-C16</option><option>HD-A3</option><option>HD-A6</option></select></label><label class="f">Largeur (px)<input type="number" class="sw" value="320"></label><label class="f">Hauteur (px)<input type="number" class="sh" value="160"></label></div><button class="btn primary mk" type="button" style="width:max-content">Créer l’écran</button></div>' +
+    '<div class="pane" hidden><p>Disposition du programme :</p><div class="files lay"></div><label class="f">Texte du bandeau<input type="text" class="txt" value="Promotion : -20 % sur les solaires cette semaine" style="width:100%"></label></div>' +
+    '<div class="pane" hidden><p>Envoyer le programme au lecteur :</p><div class="row"><button class="btn primary sendw" type="button">Envoyer par Wi-Fi</button><button class="btn sendu" type="button">Exporter sur clé USB</button></div></div>' +
+    '</div><div class="screen"><span class="label">Écran de la pharmacie</span><div class="hdscreen"><div class="hdvid">VIDÉO</div><div class="hdbar"><span></span></div><div class="hdclock">14:32</div></div><p class="msg smsg">Écran allumé : ancien programme en cours.</p><span class="label">Objectifs</span><ul class="goals"></ul></div></div>';
+  var q = function(s){ return root.querySelector(s); }, qa = function(s){ return [].slice.call(root.querySelectorAll(s)); };
+  var T = ['Wi-Fi','Écran','Programme','Envoi'];
+  var tabs = T.map(function(t, i){ var b = el('button', {role:'tab', type:'button', 'aria-selected': i ? 'false' : 'true', text:t}); b.addEventListener('click', function(){ tab(i); }); q('.tabs').appendChild(b); return b; });
+  var panes = qa('.pane');
+  function tab(i){ tabs.forEach(function(t, j){ t.setAttribute('aria-selected', j === i ? 'true' : 'false'); }); panes.forEach(function(p, j){ p.hidden = j !== i; }); }
+  ['Se connecter au Wi-Fi du lecteur','Choisir le bon contrôleur','Saisir la bonne résolution','Programme vidéo + bandeau texte','Envoyer au lecteur'].forEach(function(g){ q('.goals').appendChild(el('li', {text:g})); });
+  var S = {wifi:null, ok:false, screen:null, layout:null, sentOk:false}, goals = [];
+  function goal(i){ if (goals[i]) return; goals[i] = true; qa('.goals li')[i].classList.add('on'); }
+  function msg(t, k){ var m = q('.smsg'); m.className = 'msg smsg' + (k ? ' ' + k : ''); m.textContent = t; }
+  var nm = 'w' + Math.random().toString(36).slice(2);
+  ['Box-Pharmacie','HD-A3-4F21C8','Pharmacie-Invites'].forEach(function(s){ var i = el('input', {type:'radio', name:nm}); i.addEventListener('change', function(){ S.wifi = s; }); q('.wifi').appendChild(el('label', null, [i, s])); });
+  q('.wgo').addEventListener('click', function(){
+    var m = q('.wmsg'); m.hidden = false;
+    if (S.wifi !== 'HD-A3-4F21C8'){ m.className = 'msg wmsg bad'; m.textContent = 'Ce réseau n’est pas celui du lecteur. Le point d’accès d’un lecteur Huidu commence par « HD- ».'; return; }
+    if (q('.wpwd').value.trim() !== '88888888'){ m.className = 'msg wmsg bad'; m.textContent = 'Mot de passe refusé. Indice : valeur d’usine fréquente, huit fois le même chiffre.'; return; }
+    S.ok = true; m.className = 'msg wmsg ok'; m.textContent = 'Connecté au lecteur. Changez ce mot de passe après la mise en service.';
+    q('.wst').textContent = 'Wi-Fi : HD-A3-4F21C8'; goal(0); tab(1);
+  });
+  q('.mk').addEventListener('click', function(){
+    S.screen = {ctl: q('.ctl').value, w: +q('.sw').value, h: +q('.sh').value};
+    if (S.screen.ctl === 'HD-A3') goal(1);
+    if (S.screen.w === 384 && S.screen.h === 192) goal(2);
+    msg('Écran créé : ' + S.screen.ctl + ', ' + S.screen.w + ' × ' + S.screen.h + ' px.', ''); tab(2);
+  });
+  var ln = 'l' + Math.random().toString(36).slice(2);
+  [['full','Vidéo plein écran'],['bar','Vidéo + bandeau texte en bas'],['clock','Vidéo + horloge']].forEach(function(l){ var i = el('input', {type:'radio', name:ln}); i.addEventListener('change', function(){ S.layout = l[0]; if (l[0] === 'bar') goal(3); }); q('.lay').appendChild(el('label', null, [i, l[1]])); });
+  function show(){
+    var v = q('.hdvid'), b = q('.hdbar'), c = q('.hdclock'), scr = q('.hdscreen');
+    b.firstChild.textContent = q('.txt').value;
+    v.hidden = false; b.hidden = S.layout !== 'bar'; c.hidden = S.layout !== 'clock';
+    var s = S.screen, sx = Math.min(1, s.w / 384), sy = Math.min(1, s.h / 192);
+    scr.style.setProperty('--sx', sx); scr.style.setProperty('--sy', sy);
+    scr.classList.toggle('err', !(s.w === 384 && s.h === 192)); scr.classList.toggle('withbar', S.layout === 'bar');
+  }
+  function send(how){
+    if (!S.screen) return msg('Créez d’abord l’écran (onglet Écran).', 'bad');
+    if (!S.layout) return msg('Choisissez une disposition de programme.', 'bad');
+    if (how === 'wifi' && !S.ok) return msg('Envoi impossible : vous n’êtes pas connecté au Wi-Fi du lecteur.', 'bad');
+    if (S.screen.ctl !== 'HD-A3') return msg('Le lecteur refuse le programme : il a été créé pour un ' + S.screen.ctl + ' alors que le contrôleur est un HD-A3.', 'bad');
+    show();
+    if (!(S.screen.w === 384 && S.screen.h === 192)) return msg('Programme lu, mais l’image n’occupe pas tout l’écran : ' + S.screen.w + ' × ' + S.screen.h + ' px au lieu de 6 × 64 = 384 par 6 × 32 = 192.', 'bad');
+    goal(4);
+    msg(how === 'usb' ? 'Programme exporté : branchez la clé sur le lecteur, il copie et lance le programme.' : 'Programme envoyé et lu correctement.', goals.every(Boolean) && goals.length === 5 ? 'ok' : '');
+    if ([0,1,2,3,4].every(function(k){ return goals[k]; })) msg('Mission accomplie : le bon programme tourne en plein écran avec son bandeau.', 'ok');
+    else if (how === 'usb') goal(0);
+  }
+  q('.sendw').addEventListener('click', function(){ send('wifi'); });
+  q('.sendu').addEventListener('click', function(){ send('usb'); });
+  q('.txt').addEventListener('input', function(){ q('.hdbar span').textContent = q('.txt').value; });
+  q('.hdbar').hidden = true; q('.hdclock').hidden = true;
+});
+
+/* ================= Atelier de chiffrage ================= */
+$$('[data-sim="devis"]').forEach(function(root){
+  var F = [['surf','Surface d’écran (m²)',21,0.5],['ecr','Écran (€ / m²)',2500,50],['str','Structure (€ / m²)',250,10],['ctl','Contrôle et processeur (€)',4500,100],['ele','Électricité et réseau (€)',2500,100],['jrs','Jours d’installation',4,1],['tec','Techniciens',3,1],['tj','Taux journalier (€ / technicien)',450,10],['trp','Transport et levage (€)',1200,50],['mes','Mise en service, calibration, formation (€)',1500,50],['mrg','Marge (%)',25,1]];
+  root.innerHTML = '<p class="intro">Saisissez vos hypothèses : le devis se recalcule. Les valeurs de départ sont des exemples, remplacez-les par vos tarifs et ceux de vos fournisseurs.</p><div class="row fields"></div><div class="dv"></div><div class="out"><div><span>Total HT</span><b class="tht">–</b></div><div><span>TVA 20 %</span><b class="tva">–</b></div><div><span>Total TTC</span><b class="ttc">–</b></div><div><span>Prix de vente / m²</span><b class="pm2">–</b></div><div><span>Main-d’œuvre</span><b class="mo">–</b></div><div><span>Marge</span><b class="mg">–</b></div></div>';
+  var box = root.querySelector('.fields'), val = {};
+  F.forEach(function(f){ var i = el('input', {type:'number', min:'0', step:String(f[3]), value:String(f[2])}); i.addEventListener('input', calc); val[f[0]] = i; box.appendChild(el('label', {'class':'f'}, [f[1], i])); });
+  var eur = function(n){ return fmt(Math.round(n)) + ' €'; };
+  function calc(){
+    var v = {}; Object.keys(val).forEach(function(k){ v[k] = parseFloat(val[k].value) || 0; });
+    var lines = [['Écran', v.surf*v.ecr], ['Structure', v.surf*v.str], ['Contrôle', v.ctl], ['Électricité et réseau', v.ele], ['Main-d’œuvre', v.jrs*v.tec*v.tj], ['Transport et levage', v.trp], ['Mise en service', v.mes]];
+    var cost = lines.reduce(function(a, l){ return a + l[1]; }, 0), ht = cost * (1 + v.mrg/100), max = Math.max.apply(null, lines.map(function(l){ return l[1]; })) || 1;
+    var dv = root.querySelector('.dv'); dv.innerHTML = '';
+    lines.forEach(function(l){
+      var r = el('div', {'class':'dvrow'}, [el('span', {text:l[0]}), el('span', {'class':'dvbar'}, [el('i', {style:'width:' + (l[1]/max*100) + '%'})]), el('b', {text:eur(l[1])}), el('span', {'class':'dvp', text: cost ? fmt(l[1]/cost*100) + ' %' : '–'})]);
+      dv.appendChild(r);
+    });
+    root.querySelector('.tht').textContent = eur(ht); root.querySelector('.tva').textContent = eur(ht*.2); root.querySelector('.ttc').textContent = eur(ht*1.2);
+    root.querySelector('.pm2').textContent = v.surf ? eur(ht / v.surf) : '–'; root.querySelector('.mo').textContent = eur(v.jrs*v.tec*v.tj); root.querySelector('.mg').textContent = eur(ht - cost);
+  }
+  calc();
+});
 
 /* ================= Totem asynchrone ================= */
 (function(){
@@ -2338,6 +2609,156 @@ if (cv){
   $('trReset').addEventListener('click', function(){ path = []; go('start'); });
   go('start');
 })();
+
+/* ================= Suivi, attestation, espace formateur ================= */
+TR = {db:null, user:null, ref:null, uid:null, timer:null, admin:false};
+function syncStatus(t, on){ var s = $('meStatus'); if (s){ s.textContent = t; s.className = 'sync' + (on ? ' on' : ''); } }
+function progressDoc(){
+  var modsOut = {};
+  mods.forEach(function(s){ modsOut[s.id] = {seen: Math.min(seenCount(s.id), stepsOf(s).length), total: stepsOf(s).length, quiz: st.quiz[s.id] || 0, ok: isDone(s)}; });
+  var validated = mods.filter(isDone).length;
+  return {name: (st.name || '').slice(0, 80), validated: validated, total: mods.length, final: st.final || 0, certified: eligible(), modules: modsOut, updatedAt: new Date().toISOString()};
+}
+function schedulePush(){
+  if (!TR.ref) return;
+  clearTimeout(TR.timer);
+  TR.timer = setTimeout(function(){
+    TR.ref.set(progressDoc()).then(function(){
+      syncStatus('Progression partagée avec le formateur · ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), true);
+    }, function(e){
+      if (e && e.code === 'invalid_argument') { syncStatus('Le formateur ne vous a pas donné le droit d’enregistrer : progression gardée sur cet appareil.', false); TR.ref = null; }
+      else syncStatus('Enregistrement en attente (connexion). Nouvel essai au prochain changement.', false);
+    });
+  }, 2000);
+}
+function eligible(){ return mods.every(isDone) && (st.final || 0) >= 16 && !!(st.name || '').trim(); }
+function mergeRemote(d){
+  if (!d) return;
+  if (d.modules) Object.keys(d.modules).forEach(function(id){
+    var m = d.modules[id], s = $(id); if (!s) return;
+    var loc = st.seen[id] = st.seen[id] || [];
+    for (var i = 0; i < Math.min(m.seen || 0, stepsOf(s).length); i++) if (loc.indexOf(i) < 0 && loc.length < (m.seen || 0)) loc.push(i);
+    st.quiz[id] = Math.max(st.quiz[id] || 0, m.quiz || 0);
+  });
+  st.final = Math.max(st.final || 0, d.final || 0);
+  if (!st.name && d.name) st.name = d.name;
+}
+(function(){
+  var inp = $('meName');
+  inp.value = st.name || '';
+  inp.addEventListener('input', function(){ st.name = inp.value; save(); });
+  syncStatus('Progression enregistrée sur cet appareil.', false);
+  if (!window.claude || !window.claude.use){ return; }
+  Promise.all([window.claude.use('db'), window.claude.use('user')]).then(function(r){
+    var db = r[0], user = r[1];
+    if (!db || !user) return;
+    TR.db = db; TR.user = user;
+    return user.id().then(function(uid){
+      if (!uid) return;
+      TR.uid = uid; TR.ref = db.doc('results/' + uid);
+      return TR.ref.get().then(function(snap){
+        if (snap.exists) mergeRemote(snap.data());
+        var p = st.name ? Promise.resolve() : user.me().then(function(me){ if (me.name && !st.name) st.name = me.name; });
+        return p.then(function(){
+          inp.value = st.name || ''; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){}
+          syncStatus('Progression partagée avec le formateur.', true);
+          if (!$('home').hidden) buildHome();
+          schedulePush();
+        });
+      }, function(){ syncStatus('Suivi partagé indisponible pour le moment : progression gardée sur cet appareil.', false); TR.ref = null; });
+    }).then(function(){ return user.canEdit(); }).then(function(adm){
+      TR.admin = !!adm;
+      if (TR.admin){ $('formateur').dataset.hide = ''; if (!$('home').hidden) buildHome(); watchClass(); }
+    });
+  }, function(){});
+})();
+function watchClass(){
+  var body = $('fmBody'), msgEl = $('fmMsg');
+  TR.db.collection('results').onSnapshot(function(snap){
+    var rows = snap.docs.map(function(d){ return d.data(); }).filter(Boolean);
+    rows.sort(function(a, b){ return (b.validated || 0) - (a.validated || 0) || String(a.name).localeCompare(String(b.name)); });
+    body.innerHTML = '';
+    if (!rows.length){ msgEl.textContent = 'Aucun stagiaire pour l’instant. Partagez la page avec eux en « Peut interagir ».'; return; }
+    msgEl.textContent = rows.length + ' stagiaire' + (rows.length > 1 ? 's' : '') + ' · ' + rows.filter(function(r){ return r.certified; }).length + ' certifié(s)';
+    rows.forEach(function(r){
+      var pct = r.total ? r.validated / r.total * 100 : 0;
+      var tr = el('tr', null, [
+        el('td', {text: r.name || 'Sans nom'}),
+        el('td', null, [el('span', {'class':'pb'}, [el('i', {style:'width:' + pct + '%'})])]),
+        el('td', {'class':'num', text: (r.validated || 0) + ' / ' + (r.total || '–')}),
+        el('td', {'class':'num', text: r.final ? r.final + ' / 20' : '–'}),
+        el('td', null, [el('span', {'class':'badge' + (r.certified ? ' ok' : ''), text: r.certified ? 'Certifié' : 'En cours'})]),
+        el('td', {'class':'num', text: r.updatedAt ? new Date(r.updatedAt).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '–'})
+      ]);
+      body.appendChild(tr);
+    });
+  }, function(){ msgEl.textContent = 'Impossible de lire les résultats pour le moment.'; });
+}
+function renderAttest(){
+  var box = $('attBox'); if (!box) return;
+  box.innerHTML = '';
+  var miss = el('ul', {'class':'missing'});
+  var nOk = mods.filter(isDone).length;
+  miss.appendChild(el('li', {'class': nOk === mods.length ? 'ok' : '', text: 'Modules validés : ' + nOk + ' / ' + mods.length}));
+  miss.appendChild(el('li', {'class': (st.final || 0) >= 16 ? 'ok' : '', text: 'Évaluation finale : ' + (st.final ? st.final + ' / 20' : 'non passée') + ' (16 minimum)'}));
+  miss.appendChild(el('li', {'class': (st.name || '').trim() ? 'ok' : '', text: 'Nom pour l’attestation : ' + ((st.name || '').trim() || 'à saisir sur l’accueil')}));
+  box.appendChild(miss);
+  if (!eligible()){
+    var todo = mods.filter(function(s){ return !isDone(s); });
+    if (todo.length){
+      box.appendChild(el('p', {text:'Modules restant à valider :'}));
+      var ul = el('div', {'class':'chips'});
+      todo.forEach(function(s){ ul.appendChild(el('button', {'class':'chip', type:'button', text: s.dataset.num + ' · ' + s.dataset.title, onclick:function(){ openMod(s.id); }})); });
+      box.appendChild(ul);
+    }
+    return;
+  }
+  var cvs = el('canvas', {id:'attCanvas', width:'1600', height:'1131', 'aria-label':'Attestation de formation'});
+  box.appendChild(cvs); drawAttest(cvs);
+  var b = el('button', {'class':'btn primary', type:'button', text:'Télécharger l’attestation (PNG)'});
+  var m = el('p', {'class':'msg', hidden:''});
+  box.appendChild(b); box.appendChild(m);
+  (window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null)).then(function(dl){
+    if (!dl){ b.hidden = true; m.hidden = false; m.textContent = 'Le téléchargement n’est pas disponible ici : faites une capture de l’attestation.'; return; }
+    b.addEventListener('click', function(){
+      cvs.toBlob(function(blob){
+        var fn = 'attestation-formation-ecrans-led-' + (st.name || '').trim().toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') + '.png';
+        dl.save({filename: fn, data: blob}).then(function(){ m.hidden = false; m.className = 'msg ok'; m.textContent = 'Attestation enregistrée.'; }, function(e){
+          m.hidden = false; m.className = 'msg bad';
+          m.textContent = e && e.code === 'declined' ? 'Téléchargement annulé.' : 'Téléchargement impossible pour le moment. Réessayez dans un instant.';
+        });
+      }, 'image/png');
+    });
+  });
+}
+function drawAttest(c){
+  var x = c.getContext('2d'), W = c.width, H = c.height;
+  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#07090C'; x.fillRect(0, 0, W, 180);
+  for (var i = 0; i < 80; i++) for (var j = 0; j < 9; j++){ x.fillStyle = 'rgba(255,255,255,' + (0.04 + ((i*7+j*3) % 5) * 0.012) + ')'; x.fillRect(12 + i*20, 12 + j*18, 4, 4); }
+  ['#E0352A','#17A454','#2563EB'].forEach(function(col, k){ x.fillStyle = col; x.fillRect(90 + k*20, 62, 12, 56); });
+  x.fillStyle = '#F2F5F8'; x.font = '800 54px Archivo, "Arial Narrow", Arial, sans-serif'; x.textBaseline = 'middle';
+  x.fillText('ATTESTATION DE FORMATION', 170, 92);
+  x.strokeStyle = '#15191F'; x.lineWidth = 3; x.strokeRect(40, 220, W - 80, H - 260);
+  x.fillStyle = '#56606C'; x.font = '500 26px "IBM Plex Mono", Menlo, monospace'; x.fillText('DÉLIVRÉE À', 110, 300);
+  x.fillStyle = '#15191F'; x.font = '800 86px Archivo, "Arial Narrow", Arial, sans-serif'; x.fillText((st.name || '').trim().toUpperCase().slice(0, 34), 106, 385);
+  x.fillStyle = '#15191F'; x.font = '400 32px "IBM Plex Sans", "Segoe UI", sans-serif';
+  x.fillText('qui a suivi et validé la formation', 110, 470);
+  x.font = '700 40px "IBM Plex Sans", "Segoe UI", sans-serif'; x.fillStyle = '#1650B8';
+  x.fillText('Écrans LED : installation de tous les types et programmation', 110, 525);
+  x.fillStyle = '#15191F'; x.font = '400 28px "IBM Plex Sans", "Segoe UI", sans-serif';
+  var facts = [['Durée', '35 heures'], ['Modules validés', mods.length + ' / ' + mods.length], ['Évaluation finale', (st.final || 0) + ' / 20'], ['Date', new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})]];
+  facts.forEach(function(f, k){
+    var fx = 110 + k * 350;
+    x.fillStyle = '#56606C'; x.font = '500 20px "IBM Plex Mono", Menlo, monospace'; x.fillText(f[0].toUpperCase(), fx, 610);
+    x.fillStyle = '#15191F'; x.font = '700 34px "IBM Plex Sans", "Segoe UI", sans-serif'; x.fillText(f[1], fx, 652);
+  });
+  x.fillStyle = '#56606C'; x.font = '500 20px "IBM Plex Mono", Menlo, monospace'; x.fillText('PROGRAMME', 110, 735);
+  x.fillStyle = '#15191F'; x.font = '400 21px "IBM Plex Sans", "Segoe UI", sans-serif';
+  mods.forEach(function(s, k){ var col = k < 8 ? 0 : 1, row = k % 8; x.fillText(s.dataset.num + '  ' + s.dataset.title, 110 + col * 700, 775 + row * 32); });
+  x.strokeStyle = '#15191F'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(1080, 1040); x.lineTo(1480, 1040); x.stroke();
+  x.fillStyle = '#56606C'; x.font = '500 20px "IBM Plex Mono", Menlo, monospace'; x.fillText('SIGNATURE DU FORMATEUR', 1080, 1065);
+}
 
 var LAZY = {};
 route();
