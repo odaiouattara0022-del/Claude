@@ -1,0 +1,1214 @@
+<title>Formation Écrans LED</title>
+<meta name="description" content="Formation complète : installation de tous les types d'écrans LED et programmation (NovaStar, Colorlight, Huidu, contenus).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --ink:#10151C; --muted:#56616E; --line:#D6DCE3;
+  --accent:#0A5BD3; --accent-ink:#FFFFFF; --accent-soft:#E2EBF9;
+  --r:#E0352A; --g:#17A454; --b:#2563EB;
+  --warn:#9A5B00; --warn-soft:#FBF0DC; --danger:#B42525; --danger-soft:#FBE6E4; --ok:#157A40; --ok-soft:#E0F3E8;
+  --code-bg:#0E131A; --code-ink:#D8E2EE; --code-key:#7FB2FF;
+  --display:"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0B0F14; --surface:#131920; --surface-2:#18202A; --ink:#E5EAF0; --muted:#9AA6B4; --line:#25303C;
+    --accent:#6AA5FF; --accent-ink:#06101F; --accent-soft:#15253B;
+    --warn:#E8A948; --warn-soft:#2A2113; --danger:#FF8177; --danger-soft:#2E1716; --ok:#5ED58E; --ok-soft:#12271B;
+    --code-bg:#070A0E;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0B0F14; --surface:#131920; --surface-2:#18202A; --ink:#E5EAF0; --muted:#9AA6B4; --line:#25303C;
+  --accent:#6AA5FF; --accent-ink:#06101F; --accent-soft:#15253B;
+  --warn:#E8A948; --warn-soft:#2A2113; --danger:#FF8177; --danger-soft:#2E1716; --ok:#5ED58E; --ok-soft:#12271B;
+  --code-bg:#070A0E;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 64px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1240px;margin-inline:auto}
+header.hero{padding-block:40px 28px;display:grid;gap:18px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,76px);line-height:.95;margin:0;letter-spacing:-.01em;text-wrap:balance;text-transform:uppercase}
+h1 .sub{display:block;color:var(--muted);font-weight:500;font-size:.42em;letter-spacing:.02em;margin-top:10px;text-transform:none}
+.lede{max-width:70ch;font-size:17px;color:var(--ink);margin:0}
+.pixels{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;max-width:520px}
+.pixels span{aspect-ratio:1;border-radius:2px;display:flex;gap:1px;padding:1px;background:#05070a}
+.pixels span i{flex:1;border-radius:1px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.facts b{color:var(--ink);font-weight:500}
+
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:36px;align-items:start}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.toc h2{font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.progress{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:6px 0 4px;border:1px solid var(--line)}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.progress-label{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.toc li a{display:grid;grid-template-columns:28px 1fr 14px;align-items:baseline;gap:4px;padding:5px 6px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px;line-height:1.3}
+.toc li a:hover{background:var(--surface-2)}
+.toc li a .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.toc li a .d{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);align-self:center}
+.toc li a.done .d{background:var(--ok);border-color:var(--ok)}
+details.toc-mobile{display:none}
+
+main{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+section.mod{min-width:0}
+section.mod{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px clamp(18px,3vw,40px);scroll-margin-top:16px}
+.mod-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+.mod-num{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.4vw,38px);line-height:1.05;margin:4px 0 0;text-transform:uppercase;letter-spacing:.005em;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.15;margin:28px 0 8px;letter-spacing:.01em;text-wrap:balance}
+h4{font-size:16px;margin:18px 0 6px;font-weight:600}
+p,li{max-width:74ch}
+ul,ol{padding-left:22px}
+li{margin-block:3px}
+.done-btn{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.done-btn::before{content:"";width:10px;height:10px;border-radius:50%;border:1.5px solid var(--muted)}
+.done-btn[aria-pressed="true"]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.done-btn[aria-pressed="true"]::before{background:var(--ok);border-color:var(--ok)}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.objectifs{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:8px}
+.objectifs strong{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.objectifs ul{margin:6px 0 0}
+
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.45}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;font-size:13px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num,th.num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px;white-space:nowrap}
+
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;border:1px solid var(--line);background:var(--surface-2)}
+.note > strong:first-child{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.note.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.note.warn > strong:first-child{color:var(--warn)}
+.note.danger{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
+.note.danger > strong:first-child{color:var(--danger)}
+.note.tip{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.note.tip > strong:first-child{color:var(--accent)}
+.note p{margin:4px 0}
+
+.formula{font-family:var(--mono);font-size:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 16px;overflow-x:auto;white-space:pre;line-height:1.7}
+pre.code{font-family:var(--mono);font-size:13px;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:14px 16px;overflow-x:auto;line-height:1.6;margin:12px 0}
+pre.code b{color:var(--code-key);font-weight:500}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+kbd{font-family:var(--mono);font-size:.85em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface)}
+
+ol.steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:10px;margin:14px 0}
+ol.steps > li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;max-width:none}
+ol.steps > li::before{content:counter(s);font-family:var(--display);font-weight:700;font-size:20px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;line-height:1}
+ol.steps > li > div > strong:first-child{display:block}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:14px 0}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface-2)}
+.card h4{margin:0 0 4px;font-family:var(--display);font-size:20px;font-weight:600}
+.card .spec{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px}
+.card p,.card ul{margin:4px 0;font-size:14px}
+.card ul{padding-left:18px}
+
+.diagram{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:10px}
+.diagram svg{display:block;min-width:640px;width:100%;height:auto}
+.diagram figcaption{font-size:13px;color:var(--muted);padding:6px 4px 0}
+svg .bx{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+svg .bx-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
+svg .t{fill:var(--ink);font:600 13px var(--body)}
+svg .ts{fill:var(--muted);font:400 11px var(--mono)}
+svg .ln{stroke:var(--ink);stroke-width:1.6;fill:none}
+svg .la{stroke:var(--accent);stroke-width:2.4;fill:none}
+svg .lb{stroke:var(--r);stroke-width:2.4;fill:none}
+svg .ld{stroke:var(--muted);stroke-width:1.6;fill:none;stroke-dasharray:5 4}
+svg .ar{fill:var(--ink)}
+svg .ara{fill:var(--accent)}
+svg .arb{fill:var(--r)}
+
+/* Calculator */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;margin:16px 0;border:1px solid var(--line);border-radius:10px;padding:18px;background:var(--surface-2)}
+.calc fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.calc label{display:grid;gap:3px;font-size:13px;color:var(--muted)}
+.calc input,.calc select{font:500 15px var(--mono);padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);width:100%}
+.calc .full{grid-column:1/-1}
+.out{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:start}
+.out div{background:var(--surface);padding:10px 12px}
+.out span{display:block;font-size:12px;color:var(--muted)}
+.out b{font:500 18px var(--mono);font-variant-numeric:tabular-nums}
+.out .wide{grid-column:1/-1}
+.out .alert{color:var(--warn);font-size:13px;font-weight:500}
+
+/* Quiz */
+.quiz{display:grid;gap:14px;counter-reset:q}
+.q{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface-2);counter-increment:q}
+.q > p{margin:0 0 8px;font-weight:600}
+.q > p::before{content:"Q" counter(q) " · ";font-family:var(--mono);color:var(--accent);font-weight:500}
+.q .opts{display:grid;gap:6px}
+.q button.opt{font:400 15px var(--body);text-align:left;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.q button.opt:hover:not(:disabled){border-color:var(--accent)}
+.q button.opt:disabled{cursor:default}
+.q button.opt.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:500}
+.q button.opt.wrong{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.q .expl{margin:8px 0 0;font-size:14px;color:var(--muted)}
+.score{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-family:var(--mono);font-size:14px;margin-top:8px}
+.score b{font-size:22px;font-family:var(--display)}
+.btn{font:500 14px var(--body);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:7px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+
+.check{list-style:none;padding:0;display:grid;gap:4px}
+.check li{display:grid;grid-template-columns:20px 1fr;gap:8px;max-width:none}
+.check li::before{content:"";width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;margin-top:5px}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+dl.glos{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:6px 18px;margin:0}
+dl.glos dt{font-weight:600;font-family:var(--mono);font-size:14px}
+dl.glos dd{margin:0;color:var(--ink)}
+footer{max-width:1240px;margin:40px auto 0;color:var(--muted);font-size:13px}
+
+@media (max-width: 900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  nav.toc{display:none}
+  details.toc-mobile{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+  details.toc-mobile summary{cursor:pointer;font-family:var(--display);font-size:18px;text-transform:uppercase;font-weight:600}
+  details.toc-mobile ol{margin:8px 0 4px;padding-left:22px;font-size:15px}
+  .calc{grid-template-columns:1fr}
+  dl.glos{grid-template-columns:1fr}
+  dl.glos dd{margin-bottom:8px}
+}
+@media (max-width: 480px){
+  .calc fieldset{grid-template-columns:1fr}
+  .out{grid-template-columns:1fr}
+}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Formation technique · Niveau débutant → confirmé · 5 jours / 35 h</div>
+  <h1>Écrans LED<span class="sub">Installation de tous les types d'écrans et programmation, du câblage à la diffusion</span></h1>
+  <div class="pixels" id="pixels" aria-hidden="true"></div>
+  <p class="lede">Cette formation couvre tout le cycle d'un écran LED : choisir la technologie, dimensionner, monter la structure, câbler l'alimentation et les données, configurer les cartes (NovaStar, Colorlight, Huidu, Linsn), calibrer, diffuser du contenu, faire la recette puis maintenir et dépanner. Chaque module se termine par des points de contrôle. Cochez-les au fur et à mesure : votre progression reste enregistrée dans ce navigateur.</p>
+  <div class="facts">
+    <span><b>14</b> modules</span><span><b>1</b> calculateur de dimensionnement</span><span><b>4</b> travaux pratiques</span><span><b>20</b> questions d'évaluation</span>
+  </div>
+</header>
+
+<details class="toc-mobile"><summary>Sommaire · <span class="prog-txt">0 / 14</span></summary><ol id="tocMobile"></ol></details>
+
+<div class="layout">
+<nav class="toc" aria-label="Sommaire">
+  <h2>Sommaire</h2>
+  <div class="progress"><i id="progBar"></i></div>
+  <div class="progress-label"><span class="prog-txt">0 / 14</span> modules terminés</div>
+  <ol id="toc"></ol>
+</nav>
+
+<main>
+
+<!-- ============ 0 ============ -->
+<section class="mod" id="m0" data-title="Programme et organisation">
+  <div class="mod-head"><div><div class="mod-num">Module 00</div><h2>Programme et organisation</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Public et prérequis</strong>
+    <ul>
+      <li>Techniciens audiovisuels, électriciens, intégrateurs, régisseurs, installateurs de signalétique, personnel d'église ou d'événementiel qui gère un mur LED.</li>
+      <li>Prérequis : bases d'électricité (tension, courant, puissance), usage courant d'un PC Windows, notions de réseau (câble RJ45). Aucune connaissance LED requise.</li>
+      <li>Pour la pratique sur site : habilitation électrique adaptée (en France : B0/H0 minimum pour l'accès, BR ou B1V/B2V pour intervenir), formation travail en hauteur, CACES nacelle si utilisée.</li>
+    </ul>
+  </div>
+  <h3>Déroulé sur 5 jours</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Jour</th><th>Matin</th><th>Après-midi</th></tr></thead>
+    <tbody>
+      <tr><td class="num">J1</td><td>M1 Fondamentaux · M2 Types d'écrans</td><td>M3 Composants · atelier démontage d'un cabinet</td></tr>
+      <tr><td class="num">J2</td><td>M4 Étude et dimensionnement (calculateur, TP1)</td><td>M5 Structures et fixations · M6 Électricité</td></tr>
+      <tr><td class="num">J3</td><td>M7 Installation pas à pas (par type)</td><td>M8 Câblage des données · montage réel 2×2 cabinets</td></tr>
+      <tr><td class="num">J4</td><td>M9 Programmation synchrone (NovaLCT, LEDVISION) · TP2</td><td>M10 Programmation asynchrone (ViPlex, HDPlayer) · TP3</td></tr>
+      <tr><td class="num">J5</td><td>M11 Contenu et diffusion · M12 Calibration et recette</td><td>M13 Maintenance et dépannage · TP4 · M14 Évaluation finale</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Matériel conseillé pour la salle de formation</h3>
+  <ul>
+    <li>4 à 6 cabinets identiques (idéalement 500×500 mm location, P2.9 ou P3.9) + 1 module de rechange.</li>
+    <li>1 carte émettrice ou processeur (ex. NovaStar MCTRL300 ou VX400, Colorlight S2 ou X4), 1 lecteur asynchrone (NovaStar Taurus TB30/TB40 ou Huidu).</li>
+    <li>1 PC Windows avec NovaLCT, SmartLCT, ViPlex Express, LEDVISION, HDPlayer, Resolume (version d'essai).</li>
+    <li>Câbles Cat6 blindés, rallonges powerCON TRUE1, multimètre, pince ampèremétrique, niveau laser, tournevis, ventouse de module, bracelet antistatique.</li>
+  </ul>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="mod" id="m1" data-title="Fondamentaux de la technologie LED">
+  <div class="mod-head"><div><div class="mod-num">Module 01</div><h2>Fondamentaux de la technologie LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Expliquer comment un écran LED forme une image.</li><li>Lire une fiche technique et en comprendre chaque ligne.</li><li>Choisir un pas de pixel selon la distance de vision.</li></ul></div>
+
+  <h3>1.1 Le pixel LED</h3>
+  <p>Un écran LED est une mosaïque de pixels. Chaque pixel contient trois diodes : rouge, verte et bleue (RGB). En modulant l'intensité de chacune, on reproduit n'importe quelle couleur. Contrairement à un écran LCD, la LED <em>émet</em> sa propre lumière : pas de rétroéclairage, d'où une luminosité très élevée et un noir profond.</p>
+  <p>L'intensité est modulée par PWM (modulation de largeur d'impulsion) : la LED s'allume et s'éteint très vite. Le rapport temps allumé / temps éteint donne le niveau de gris. Ce principe explique deux caractéristiques clés : le <strong>taux de rafraîchissement</strong> et la <strong>profondeur de gris</strong>.</p>
+
+  <h3>1.2 Les technologies d'encapsulation</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Technologie</th><th>Principe</th><th>Pas typiques</th><th>Points forts</th><th>Limites</th></tr></thead>
+    <tbody>
+      <tr><td><b>DIP</b> (Dual In-line Package)</td><td>3 LED séparées (R, G, B) à pattes, traversantes</td><td class="num">P8 – P31</td><td>Très lumineux, robuste, pas cher en grand pas</td><td>Angle de vue réduit, résolution faible. Surtout extérieur ancien</td></tr>
+      <tr><td><b>SMD</b> (Surface Mounted Device)</td><td>Les 3 puces dans un même boîtier CMS (1010, 1515, 2121, 3535…)</td><td class="num">P1.2 – P10</td><td>Standard du marché, bon angle, bonne colorimétrie</td><td>LED exposées aux chocs en pas fin</td></tr>
+      <tr><td><b>GOB</b> (Glue On Board)</td><td>SMD recouvert d'une résine transparente</td><td class="num">P1.2 – P3.9</td><td>Protège des chocs, poussière, humidité. Idéal location et sol</td><td>Réparation plus difficile, léger voile possible</td></tr>
+      <tr><td><b>COB</b> (Chip On Board)</td><td>Puces nues collées directement sur le circuit puis encapsulées</td><td class="num">P0.4 – P1.9</td><td>Pas très fin, surface lisse et solide, excellent contraste, bonne dissipation</td><td>Prix, uniformité à calibrer, réparation en usine</td></tr>
+      <tr><td><b>MiP / Micro-LED</b></td><td>Micro-puces en boîtier (MiP) ou directement sur verre/substrat</td><td class="num">P0.4 – P1.5</td><td>Très haute définition, salles de contrôle, broadcast</td><td>Coût élevé</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1.3 Lire une fiche technique</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Paramètre</th><th>Définition</th><th>Valeurs de référence</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pas de pixel (pitch, P)</b></td><td>Distance entre centres de deux pixels voisins, en mm. P2.6 = 2,6 mm.</td><td class="num">Intérieur P0.9–P4 · Extérieur P3–P16</td></tr>
+      <tr><td><b>Résolution du module / cabinet</b></td><td>Nombre de pixels en largeur × hauteur. Cabinet 500 mm en P3.91 → 500 / 3,906 = 128 px.</td><td class="num">500×500 P2.6 = 192×192</td></tr>
+      <tr><td><b>Densité</b></td><td>Pixels par m² = (1000 / pitch)².</td><td class="num">P3.91 ≈ 65 536 px/m²</td></tr>
+      <tr><td><b>Luminosité</b></td><td>En nits (cd/m²).</td><td class="num">Intérieur 600–1 500 · Vitrine 2 500–4 500 · Extérieur 5 000–8 000</td></tr>
+      <tr><td><b>Taux de rafraîchissement</b></td><td>Fréquence de répétition du PWM, en Hz. À ne pas confondre avec la fréquence d'image (50/60 Hz).</td><td class="num">1 920 Hz standard · 3 840 Hz caméra · 7 680 Hz studio / XR</td></tr>
+      <tr><td><b>Niveaux de gris</b></td><td>Nombre de nuances par couleur, en bits.</td><td class="num">13–16 bits (processeur jusqu'à 22 bits)</td></tr>
+      <tr><td><b>Mode de balayage (scan)</b></td><td>Fraction des lignes allumées à la fois : 1/8, 1/16, 1/32… Plus le scan est élevé, moins c'est cher, mais moins c'est lumineux.</td><td class="num">Extérieur 1/2–1/8 · Intérieur 1/16–1/64</td></tr>
+      <tr><td><b>Angle de vue</b></td><td>Angle où la luminosité tombe à 50 %.</td><td class="num">H 140–160° · V 120–160°</td></tr>
+      <tr><td><b>Indice IP</b></td><td>Étanchéité poussière (1er chiffre) / eau (2e chiffre).</td><td class="num">Intérieur IP30–IP43 · Extérieur IP65 avant / IP54–IP65 arrière</td></tr>
+      <tr><td><b>Consommation</b></td><td>Max (plein blanc) et moyenne (contenu vidéo, environ 30–40 % du max).</td><td class="num">Intérieur max 400–700 W/m² · Extérieur max 700–1 000 W/m²</td></tr>
+      <tr><td><b>Cathode commune</b></td><td>Chaque couleur reçoit sa propre tension (R ~2,8 V, G/B ~3,8 V) au lieu d'un 5 V commun.</td><td class="num">≈ 30–40 % d'économie, moins de chaleur</td></tr>
+      <tr><td><b>Durée de vie</b></td><td>Heures jusqu'à 50 % de luminosité.</td><td class="num">50 000–100 000 h</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1.4 Choisir le pas selon la distance de vision</h3>
+  <div class="formula">Distance minimale (m)   ≈ pas (mm) × 1
+Distance confortable (m) ≈ pas (mm) × 2 à 3
+Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du texte)</div>
+  <div class="tbl"><table>
+    <thead><tr><th>Pas</th><th class="num">Dist. min.</th><th class="num">Dist. confortable</th><th>Usages typiques</th></tr></thead>
+    <tbody>
+      <tr><td>P0.9 – P1.5</td><td class="num">1–1,5 m</td><td class="num">2–4 m</td><td>Salle de contrôle, salle de réunion, studio TV, retail haut de gamme</td></tr>
+      <tr><td>P1.8 – P2.6</td><td class="num">2–2,6 m</td><td class="num">4–8 m</td><td>Hall d'accueil, auditorium, église, plateau TV, conférence</td></tr>
+      <tr><td>P2.9 – P3.9</td><td class="num">3–4 m</td><td class="num">6–12 m</td><td>Location scène, concerts en salle, événementiel</td></tr>
+      <tr><td>P4 – P6</td><td class="num">4–6 m</td><td class="num">10–20 m</td><td>Extérieur proche, façade de magasin, stade (périmétrique)</td></tr>
+      <tr><td>P8 – P16</td><td class="num">8–16 m</td><td class="num">20–50 m</td><td>Panneau publicitaire bord de route, grande façade</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note tip"><strong>Règle de terrain</strong><p>Choisissez le pas pour le spectateur le plus proche qui compte, pas pour la moyenne. Un pas plus fin que nécessaire coûte cher (prix ≈ proportionnel au nombre de pixels) et demande plus de ports réseau.</p></div>
+
+  <h3>1.5 Rafraîchissement, caméra et moiré</h3>
+  <ul>
+    <li>Si l'écran est filmé (culte diffusé en direct, TV, streaming), visez <strong>≥ 3 840 Hz</strong> sinon des bandes noires défilent à l'image.</li>
+    <li>Le <strong>moiré</strong> apparaît quand la grille de pixels interfère avec le capteur de la caméra : jouez sur la mise au point (léger flou de l'écran), l'angle, la focale et la distance.</li>
+    <li>Réglez l'obturateur de la caméra sur un multiple de la fréquence d'image (1/50 en Europe, 1/60 aux États-Unis).</li>
+  </ul>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="mod" id="m2" data-title="Tous les types d'écrans LED">
+  <div class="mod-head"><div><div class="mod-num">Module 02</div><h2>Tous les types d'écrans LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Identifier chaque famille d'écran et ses contraintes de pose.</li><li>Recommander le bon type selon le lieu et l'usage.</li></ul></div>
+
+  <div class="cards">
+    <div class="card"><h4>Intérieur fixe</h4><div class="spec">P1.2–P4 · 600–1 200 nits · IP30–IP43</div><p>Mur d'image de hall, salle de conférence, église, magasin. Cabinets 640×480, 500×500 ou 600×337,5 (16:9).</p><ul><li>Pose sur cadre acier fixé au mur</li><li>Maintenance souvent par l'avant (aimants)</li></ul></div>
+    <div class="card"><h4>Extérieur fixe</h4><div class="spec">P3–P16 · 5 000–8 000 nits · IP65</div><p>Façade, panneau publicitaire, fronton de stade. Cabinets 960×960 ou 1 000×1 000 en acier ou aluminium.</p><ul><li>Structure calculée au vent, fondation</li><li>Parafoudre, ventilation ou clim, capteur de luminosité</li></ul></div>
+    <div class="card"><h4>Location (rental)</h4><div class="spec">P1.9–P4.8 · 1 000–5 000 nits · IP30–IP65</div><p>Scène, concert, salon. Cabinets 500×500 et 500×1 000 en aluminium moulé, verrous rapides, coins de protection.</p><ul><li>Suspension (bumpers, moteurs) ou pile au sol</li><li>Cintrage réglable (−10° à +10° selon modèle)</li></ul></div>
+    <div class="card"><h4>Pas fin / COB</h4><div class="spec">P0.6–P1.9 · 400–800 nits</div><p>Salle de contrôle, salle de réunion, studio. Tolérances de pose très serrées (joints &lt; 0,1 mm).</p><ul><li>Structure parfaitement plane, réglable</li><li>Maintenance avant, gants, antistatique</li></ul></div>
+    <div class="card"><h4>Transparent / grille / film</h4><div class="spec">P3.9–P15 · 50–90 % transparence</div><p>Vitrine, façade vitrée, scénographie. Barres LED fixées en haut et en bas, écran léger (≈ 12–18 kg/m²). Le film LED se colle directement sur le verre.</p><ul><li>Distance vitre–écran à respecter (dilatation, condensation)</li><li>Câblage caché dans les profilés</li></ul></div>
+    <div class="card"><h4>Flexible / souple</h4><div class="spec">P1.5–P4 · modules sur circuit souple</div><p>Colonnes, formes courbes, cylindres, vagues. Modules fixés par aimants sur une tôle acier formée.</p><ul><li>Rayon de courbure minimal à respecter (fiche)</li><li>Mapping de pixels spécifique</li></ul></div>
+    <div class="card"><h4>Sol LED (dance floor)</h4><div class="spec">P2.6–P6.25 · charge 1–2 t/m²</div><p>Scène, plateau TV, parcours interactif. Surface verre/PC antidérapante, pieds réglables, option capteurs de présence.</p><ul><li>Support parfaitement nivelé</li><li>Contrôler la charge admissible du plancher</li></ul></div>
+    <div class="card"><h4>Créatifs</h4><div class="spec">Cube, sphère, ruban, triangle, hexagone</div><p>Scénographie, muséographie, stands. Modules sur mesure, cartes réceptrices dédiées, mapping par logiciel média-serveur.</p><ul><li>Plan de pixel (pixel map) indispensable</li></ul></div>
+    <div class="card"><h4>Tout-en-un (All-in-one)</h4><div class="spec">108"–220" · P0.9–P1.9</div><p>« Téléviseur LED » livré avec processeur, lecteur, Android et haut-parleurs intégrés. Salles de réunion.</p><ul><li>Pose sur support mural ou pied fourni</li><li>Configuration simplifiée (pré-mappé usine)</li></ul></div>
+    <div class="card"><h4>Affiches / totems LED</h4><div class="spec">P1.8–P2.5 · format portrait</div><p>Magasins, galeries, halls. Lecteur asynchrone intégré (Wi-Fi/4G/USB), chaînables pour former un mur.</p></div>
+    <div class="card"><h4>Périmétriques de stade</h4><div class="spec">P6–P16 · 6 000+ nits · IP65</div><p>Bandeaux au bord du terrain. Mousse de protection, inclinaison, fixation au sol lestée ou vissée.</p></div>
+    <div class="card"><h4>Mobiles (camion, remorque)</h4><div class="spec">P3.9–P6 · vérins hydrauliques</div><p>Écran sur mât hydraulique, groupe électrogène embarqué. Mise à niveau par stabilisateurs, limite de vent stricte.</p></div>
+    <div class="card"><h4>Studio XR / production virtuelle</h4><div class="spec">P1.5–P2.6 · 7 680 Hz · genlock</div><p>Mur + plafond LED pour tournages. Exige synchronisation genlock, faible latence, calibration colorimétrique poussée.</p></div>
+  </div>
+
+  <h3>2.1 Arbre de décision rapide</h3>
+  <ol>
+    <li><b>Où ?</b> Soleil direct → extérieur IP65 ≥ 5 000 nits. Derrière une vitrine → transparent haute luminosité ou intérieur ≥ 2 500 nits. Intérieur → intérieur.</li>
+    <li><b>Permanent ou temporaire ?</b> Temporaire / tournée → location. Permanent → fixe (moins cher au m², mieux intégré).</li>
+    <li><b>Distance du public ?</b> Voir tableau 1.4 pour le pas.</li>
+    <li><b>Forme ?</b> Plane → cabinets standard. Courbe douce → cabinets location avec verrous d'angle. Cylindre / forme libre → flexible ou créatif.</li>
+    <li><b>Filmé ?</b> Oui → ≥ 3 840 Hz, bon niveau de gris à faible luminosité.</li>
+    <li><b>Contenu ?</b> Direct depuis un ordinateur / régie → contrôle synchrone. Programmes publicitaires planifiés → asynchrone.</li>
+  </ol>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="mod" id="m3" data-title="Composants d'un écran LED">
+  <div class="mod-head"><div><div class="mod-num">Module 03</div><h2>Composants d'un écran LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Nommer chaque élément de la chaîne, de la source au pixel.</li><li>Différencier contrôle synchrone et asynchrone.</li></ul></div>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 780 190" role="img" aria-label="Chaîne du signal : source, processeur, câble réseau, carte réceptrice, carte HUB, modules">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker>
+        <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ara"/></marker>
+      </defs>
+      <rect class="bx" x="10" y="40" width="120" height="70" rx="6"/>
+      <text class="t" x="70" y="70" text-anchor="middle">Source</text>
+      <text class="ts" x="70" y="90" text-anchor="middle">PC · lecteur · régie</text>
+      <line class="ln" x1="130" y1="75" x2="172" y2="75" marker-end="url(#ah)"/>
+      <text class="ts" x="151" y="65" text-anchor="middle">HDMI/DP</text>
+      <text class="ts" x="151" y="100" text-anchor="middle">SDI/DVI</text>
+      <rect class="bx-acc" x="175" y="30" width="150" height="90" rx="6"/>
+      <text class="t" x="250" y="62" text-anchor="middle">Processeur</text>
+      <text class="t" x="250" y="80" text-anchor="middle">ou carte émettrice</text>
+      <text class="ts" x="250" y="102" text-anchor="middle">MCTRL · VX · Colorlight X</text>
+      <line class="la" x1="325" y1="75" x2="387" y2="75" marker-end="url(#aha)"/>
+      <text class="ts" x="356" y="65" text-anchor="middle">Cat6</text>
+      <text class="ts" x="356" y="100" text-anchor="middle">≤ 100 m</text>
+      <rect class="bx" x="390" y="20" width="370" height="150" rx="8" style="stroke-dasharray:6 4"/>
+      <text class="ts" x="575" y="38" text-anchor="middle">CABINET</text>
+      <rect class="bx" x="405" y="50" width="110" height="60" rx="6"/>
+      <text class="t" x="460" y="76" text-anchor="middle">Carte</text>
+      <text class="t" x="460" y="93" text-anchor="middle">réceptrice</text>
+      <line class="ln" x1="515" y1="80" x2="542" y2="80" marker-end="url(#ah)"/>
+      <rect class="bx" x="545" y="50" width="70" height="60" rx="6"/>
+      <text class="t" x="580" y="84" text-anchor="middle">HUB</text>
+      <line class="ln" x1="615" y1="80" x2="642" y2="80" marker-end="url(#ah)"/>
+      <text class="ts" x="628" y="70" text-anchor="middle">nappe</text>
+      <rect class="bx" x="645" y="50" width="100" height="60" rx="6"/>
+      <text class="t" x="695" y="76" text-anchor="middle">Modules</text>
+      <text class="ts" x="695" y="94" text-anchor="middle">LED + drivers</text>
+      <rect class="bx" x="405" y="125" width="210" height="32" rx="6"/>
+      <text class="t" x="510" y="146" text-anchor="middle">Alimentation 230 V → 5 V</text>
+      <line class="ld" x1="615" y1="141" x2="695" y2="141"/><line class="ld" x1="695" y1="141" x2="695" y2="112"/>
+      <line class="ld" x1="460" y1="125" x2="460" y2="112"/>
+      <line class="la" x1="560" y1="30" x2="740" y2="30" marker-end="url(#aha)"/>
+      <text class="ts" x="700" y="24" text-anchor="end">vers cabinet suivant</text>
+    </svg>
+    <figcaption>La chaîne complète. Le signal réseau entre dans la carte réceptrice du premier cabinet, qui le renvoie au cabinet suivant (chaînage).</figcaption>
+  </figure>
+
+  <h3>3.1 Le module</h3>
+  <p>Circuit imprimé portant les LED en face avant et, en face arrière, les circuits intégrés de pilotage (<em>driver IC</em> : ICN2153, MBI5153, MBI5264, FM6363, SM16259…), les décodeurs de lignes et les connecteurs de données (HUB75, HUB320…) et d'alimentation. Tailles courantes : 320×160, 250×250, 240×240, 256×128, 160×160 mm.</p>
+  <div class="note tip"><strong>Important</strong><p>Le type de driver IC, le décodage et le scan du module déterminent le fichier de configuration de la carte réceptrice. Un module de rechange d'un autre lot peut exiger un autre fichier. Notez toujours la référence imprimée au dos.</p></div>
+
+  <h3>3.2 Le cabinet (caisson)</h3>
+  <p>Châssis qui assemble plusieurs modules avec la carte réceptrice, la carte HUB, l'alimentation, les connecteurs et le système de fixation. Matériaux : aluminium moulé (location, léger, précis), tôle acier (fixe extérieur, économique), aluminium profilé, magnésium (ultraléger).</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Format cabinet</th><th>Usage</th><th class="num">Poids typique</th></tr></thead>
+    <tbody>
+      <tr><td class="num">500×500 / 500×1000 mm</td><td>Location intérieur et extérieur</td><td class="num">7–8 kg / 12–14 kg</td></tr>
+      <tr><td class="num">600×337,5 mm (16:9)</td><td>Pas fin, murs 4K natifs (ex. P1.56 → 384×216)</td><td class="num">4–6 kg</td></tr>
+      <tr><td class="num">640×480 mm</td><td>Intérieur fixe</td><td class="num">6–9 kg</td></tr>
+      <tr><td class="num">960×960 mm</td><td>Extérieur fixe acier</td><td class="num">35–45 kg</td></tr>
+      <tr><td class="num">1000×1000 / 1000×500 mm</td><td>Transparent, extérieur léger</td><td class="num">8–25 kg</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>3.3 La carte réceptrice</h3>
+  <p>Reçoit les données du port réseau, extrait la zone de l'image qui concerne son cabinet et pilote les modules. Elle stocke le fichier de configuration (modules, scan, gamma, calibration). Exemples : NovaStar A5s Plus, A8s, A10s Pro, MRV336 ; Colorlight 5A-75B, i5+, E120, CA/CF series ; Linsn RV908/RV926 ; Huidu R-series. La capacité varie de ~256×256 à 512×512 pixels selon le modèle : vérifiez la fiche.</p>
+
+  <h3>3.4 L'alimentation</h3>
+  <p>Convertisseur 230 V AC → 5 V DC (ou 4,2 V / 3,8 V en cathode commune). Formats : 200 W (40 A) et 300 W (60 A). Une alimentation alimente en général 2 à 6 modules. Les cabinets location intègrent l'entrée et la sortie powerCON pour chaîner le secteur.</p>
+
+  <h3>3.5 Contrôleurs : synchrone ou asynchrone</h3>
+  <div class="two">
+    <div class="card"><h4>Synchrone</h4><div class="spec">Image en temps réel depuis une source</div>
+      <p>L'écran affiche exactement ce que reçoit l'entrée vidéo. Sans source, l'écran est noir.</p>
+      <ul><li>Cartes émettrices : NovaStar MSD300/MSD600, Colorlight S2/S4</li><li>Contrôleurs : NovaStar MCTRL300, MCTRL660 Pro, MCTRL4K ; Colorlight X4/X8/X16</li><li>Processeurs tout-en-un (mise à l'échelle, couches) : NovaStar VX400/VX600/VX1000, série H, Colorlight Z6/X20</li></ul>
+      <p>Pour : scène, église, événementiel, régie TV.</p></div>
+    <div class="card"><h4>Asynchrone</h4><div class="spec">Lecteur multimédia autonome</div>
+      <p>Le contenu est chargé dans une mémoire interne (USB, Wi-Fi, 4G, réseau) et joué selon une programmation, sans PC.</p>
+      <ul><li>NovaStar Taurus TB10 à TB60, TU series ; gestion cloud VNNOX</li><li>Colorlight C-series, A-series ; cloud Colorlight</li><li>Huidu HD-A3/A4/A6, HD-C16… ; logiciel HDPlayer</li><li>Linsn / Xixun (lecteurs Android)</li></ul>
+      <p>Pour : affichage publicitaire, totems, pharmacies, commerces. Beaucoup de lecteurs ont un mode <b>synchrone/asynchrone commutable</b> (entrée HDMI).</p></div>
+  </div>
+
+  <h3>3.6 Accessoires</h3>
+  <ul>
+    <li><b>Carte multifonction</b> (NovaStar MFN300, relais) : allumage/extinction programmés de l'alimentation, capteur de température/humidité.</li>
+    <li><b>Capteur de luminosité</b> (NS060) : ajuste la luminosité automatiquement selon l'éclairage ambiant.</li>
+    <li><b>Convertisseur fibre</b> (NovaStar CVT4K, CVT10) : au-delà de 100 m entre régie et écran.</li>
+    <li><b>Séquenceur d'alimentation</b> : allume les départs électriques l'un après l'autre pour limiter l'appel de courant.</li>
+    <li><b>Bumper / barre d'accroche, pieds de pile au sol, verrous d'angle, coins de protection</b> (location).</li>
+  </ul>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="mod" id="m4" data-title="Étude préalable et dimensionnement">
+  <div class="mod-head"><div><div class="mod-num">Module 04</div><h2>Étude préalable et dimensionnement</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Mener une visite technique complète.</li><li>Calculer la résolution, le nombre de cabinets, de ports, la puissance, le poids.</li></ul></div>
+
+  <h3>4.1 Visite technique (site survey)</h3>
+  <ul class="check">
+    <li>Dimensions disponibles (largeur × hauteur), hauteur du bas de l'écran, obstacles, accès pour le montage (portes, ascenseurs, nacelle).</li>
+    <li>Nature du support : béton, parpaing, placo, charpente, verrière. Le placo seul ne porte <b>jamais</b> un écran.</li>
+    <li>Exposition : orientation soleil, pluie, vent, sel (bord de mer), température.</li>
+    <li>Distance et angle du public, éclairage ambiant.</li>
+    <li>Arrivée électrique : tableau, puissance disponible, mono ou triphasé, régime de neutre, terre.</li>
+    <li>Réseau : emplacement de la régie ou du lecteur, longueur de câble, internet pour gestion à distance.</li>
+    <li>Accès maintenance : par l'avant (écran collé au mur) ou par l'arrière (passerelle ≥ 0,8 m).</li>
+    <li>Réglementation : permis/déclaration préalable (extérieur), règlement local de publicité, ERP.</li>
+  </ul>
+
+  <h3>4.2 Formules essentielles</h3>
+  <div class="formula">Cabinets en largeur   = largeur voulue (mm) ÷ largeur cabinet (mm)   → arrondir
+Cabinets en hauteur   = hauteur voulue (mm) ÷ hauteur cabinet (mm)
+Pixels par cabinet    = dimension cabinet (mm) ÷ pas (mm)
+Résolution écran      = nb cabinets × pixels par cabinet (chaque axe)
+Ports réseau (1 Gb)   = pixels totaux ÷ 650 000   → arrondir au-dessus (+ marge)
+Puissance max (W)     = surface (m²) × W/m² max
+Puissance moy. (W)    ≈ puissance max × 0,33
+Courant mono (A)      = P ÷ 230
+Courant tri / phase   = P ÷ (√3 × 400 × cos φ)     (cos φ ≈ 0,95 avec PFC)</div>
+  <div class="note"><strong>Capacité d'un port Gigabit</strong><p>≈ 650 000 pixels (NovaStar : 655 360) en 8 bits à 60 Hz. En 10/12 bits ou à des fréquences plus hautes, la capacité est divisée (environ par 2 en 10 bits). Gardez une marge de 10 % pour pouvoir câbler proprement par rangées complètes.</p></div>
+
+  <h3>4.3 Calculateur de dimensionnement</h3>
+  <div class="calc" id="calc">
+    <fieldset>
+      <label>Largeur souhaitée (m)<input id="cW" type="number" step="0.1" min="0.5" value="6"></label>
+      <label>Hauteur souhaitée (m)<input id="cH" type="number" step="0.1" min="0.5" value="3.5"></label>
+      <label>Pas de pixel (mm)<input id="cP" type="number" step="0.01" min="0.4" value="2.6"></label>
+      <label>Type de cabinet
+        <select id="cCab">
+          <option value="500x500|30|550">500×500 location</option>
+          <option value="500x1000|28|550">500×1000 location</option>
+          <option value="600x337.5|25|450">600×337,5 pas fin 16:9</option>
+          <option value="640x480|28|500">640×480 intérieur fixe</option>
+          <option value="960x960|45|900">960×960 extérieur fixe</option>
+          <option value="1000x500|16|650">1000×500 transparent</option>
+        </select></label>
+      <label>Puissance max (W/m²)<input id="cWm" type="number" step="10" min="50" value="550"></label>
+      <label>Poids (kg/m²)<input id="cKg" type="number" step="1" min="1" value="30"></label>
+      <label>Profondeur de couleur
+        <select id="cBit"><option value="650000">8 bits · 60 Hz</option><option value="327000">10 bits · 60 Hz</option><option value="325000">8 bits · 120 Hz</option></select></label>
+      <label>Alimentation secteur
+        <select id="cPh"><option value="1">Monophasé 230 V</option><option value="3" selected>Triphasé 400 V</option></select></label>
+      <p class="meta full">Le type de cabinet pré-remplit puissance et poids avec des valeurs moyennes. Remplacez-les par celles de votre fiche technique.</p>
+    </fieldset>
+    <div class="out" aria-live="polite">
+      <div><span>Cabinets (L × H)</span><b id="oCab">–</b></div>
+      <div><span>Taille réelle</span><b id="oSize">–</b></div>
+      <div><span>Résolution</span><b id="oRes">–</b></div>
+      <div><span>Pixels totaux</span><b id="oPix">–</b></div>
+      <div><span>Ports Gigabit min.</span><b id="oPorts">–</b></div>
+      <div><span>Surface</span><b id="oArea">–</b></div>
+      <div><span>Puissance max / moy.</span><b id="oPow">–</b></div>
+      <div><span>Courant max</span><b id="oAmp">–</b></div>
+      <div><span>Poids écran (hors structure)</span><b id="oKg">–</b></div>
+      <div><span>Distance de vision min. / idéale</span><b id="oDist">–</b></div>
+      <div class="wide"><span>Recommandations</span><div id="oReco" class="alert"></div></div>
+    </div>
+  </div>
+
+  <h3>4.4 Exemple corrigé (TP1)</h3>
+  <p>Une église veut un écran d'environ 6 m × 3,5 m, public entre 5 et 25 m, services filmés.</p>
+  <ol>
+    <li>Pas : spectateur le plus proche à 5 m → P2.6 à P3.9 conviennent. Filmé → 3 840 Hz. On retient <b>P2.6</b>, cabinets 500×500.</li>
+    <li>Cabinets : 6 000 / 500 = <b>12</b> ; 3 500 / 500 = <b>7</b> → 84 cabinets, écran réel 6,0 × 3,5 m.</li>
+    <li>Pixels par cabinet : 500 / 2,6 ≈ 192 (le pas exact est 2,604 mm) → 192×192.</li>
+    <li>Résolution : 12 × 192 = <b>2 304</b> × 7 × 192 = <b>1 344</b> px → 3 096 576 pixels. Plus large que 1920×1080 : il faut un processeur 4K ou un contrôleur à mise à l'échelle.</li>
+    <li>Ports : 3 096 576 / 650 000 = 4,8 → <b>5 ports minimum</b>. En pratique 6 ports de 2 colonnes chacun (2 × 7 = 14 cabinets × 36 864 px = 516 096 px par port). Processeur type VX600 ou MCTRL660 Pro.</li>
+    <li>Puissance : 21 m² × 550 W/m² ≈ <b>11,6 kW max</b>, ≈ 3,8 kW en moyenne. Triphasé : 11 550 / (1,732 × 400 × 0,95) ≈ <b>17,6 A par phase</b> → 3 départs 20 A équilibrés, un par phase.</li>
+    <li>Poids : 21 m² × 30 kg/m² ≈ <b>630 kg</b> + structure + bumpers → faire valider les points d'accroche.</li>
+  </ol>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="mod" id="m5" data-title="Structures et fixations">
+  <div class="mod-head"><div><div class="mod-num">Module 05</div><h2>Structures et fixations</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Choisir le système porteur adapté à chaque type d'écran.</li><li>Appliquer les règles de sécurité de levage et de travail en hauteur.</li></ul></div>
+
+  <div class="note danger"><strong>Sécurité avant tout</strong><p>Toute structure fixe d'extérieur, tout accrochage en hauteur au-dessus du public et tout écran de plus de quelques centaines de kilos doit être validé par un bureau d'études (note de calcul) : charges permanentes, vent (Eurocode 1, NF EN 1991-1-4), neige, séisme selon zone. En France, les structures acier relèvent de la NF EN 1090 et le contrôle peut être demandé par un bureau de contrôle agréé.</p></div>
+
+  <h3>5.1 Écran mural fixe (intérieur)</h3>
+  <ul>
+    <li>Cadre en tubes acier (40×40, 60×40 ou 80×40 mm), galvanisé ou peint, fixé au mur porteur par chevilles chimiques ou mécaniques adaptées au support.</li>
+    <li>Traverses horizontales alignées sur les points de fixation des cabinets ; montants verticaux tous les 1 à 1,5 m.</li>
+    <li>Écarts : 50–150 mm entre mur et arrière des cabinets pour la ventilation et le câblage.</li>
+    <li>Planéité : tolérance ≤ 1 mm sur 2 m pour pas ≥ P2.5, ≤ 0,5 mm pour pas fin. Utiliser des cales ou des supports réglables.</li>
+    <li>Habillage : cadre de finition (aluminium brossé, noir mat) pour masquer tranches et câbles.</li>
+  </ul>
+
+  <h3>5.2 Écran extérieur fixe</h3>
+  <ul>
+    <li><b>Sur façade</b> : ossature acier galvanisé ancrée dans la structure du bâtiment (jamais dans l'isolant ou le bardage seul). Passerelle de maintenance arrière si service arrière.</li>
+    <li><b>Sur mât / totem</b> : fondation béton armé dimensionnée (massif), tiges d'ancrage, mât simple ou double, cadre caisson. Accès par trappe ou échelle intérieure.</li>
+    <li><b>Toiture</b> : charpente calculée, lests ou ancrages, garde-corps, prise en compte de l'effet de voile.</li>
+    <li>Pente de toit ou auvent pour protéger la carrosserie ; évacuation de l'eau ; ventilation forcée ou climatisation dans les caissons fermés.</li>
+    <li>Paratonnerre / parafoudres (type 1 ou 2 selon étude) et liaison équipotentielle de toute la structure à la terre.</li>
+  </ul>
+
+  <h3>5.3 Location : suspension (flying)</h3>
+  <ol class="steps">
+    <li><div><strong>Vérifier les points d'accroche</strong> Charge maximale (WLL) du grill, de la poutre ou du pont (truss). Documents de la salle.</div></li>
+    <li><div><strong>Préparer bumper(s)</strong> 1 bumper pour 2 à 4 colonnes selon modèle. Palans électriques (moteurs D8+ si au-dessus du public) ou manuels, élingues avec facteur de sécurité adapté.</div></li>
+    <li><div><strong>Monter de haut en bas</strong> Accrocher la première rangée au bumper, lever de la hauteur d'un cabinet, accrocher la rangée suivante dessous, et ainsi de suite.</div></li>
+    <li><div><strong>Respecter le nombre max de cabinets suspendus</strong> Indiqué par le fabricant (ex. 12 à 20 cabinets 500×500 en hauteur). Au-delà : double rangée d'accroche ou ground stack.</div></li>
+    <li><div><strong>Sécurité secondaire</strong> Élingues de sécurité indépendantes sur chaque point. Aucun personnel sous la charge pendant le levage.</div></li>
+  </ol>
+
+  <h3>5.4 Location : pile au sol (ground stack)</h3>
+  <ul>
+    <li>Barre de base avec pieds réglables, niveau à bulle / laser, jambes de force arrière (outriggers) ou contrepoids.</li>
+    <li>Hauteur maximale indiquée par le fabricant (souvent 5–6 m sans haubanage).</li>
+    <li>En extérieur : haubanage ou lestage calculé et <b>procédure de vent</b> (vitesse à partir de laquelle on baisse la luminosité, puis on démonte l'écran : voir manuel, souvent 10–15 m/s).</li>
+  </ul>
+
+  <h3>5.5 Écrans courbes</h3>
+  <p>Les cabinets location ont des verrous d'angle (−10° à +10° par pas de 2,5° ou 5°). Pour un cylindre ou une forme concave serrée : cabinets dédiés à arc, ou modules flexibles. Calculez l'angle entre cabinets : angle = 360° × largeur cabinet / (2π × rayon).</p>
+
+  <h3>5.6 Transparent, film, flexible, sol</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Type</th><th>Fixation</th><th>Points de vigilance</th></tr></thead>
+    <tbody>
+      <tr><td>Transparent / grille</td><td>Profilé haut (suspendu) et profilé bas (maintien), ou cadre autoportant. Câbles acier possibles.</td><td>Laisser 50–100 mm avec la vitre, éviter la condensation, prévoir le passage des câbles dans les barres.</td></tr>
+      <tr><td>Film LED adhésif</td><td>Collé côté intérieur de la vitre (verre propre, dégraissé, T° &gt; 10 °C).</td><td>Pas de bulles, alimentation et contrôleur en bord de vitre, respect des limites de chaleur sur double vitrage.</td></tr>
+      <tr><td>Flexible</td><td>Aimants sur tôle acier cintrée ou structure en fer formée.</td><td>Rayon minimal, ne pas plier les modules à la main plusieurs fois, joints réguliers.</td></tr>
+      <tr><td>Sol LED</td><td>Cabinets posés sur pieds réglables, verrouillés entre eux, rampes d'accès.</td><td>Sol porteur et nivelé, charge admissible, surface antidérapante, pas de chariot lourd sans plaques de répartition.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>5.7 Travail en hauteur</h3>
+  <ul>
+    <li>Priorité aux protections collectives : échafaudage roulant (monté par personne formée), nacelle (CACES R486), garde-corps.</li>
+    <li>Harnais uniquement si aucune protection collective possible, avec point d'ancrage validé.</li>
+    <li>Balisage au sol, casque pour tous dans la zone de levage, outils attachés.</li>
+  </ul>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="mod" id="m6" data-title="Alimentation électrique">
+  <div class="mod-head"><div><div class="mod-num">Module 06</div><h2>Alimentation électrique</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Concevoir une distribution électrique fiable et conforme.</li><li>Éviter les pièges classiques : appel de courant, déclenchements différentiels, déséquilibre de phases.</li></ul></div>
+
+  <div class="note danger"><strong>Habilitation</strong><p>Les raccordements au tableau électrique sont réalisés par une personne habilitée et dans le respect de la NF C 15-100 (installations fixes) ou de la réglementation événementielle locale. L'écran est un appareil de classe I : la terre est obligatoire sur chaque cabinet.</p></div>
+
+  <h3>6.1 Architecture</h3>
+  <ol>
+    <li>Tableau dédié écran avec interrupteur général, parafoudre (extérieur), disjoncteurs par départ, protection différentielle 30 mA.</li>
+    <li>Départs de 16 A ou 20 A, chacun alimentant une chaîne de cabinets.</li>
+    <li>Triphasé : répartir les départs de façon équilibrée sur L1, L2, L3.</li>
+    <li>Câbles : section selon longueur et courant (1,5 mm² pour 16 A courte distance ; 2,5 mm² pour 20 A ou longueur &gt; 20 m). Vérifier la chute de tension (&lt; 3 %).</li>
+  </ol>
+
+  <h3>6.2 Combien de cabinets par ligne ?</h3>
+  <div class="formula">Cabinets par ligne = (tension × courant disjoncteur × 0,8) ÷ puissance max d'un cabinet
+Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 cabinets théoriques
+→ limiter aussi au courant max du connecteur de chaînage (powerCON TRUE1 : 16 A) et à la notice du fabricant</div>
+
+  <h3>6.3 Pièges fréquents</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Problème</th><th>Cause</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>Le disjoncteur saute à la mise sous tension</td><td>Appel de courant (inrush) des alimentations à découpage</td><td>Disjoncteurs courbe C ou D, séquenceur, allumer les départs un par un</td></tr>
+      <tr><td>Le différentiel 30 mA saute</td><td>Cumul des courants de fuite des alimentations (≈ 0,5–1 mA chacune)</td><td>Limiter la fuite à ~30 % du seuil par différentiel (≈ 9 mA) → répartir sur plusieurs différentiels, type A ou F conseillé</td></tr>
+      <tr><td>Scintillement, cabinets qui redémarrent</td><td>Chute de tension, neutre sous-dimensionné, groupe électrogène instable</td><td>Section de câble, mesurer tension en charge (plein blanc), régulation du groupe</td></tr>
+      <tr><td>Lignes de couleur ou bruit vidéo</td><td>Terre absente ou boucles de masse</td><td>Vérifier la continuité de terre de chaque cabinet</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6.4 Groupe électrogène</h3>
+  <p>Dimensionner le groupe à au moins 1,5 × la puissance max de l'écran (charge non linéaire). Démarrer le groupe, stabiliser, puis allumer l'écran progressivement. Éteindre l'écran avant d'arrêter le groupe.</p>
+
+  <h3>6.5 Séquence d'allumage et d'extinction</h3>
+  <ul>
+    <li><b>Allumage</b> : source et processeur → écran (départ par départ, 2–3 s d'intervalle).</li>
+    <li><b>Extinction</b> : noir sur l'écran → couper l'écran → couper processeur et source.</li>
+    <li>Ne jamais afficher de plein blanc à 100 % au premier allumage.</li>
+  </ul>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="mod" id="m7" data-title="Installation pas à pas, par type">
+  <div class="mod-head"><div><div class="mod-num">Module 07</div><h2>Installation pas à pas, par type</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Dérouler une installation complète dans le bon ordre.</li><li>Appliquer les gestes spécifiques de chaque type d'écran.</li></ul></div>
+
+  <h3>7.1 Outillage</h3>
+  <div class="two">
+    <ul>
+      <li>Niveau laser croix + niveau à bulle 1 m, mètre, cordeau</li>
+      <li>Visseuse, clés (Allen, plates, douilles), clé dynamométrique</li>
+      <li>Ventouse(s) de module, outil de démontage magnétique</li>
+      <li>Bracelet et tapis antistatiques, gants coton ou nitrile</li>
+    </ul>
+    <ul>
+      <li>Multimètre, pince ampèremétrique, testeur de câble RJ45</li>
+      <li>PC portable avec logiciels et fichiers de config, câble USB</li>
+      <li>Étiqueteuse, colliers, gaines</li>
+      <li>EPI : casque, chaussures de sécurité, gants de manutention</li>
+    </ul>
+  </div>
+
+  <h3>7.2 Procédure générale</h3>
+  <ol class="steps">
+    <li><div><strong>Réception et contrôle</strong> Compter les caisses, vérifier les chocs, lire les numéros de série et de lot. Laisser le matériel s'acclimater 2 à 4 h si la différence de température est importante (condensation).</div></li>
+    <li><div><strong>Test au sol</strong> Si possible, allumer chaque cabinet (ou un échantillon) au sol avec un test de couleur avant de monter.</div></li>
+    <li><div><strong>Implantation</strong> Tracer au laser l'axe horizontal bas et l'axe vertical central. Toute l'installation part de ces références.</div></li>
+    <li><div><strong>Structure</strong> Monter et fixer le cadre, vérifier niveau et planéité, serrer au couple.</div></li>
+    <li><div><strong>Première rangée</strong> La plus importante : alignée parfaitement au laser. Une erreur ici se propage sur toute la hauteur.</div></li>
+    <li><div><strong>Assemblage</strong> Rangée par rangée (de bas en haut sur mur, de haut en bas en suspension). Verrouiller chaque cabinet à ses voisins. Contrôler joints et marches entre cabinets.</div></li>
+    <li><div><strong>Câblage électrique</strong> Chaîner selon le plan (lignes numérotées), vérifier la terre, ne pas encore mettre sous tension.</div></li>
+    <li><div><strong>Câblage données</strong> Suivre le plan de câblage (module 8), étiqueter chaque câble aux deux bouts.</div></li>
+    <li><div><strong>Mise sous tension</strong> Départ par départ. Vérifier les voyants des cartes réceptrices (voir module 13).</div></li>
+    <li><div><strong>Configuration</strong> Charger les paramètres, cartographier l'écran (module 9 ou 10), sauvegarder dans le matériel.</div></li>
+    <li><div><strong>Tests et réglages</strong> Mires, luminosité, calibration, recette (module 12).</div></li>
+    <li><div><strong>Finitions</strong> Habillage, rangement des câbles, nettoyage, documentation.</div></li>
+  </ol>
+
+  <h3>7.3 Particularités par type</h3>
+  <h4>Intérieur fixe maintenance avant</h4>
+  <ul>
+    <li>Poser les cabinets vides (sans modules) sur la structure, aligner, câbler, puis poser les modules magnétiques par l'avant.</li>
+    <li>Vérifier que tous les modules affleurent : une « marche » de 0,2 mm se voit en lumière rasante.</li>
+  </ul>
+  <h4>Extérieur fixe</h4>
+  <ul>
+    <li>Joints d'étanchéité en place et non pincés, presse-étoupes serrés, capots arrière fermés, trous de purge dégagés en bas.</li>
+    <li>Câbles entrant par le bas avec boucle d'égouttement.</li>
+    <li>Capteur de luminosité hors de l'ombre portée et sans lumière directe de l'écran.</li>
+    <li>Contrôle de la ventilation (entrée basse, sortie haute) ou de la climatisation.</li>
+  </ul>
+  <h4>Location</h4>
+  <ul>
+    <li>Contrôler les verrous (loquets fermés, goupilles en place) : c'est la sécurité de l'écran suspendu.</li>
+    <li>Coins de protection jusqu'au dernier moment, ne jamais poser un cabinet sur sa face LED.</li>
+    <li>Mettre en place les caches et la jupe (masking) après tests.</li>
+  </ul>
+  <h4>Pas fin / COB</h4>
+  <ul>
+    <li>Salle propre, gants, bracelet antistatique. Ne jamais toucher la surface LED à mains nues.</li>
+    <li>Joints mesurés à la jauge d'épaisseur, réglage fin des supports par vis micrométriques.</li>
+    <li>Calibration de raccords (seams) souvent nécessaire après montage.</li>
+  </ul>
+  <h4>Transparent</h4>
+  <ul>
+    <li>Monter le profilé haut au laser, suspendre les panneaux, fixer le profilé bas sans contrainte (dilatation).</li>
+    <li>Contrôleur et alimentations dans un coffret technique accessible.</li>
+  </ul>
+  <h4>Flexible</h4>
+  <ul>
+    <li>Former la tôle support, marquer la grille des modules, poser les modules en partant de la jonction visible la moins critique.</li>
+    <li>Plan de pixel dédié : noter l'ordre et l'orientation de chaque module.</li>
+  </ul>
+  <h4>Sol</h4>
+  <ul>
+    <li>Niveler chaque pied, verrouiller, tester la charge en marchant sur toute la surface avant mise sous tension.</li>
+    <li>Rampe ou bordure pour éviter les chutes et protéger les tranches.</li>
+  </ul>
+  <h4>Camion / remorque</h4>
+  <ul>
+    <li>Sol stable, stabilisateurs déployés et calés, niveau vérifié avant levage du mât.</li>
+    <li>Anémomètre en place, consignes de vent affichées, périmètre de sécurité.</li>
+  </ul>
+
+  <div class="note warn"><strong>Humidité et stockage</strong><p>Un écran stocké longtemps ou dans un lieu humide absorbe l'humidité. Allumé directement à pleine luminosité, il peut griller des LED (pixels morts, « chenilles »). Faites un préchauffage progressif : par exemple 2 h à 10–20 %, puis 2 h à 40 %, puis 2 h à 70 %, puis 100 %. Suivez la procédure du fabricant.</p></div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="mod" id="m8" data-title="Câblage des données">
+  <div class="mod-head"><div><div class="mod-num">Module 08</div><h2>Câblage des données</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Établir un plan de câblage lisible et efficace.</li><li>Mettre en place la redondance et les liaisons longue distance.</li></ul></div>
+
+  <h3>8.1 Règles de base</h3>
+  <ul>
+    <li>Câble Cat5e minimum, Cat6 blindé conseillé (S/FTP en extérieur), longueur max 100 m entre deux équipements.</li>
+    <li>Chaque port de sortie du contrôleur alimente une chaîne de cabinets dans la limite de sa capacité (≈ 650 000 px).</li>
+    <li>Parcours en serpentin (aller sur une rangée, retour sur la suivante) ou par colonnes. Choisir un schéma et s'y tenir partout.</li>
+    <li>Les cartes réceptrices ont une entrée et une sortie : ne pas les inverser.</li>
+    <li>Étiqueter : port (A, B, C…) et numéro dans la chaîne (A1, A2…).</li>
+  </ul>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 440 250" role="img" aria-label="Exemple de câblage en serpentin avec deux ports et une boucle de secours">
+      <defs>
+        <marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ara"/></marker>
+        <marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arb"/></marker>
+      </defs>
+      <g id="grid"></g>
+      <polyline class="la" points="4,50 60,50 150,50 240,50 330,50 330,120 240,120 150,120 60,120" marker-end="url(#aa)"/>
+      <polyline class="lb" points="4,190 60,190 150,190 240,190 330,190" marker-end="url(#ab)"/>
+      <polyline class="ld" points="330,120 405,120 405,235 4,235"/>
+      <text class="ts" x="408" y="180" transform="rotate(90 408 180)">secours</text>
+    </svg>
+    <figcaption>12 cabinets, 2 ports. Port A (bleu) : A1→A8 en serpentin sur les deux premières rangées. Port B (rouge) : B1→B4. En pointillé : câble de secours du dernier cabinet de A vers un port de secours du contrôleur.</figcaption>
+  </figure>
+
+  <h3>8.2 Redondance</h3>
+  <ul>
+    <li><b>Boucle de secours</b> : relier la sortie du dernier cabinet d'une chaîne à un port libre du contrôleur, puis déclarer ce port comme secours dans le logiciel. Si un câble casse au milieu, la fin de chaîne est alimentée par l'autre sens.</li>
+    <li><b>Contrôleur de secours</b> : deux processeurs en parallèle, le second en veille (hot backup).</li>
+    <li><b>Alimentation redondante</b> dans certains cabinets haut de gamme (2 blocs par cabinet).</li>
+  </ul>
+
+  <h3>8.3 Longue distance</h3>
+  <ul>
+    <li>&gt; 100 m : convertisseurs fibre (multimode jusqu'à ~300–500 m, monomode jusqu'à 10 km et plus). Exemple NovaStar CVT4K-S/M, CVT10.</li>
+    <li>Pour la source vidéo : HDMI sur fibre ou HDBaseT, ou SDI (jusqu'à ~100 m en 3G-SDI sur coax de qualité).</li>
+  </ul>
+
+  <h3>8.4 Plan de câblage à remettre</h3>
+  <p>Un schéma vu <b>de face</b> (et indiquez-le), avec : la grille des cabinets, le numéro de chaque cabinet, le parcours de chaque port, les lignes électriques et leur disjoncteur, l'emplacement du contrôleur. C'est le document le plus utile lors d'une panne.</p>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="mod" id="m9" data-title="Programmation synchrone : NovaStar, Colorlight">
+  <div class="mod-head"><div><div class="mod-num">Module 09</div><h2>Programmation synchrone</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Configurer un écran de zéro avec NovaLCT (NovaStar) et LEDVISION (Colorlight).</li><li>Comprendre les fichiers de configuration et la sauvegarde matérielle.</li></ul></div>
+
+  <h3>9.1 Les trois niveaux de configuration</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Niveau</th><th>Ce qu'on règle</th><th>Fichier</th></tr></thead>
+    <tbody>
+      <tr><td><b>Carte émettrice / processeur</b></td><td>Résolution d'entrée, fréquence, source, mise à l'échelle, luminosité globale</td><td>Paramètres du processeur</td></tr>
+      <tr><td><b>Carte réceptrice</b></td><td>Type de module, driver IC, scan, décodage, taille du cabinet, rafraîchissement, gamma, niveaux de gris</td><td><code>.rcfgx</code> (NovaStar) · <code>.rcvbp</code> (Colorlight)</td></tr>
+      <tr><td><b>Connexion d'écran (mapping)</b></td><td>Nombre de cabinets, ordre, port utilisé, position dans l'image</td><td><code>.scr</code> / <code>.scrx</code> (NovaStar)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note tip"><strong>Toujours récupérer les fichiers du fabricant</strong><p>Le fichier de carte réceptrice est livré par le fabricant des cabinets. Le créer soi-même (Smart Setting) est possible mais long. Conservez une copie des fichiers dans la documentation du chantier et sur une clé USB près du contrôleur.</p></div>
+
+  <h3>9.2 NovaLCT pas à pas (NovaStar)</h3>
+  <ol class="steps">
+    <li><div><strong>Installer</strong> NovaLCT (version récente, pilotes USB inclus). Relier le PC à la carte émettrice / au contrôleur en USB (ou en Ethernet pour les VX / MCTRL récents). Allumer l'écran et envoyer une source.</div></li>
+    <li><div><strong>Se connecter en mode avancé</strong> Menu <kbd>User</kbd> → <kbd>Advanced Synchronous System User Login</kbd>. Mot de passe par défaut : <code>admin</code> (à modifier en production).</div></li>
+    <li><div><strong>Ouvrir Screen Configuration</strong> Choisir le port de communication détecté → <kbd>Next</kbd>. Trois onglets : Sending Card, Receiving Card, Screen Connection.</div></li>
+    <li><div><strong>Onglet Sending Card</strong> Vérifier la résolution et la fréquence d'entrée (ex. 1920×1080 à 60 Hz), le type de source (HDMI/DVI), activer le mode faible latence si besoin. <kbd>Send</kbd>.</div></li>
+    <li><div><strong>Onglet Receiving Card</strong> <kbd>Load from File</kbd> → fichier <code>.rcfgx</code> du fabricant. Vérifier la taille du cabinet (ex. 192×192), le rafraîchissement (3 840 Hz), le niveau de gris. <kbd>Send to Receiving Card</kbd> puis <kbd>Save</kbd>.</div></li>
+    <li><div><strong>Sans fichier : Smart Settings</strong> Renseigner le type de puce, la taille du module, la zone de câblage, puis répondre au test de points (quelle LED s'allume ?) et de lignes. Le logiciel en déduit scan et décodage. Enregistrer le résultat en <code>.rcfgx</code>.</div></li>
+    <li><div><strong>Onglet Screen Connection</strong> Indiquer le nombre de lignes et colonnes de cartes réceptrices. Choisir le port (Port 1, Port 2…) et cliquer sur les cabinets dans l'ordre du câblage réel. Utiliser les modèles de parcours (serpentin) pour aller vite. Définir la position X/Y de chaque port si plusieurs ports.</div></li>
+    <li><div><strong>Envoyer puis sauvegarder</strong> <kbd>Send to HW</kbd> (applique), puis <kbd>Save</kbd> (écrit dans la mémoire des cartes). Sans <kbd>Save</kbd>, tout est perdu à la coupure de courant. Enfin <kbd>Save to File</kbd> pour archiver le mapping.</div></li>
+    <li><div><strong>Luminosité</strong> Menu <kbd>Brightness</kbd> : réglage manuel, ou automatique avec capteur (table luminosité ambiante → luminosité écran), ou planification horaire.</div></li>
+    <li><div><strong>Redondance et surveillance</strong> Onglet de redondance : déclarer le port de secours. Page <kbd>Monitoring</kbd> : état des cartes, température, tension.</div></li>
+  </ol>
+
+  <h4>Processeurs VX / série H (NovaStar)</h4>
+  <p>Ces processeurs se configurent aussi depuis la façade (molette + écran) ou le logiciel V-Can / l'interface web : entrées, couches (layers), PIP, mise à l'échelle, préréglages (presets). La configuration des cartes réceptrices reste faite dans NovaLCT, ou dans SmartLCT qui propose une vue graphique du mur.</p>
+
+  <h3>9.3 LEDVISION pas à pas (Colorlight)</h3>
+  <ol class="steps">
+    <li><div><strong>Installer</strong> LEDVISION (et LEDUpgrade pour les mises à jour). Relier la carte émettrice S2/S4 ou le contrôleur X en USB ou réseau.</div></li>
+    <li><div><strong>Ouvrir les paramètres d'affichage</strong> <kbd>Settings</kbd> → <kbd>Display Setting</kbd> (ou <kbd>Screen Setting</kbd> selon version). Un mot de passe est demandé : il est donné par le fabricant ou l'intégrateur (valeurs d'usine souvent utilisées : <code>168</code> ou <code>666</code>).</div></li>
+    <li><div><strong>Onglet Receiver</strong> <kbd>Load</kbd> le fichier <code>.rcvbp</code> du fabricant, ou <kbd>Smart Setting</kbd> pour un module inconnu. <kbd>Send</kbd> puis <kbd>Save</kbd>.</div></li>
+    <li><div><strong>Onglet Connection</strong> Nombre de cartes en X et Y, taille de chaque cabinet, tracé du parcours de câblage. <kbd>Send</kbd> puis <kbd>Save</kbd>.</div></li>
+    <li><div><strong>Onglet Sender</strong> Résolution de sortie du PC, fréquence, position de l'écran dans l'image.</div></li>
+  </ol>
+
+  <h3>9.4 Autres systèmes</h3>
+  <ul>
+    <li><b>Linsn</b> : logiciel LEDStudio, même logique (paramètres matériels → carte réceptrice → connexion) ; mot de passe fourni par le fabricant.</li>
+    <li><b>Huidu synchrone</b> : HDSet / HDPlayer pour les cartes émettrices T901/T902.</li>
+    <li><b>Mooncell, Kystar, Magnimage</b> : même logique, logiciels propriétaires.</li>
+  </ul>
+
+  <div class="note warn"><strong>Avant toute modification</strong><p>Faites une lecture et un enregistrement de la configuration existante (<kbd>Read from HW</kbd> puis <kbd>Save to File</kbd>). Un mauvais fichier de carte réceptrice peut donner un écran brouillé. Avec la sauvegarde, on revient en arrière en deux minutes.</p></div>
+
+  <h3>9.5 TP2 : configurer un mur de 2 × 2 cabinets</h3>
+  <ol>
+    <li>Câbler 4 cabinets en serpentin sur le Port 1, en partant du coin haut gauche vu de face.</li>
+    <li>Se connecter à NovaLCT, lire et sauvegarder la configuration existante.</li>
+    <li>Charger le fichier <code>.rcfgx</code>, régler 3 840 Hz, envoyer et sauver.</li>
+    <li>Créer la connexion 2 × 2, envoyer. Afficher la mire de numérotation : chaque cabinet affiche son numéro.</li>
+    <li>Inverser volontairement deux câbles, observer, corriger dans le logiciel sans toucher au câblage.</li>
+    <li>Sauvegarder, couper le courant, rallumer : l'image doit revenir correcte.</li>
+  </ol>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="mod" id="m10" data-title="Programmation asynchrone">
+  <div class="mod-head"><div><div class="mod-num">Module 10</div><h2>Programmation asynchrone</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Créer, planifier et publier un programme sur un lecteur autonome.</li><li>Gérer un parc d'écrans à distance.</li></ul></div>
+
+  <h3>10.1 NovaStar Taurus avec ViPlex</h3>
+  <ol class="steps">
+    <li><div><strong>Choisir l'outil</strong> ViPlex Express (PC, réseau local), ViPlex Handy (téléphone / tablette), VNNOX (cloud, parc d'écrans).</div></li>
+    <li><div><strong>Se connecter</strong> En Wi-Fi sur le point d'accès du lecteur (nom <code>AP</code> + fin du numéro de série ; mot de passe d'usine souvent <code>12345678</code>), ou en câble réseau. Connexion au terminal : utilisateur <code>admin</code>, mot de passe d'usine indiqué dans la notice (souvent <code>SN2008@+</code>). Changez-le.</div></li>
+    <li><div><strong>Configurer l'écran</strong> Dans ViPlex : <kbd>Screen Control</kbd> → réglage de la résolution de l'écran, luminosité, volume, heure (synchronisation NTP), type de réseau (Wi-Fi client, 4G, filaire). Le mapping des cartes réceptrices se fait avec NovaLCT relié au Taurus, comme en synchrone.</div></li>
+    <li><div><strong>Créer une solution</strong> <kbd>Solutions</kbd> → <kbd>New</kbd> : même résolution que l'écran. Ajouter une ou plusieurs pages ; dans chaque page, des fenêtres : vidéo, image, texte, texte défilant, horloge, météo, web, flux en direct.</div></li>
+    <li><div><strong>Durées et ordre</strong> Durée de chaque page ou nombre de lectures, transitions, ordre de lecture.</div></li>
+    <li><div><strong>Planifier</strong> Plages horaires, jours, dates de début et de fin (campagnes publicitaires).</div></li>
+    <li><div><strong>Publier</strong> <kbd>Publish</kbd> vers un ou plusieurs lecteurs. Vérifier la lecture sur l'écran.</div></li>
+    <li><div><strong>Tâches programmées</strong> Luminosité selon l'heure ou le capteur, extinction/allumage de l'écran (via carte multifonction ou relais), redémarrage planifié.</div></li>
+  </ol>
+
+  <h3>10.2 Huidu avec HDPlayer</h3>
+  <ol>
+    <li>Connexion en Wi-Fi au lecteur (point d'accès <code>HD-…</code>, mot de passe d'usine souvent <code>88888888</code>) ou en câble réseau/USB.</li>
+    <li><kbd>Settings</kbd> → <kbd>Hardware setting</kbd> (mot de passe fourni par le fabricant) : paramètres du module et de la connexion, comme en synchrone.</li>
+    <li><kbd>New screen</kbd> → choisir le modèle de contrôleur et la résolution.</li>
+    <li>Ajouter un programme, puis des zones : vidéo, image, texte, horloge, température…</li>
+    <li><kbd>Send</kbd> via réseau / Wi-Fi, ou <kbd>Export to USB</kbd> puis brancher la clé sur le lecteur.</li>
+    <li>Application mobile LEDArt / HD2020 pour les modifications rapides.</li>
+  </ol>
+
+  <h3>10.3 Colorlight (C-series)</h3>
+  <p>Logiciel PlayerMaster (ou LEDVISION pour certains modèles) et gestion cloud Colorlight. Même logique : programme → zones → planning → publication. Les C-series ont souvent une entrée HDMI pour passer en synchrone.</p>
+
+  <h3>10.4 Gestion à distance d'un parc</h3>
+  <ul>
+    <li>Plateformes cloud (VNNOX, cloud Colorlight, Huidu cloud) : publication groupée, captures d'écran à distance, alertes (hors ligne, température).</li>
+    <li>Connexion 4G ou internet filaire, adresse IP fixe ou VPN pour la maintenance.</li>
+    <li>Sécurité : changer tous les mots de passe par défaut, désactiver le point d'accès Wi-Fi s'il n'est pas utile, mettre à jour le firmware.</li>
+  </ul>
+
+  <h3>10.5 Règles d'exploitation (affichage publicitaire extérieur)</h3>
+  <ul>
+    <li>Respecter le règlement local de publicité et les règles nationales d'extinction nocturne et de luminance (en France : Code de l'environnement, extinction en général entre 1 h et 6 h pour la publicité lumineuse, sauf exceptions).</li>
+    <li>Luminosité automatique avec capteur : trop fort la nuit = éblouissement et plaintes.</li>
+    <li>Pas de défilements rapides ni de clignotements en bordure de route (sécurité routière).</li>
+  </ul>
+
+  <h3>10.6 TP3</h3>
+  <p>Créer une solution de 3 pages pour un totem 1080×1920 : page 1 vidéo 15 s, page 2 image + texte défilant 10 s, page 3 horloge + météo 8 s. Planifier lundi-samedi 8 h-21 h, luminosité 100 % en journée et 30 % après 19 h. Publier et vérifier.</p>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="mod" id="m11" data-title="Contenu et diffusion">
+  <div class="mod-head"><div><div class="mod-num">Module 11</div><h2>Contenu et diffusion</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Envoyer une image pixel pour pixel sur l'écran.</li><li>Produire des contenus adaptés à la LED.</li></ul></div>
+
+  <h3>11.1 Le principe du pixel pour pixel</h3>
+  <p>L'écran a une résolution native (ex. 2 304 × 1 344). Pour une image nette, le contenu doit correspondre exactement à cette zone. Deux méthodes :</p>
+  <ul>
+    <li><b>Découpe (crop)</b> : le PC sort en 1920×1080 ou 3840×2160, et le contrôleur prend une zone de la taille de l'écran à partir du coin haut gauche (position X, Y). Le contenu est préparé à la résolution native.</li>
+    <li><b>Mise à l'échelle (scaling)</b> : le processeur (VX, série H…) redimensionne l'entrée vers la résolution de l'écran. Pratique pour la vidéo, moins net pour le texte fin.</li>
+  </ul>
+  <p>Résolution personnalisée : créer une résolution sur la carte graphique (panneau NVIDIA / AMD) ou modifier l'EDID de l'entrée du processeur pour que le PC sorte directement la bonne taille.</p>
+
+  <h3>11.2 Logiciels de diffusion</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Logiciel</th><th>Usage</th><th>À savoir</th></tr></thead>
+    <tbody>
+      <tr><td>Resolume Arena</td><td>VJing, concerts, événementiel</td><td><kbd>Output</kbd> → <kbd>Advanced Output</kbd> : créer des slices pour chaque zone de l'écran, mapping pixel exact, masques</td></tr>
+      <tr><td>ProPresenter</td><td>Églises, conférences (paroles, versets, médias)</td><td>Écran « Audience » en sortie dédiée, résolution personnalisée, look différent pour le mur LED</td></tr>
+      <tr><td>vMix / OBS</td><td>Production live, streaming</td><td>Sortie plein écran (Fullscreen output / Projector) sur la sortie reliée au processeur</td></tr>
+      <tr><td>Watchout, disguise, Pixera</td><td>Scénographie, grands spectacles</td><td>Plans de pixels multiples, synchronisation multi-serveurs</td></tr>
+      <tr><td>Lecteurs Windows / NovaStudio / LEDVISION</td><td>Lecture simple de playlists en synchrone</td><td>Fenêtre de lecture calée sur la zone de l'écran</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>11.3 Créer un contenu adapté</h3>
+  <ul>
+    <li>Toujours à la <b>résolution native</b> de l'écran (ou de la zone du mur).</li>
+    <li>Vidéo : H.264 ou H.265 en MP4, 25/50 i/s (Europe) ou 30/60 i/s, débit élevé (20–50 Mbit/s pour du 4K). Même fréquence que la sortie pour éviter les saccades.</li>
+    <li>Texte : hauteur de caractères suffisante en pixels (≥ 12–16 px sur écran en pas large), polices épaisses, fort contraste.</li>
+    <li>Fonds sombres : moins de consommation, meilleure durée de vie, meilleur contraste. Évitez les grands aplats blancs à 100 %.</li>
+    <li>Évitez les lignes de 1 px en mouvement lent et les motifs fins répétitifs (scintillement, moiré).</li>
+    <li>Écrans de forme spéciale : fournir aux graphistes le <b>plan de pixel</b> (image avec zones et coordonnées).</li>
+  </ul>
+
+  <h3>11.4 Mire de test pixel map</h3>
+  <p>Créez une image à la résolution native avec : un contour de 1 px, une grille par cabinet, le numéro de chaque cabinet, un cercle (pour voir les déformations) et des dégradés. Elle permet de vérifier en une seconde que le mapping est juste.</p>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="mod" id="m12" data-title="Calibration, réglages et recette">
+  <div class="mod-head"><div><div class="mod-num">Module 12</div><h2>Calibration, réglages et recette</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Obtenir une image uniforme et fidèle.</li><li>Conduire une réception de chantier et remettre un dossier complet.</li></ul></div>
+
+  <h3>12.1 Réglages d'image</h3>
+  <ul>
+    <li><b>Luminosité</b> : adaptée au lieu. Intérieur souvent 20–40 % du max d'un écran à 1 000 nits suffit. Trop fort = fatigue visuelle et image surexposée à la caméra.</li>
+    <li><b>Température de couleur</b> : 6 500 K pour correspondre à la vidéo standard ; ajuster si l'écran est filmé à côté d'autres sources.</li>
+    <li><b>Gamma</b> : 2,2 à 2,8 selon l'usage ; rendu des ombres.</li>
+    <li><b>Faible luminosité, haut niveau de gris</b> : option des cartes réceptrices récentes pour garder les dégradés quand on baisse la luminosité.</li>
+  </ul>
+
+  <h3>12.2 Calibration</h3>
+  <ul>
+    <li><b>Point par point (usine)</b> : une caméra mesure chaque LED ; les coefficients corrigent luminosité et chromie. Ils sont stockés dans la carte réceptrice ou dans la mémoire du module.</li>
+    <li><b>Sur site</b> : NovaStar (NovaCLB / système de calibration), Colorlight (logiciel de calibration) avec caméra dédiée. Nécessaire après mélange de lots ou remplacement de nombreux modules.</li>
+    <li><b>Correction des raccords (seams)</b> : ajuste la luminosité des lignes de bord pour masquer les joints clairs ou sombres.</li>
+    <li>Après remplacement d'un module avec mémoire, relire ses coefficients (fonction de lecture des coefficients du module) ou télécharger ceux du fabricant.</li>
+  </ul>
+
+  <h3>12.3 Mires de recette</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Mire</th><th>Ce qu'on contrôle</th></tr></thead>
+    <tbody>
+      <tr><td>Rouge, vert, bleu plein</td><td>Pixels morts, couleur manquante sur un module, uniformité par couleur</td></tr>
+      <tr><td>Blanc à 100 %, 50 %, 10 %</td><td>Uniformité, dominantes de couleur, consommation max (mesure à la pince)</td></tr>
+      <tr><td>Noir</td><td>Pixels allumés en permanence, « lignes fantômes »</td></tr>
+      <tr><td>Dégradés horizontaux et verticaux</td><td>Niveaux de gris, marches, gamma</td></tr>
+      <tr><td>Grille, lignes défilantes</td><td>Mapping, alignement mécanique, continuité entre cabinets</td></tr>
+      <tr><td>Mire pixel map numérotée</td><td>Ordre et position des cabinets</td></tr>
+      <tr><td>Vidéo réelle + caméra</td><td>Rafraîchissement, moiré, fluidité</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>12.4 Tolérances usuelles</h3>
+  <ul>
+    <li>Pixels morts : souvent ≤ 1/10 000 et aucun groupe (3 pixels voisins) — à préciser au contrat.</li>
+    <li>Uniformité de luminosité : ≥ 97 % après calibration.</li>
+    <li>Écarts de joints et de planéité : selon le pas (voir module 5).</li>
+    <li>Essai de fonctionnement continu (burn-in) : 24 à 72 h avant la réception.</li>
+  </ul>
+
+  <h3>12.5 Dossier à remettre au client</h3>
+  <ul class="check">
+    <li>Plan de câblage données et électrique (vu de face), photos de l'arrière.</li>
+    <li>Fichiers de configuration (<code>.rcfgx</code> / <code>.rcvbp</code>, <code>.scr</code>, presets processeur), versions de firmware.</li>
+    <li>Identifiants et mots de passe (modifiés), adresses IP.</li>
+    <li>Notes de calcul structure, certificat de conformité électrique, PV de recette signé.</li>
+    <li>Fiches techniques, notices, liste des pièces de rechange livrées.</li>
+    <li>Procédure d'allumage / extinction simplifiée pour l'utilisateur, affichée près de la régie.</li>
+  </ul>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="mod" id="m13" data-title="Maintenance et dépannage">
+  <div class="mod-head"><div><div class="mod-num">Module 13</div><h2>Maintenance et dépannage</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="objectifs"><strong>Objectifs</strong><ul><li>Planifier la maintenance préventive.</li><li>Diagnostiquer méthodiquement une panne, de la source au pixel.</li></ul></div>
+
+  <h3>13.1 Maintenance préventive</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Fréquence</th><th>Actions</th></tr></thead>
+    <tbody>
+      <tr><td>Chaque utilisation (location)</td><td>Inspection visuelle, verrous, câbles, test couleurs</td></tr>
+      <tr><td>Mensuelle</td><td>Vérifier la surveillance (températures, tensions), pixels morts, planification, mises à jour de contenu</td></tr>
+      <tr><td>Trimestrielle</td><td>Dépoussiérage (soufflette basse pression, pinceau antistatique), filtres de ventilation, contrôle des serrages (extérieur)</td></tr>
+      <tr><td>Annuelle</td><td>Contrôle électrique (terre, différentiels, serrage bornes), étanchéité, structure et corrosion, firmware, sauvegarde des configurations</td></tr>
+    </tbody>
+  </table></div>
+  <p>Stock de rechange conseillé : 3–5 % des modules du même lot, 2 alimentations, 2 cartes réceptrices, 1 carte HUB, câbles nappe et réseau. Les écrans rarement utilisés doivent être allumés régulièrement (ex. 2 h par semaine) pour chasser l'humidité.</p>
+
+  <h3>13.2 Méthode de diagnostic</h3>
+  <ol>
+    <li>Délimiter : tout l'écran, un port, un cabinet, un module, quelques pixels ?</li>
+    <li>Remonter la chaîne : source → processeur → câble → carte réceptrice → HUB → nappe → module.</li>
+    <li>Permuter : échanger un élément suspect avec un élément voisin qui fonctionne. Si la panne suit l'élément, il est en cause.</li>
+    <li>Lire les voyants des cartes réceptrices (NovaStar : le voyant vert clignotant régulièrement indique des données correctes ; rouge fixe = alimentation). Consulter la page Monitoring.</li>
+  </ol>
+
+  <h3>13.3 Tableau de dépannage</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Symptôme</th><th>Causes probables</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Écran entièrement noir</td><td>Pas de source, processeur éteint, écran en « black out », alimentation coupée</td><td>Vérifier la source et le mode de sortie du PC, le voyant du processeur, le disjoncteur</td></tr>
+      <tr><td>Tous les cabinets après le n° X de la chaîne sont noirs</td><td>Câble réseau entre X−1 et X, carte réceptrice de X (ou sortie de X−1), alimentation de X</td><td>Remplacer le câble, permuter la carte réceptrice, contrôler le 5 V</td></tr>
+      <tr><td>Un cabinet affiche l'image d'un autre</td><td>Câbles inversés ou mapping faux</td><td>Mire numérotée, corriger le mapping ou les câbles</td></tr>
+      <tr><td>Un cabinet brouillé ou de mauvaise couleur</td><td>Carte réceptrice avec mauvais fichier (ex. carte de rechange neuve)</td><td>Renvoyer et sauver le <code>.rcfgx</code> / <code>.rcvbp</code> sur ce cabinet</td></tr>
+      <tr><td>Un module noir</td><td>Alimentation du module, câble d'alimentation ou nappe, module HS</td><td>Mesurer 5 V, changer nappe, permuter module</td></tr>
+      <tr><td>Moitié ou bande d'un module noire</td><td>Driver IC, décodeur de ligne, zone d'alimentation du module</td><td>Remplacer le module (réparation atelier)</td></tr>
+      <tr><td>Une couleur manque sur un module</td><td>Nappe ou broche du connecteur, driver IC de cette couleur</td><td>Réinsérer / changer la nappe, sinon module</td></tr>
+      <tr><td>« Chenille » : ligne de pixels allumés faiblement derrière un pixel</td><td>Humidité, LED en court-circuit</td><td>Préchauffage progressif ; si persistant, changer la LED ou le module</td></tr>
+      <tr><td>Pixels morts isolés</td><td>LED défaillante, choc</td><td>Remplacement LED à la station à air chaud (atelier) ou module</td></tr>
+      <tr><td>Scintillement à la caméra</td><td>Rafraîchissement bas, obturateur mal réglé</td><td>Passer à 3 840 Hz dans le fichier de carte, régler l'obturateur</td></tr>
+      <tr><td>Module remplacé plus clair / d'une autre teinte</td><td>Autre lot, pas de coefficients de calibration</td><td>Charger les coefficients du module, ou calibrer sur site</td></tr>
+      <tr><td>Image qui saccade ou se déchire</td><td>Fréquence source ≠ processeur, contenu mal encodé, câble HDMI</td><td>Aligner les fréquences, réencoder, changer le câble</td></tr>
+      <tr><td>NovaLCT ne détecte pas le contrôleur</td><td>Pilote USB absent, câble USB de charge uniquement, port série occupé</td><td>Réinstaller NovaLCT et ses pilotes, changer câble, fermer les autres logiciels</td></tr>
+      <tr><td>Écran qui redémarre en plein blanc</td><td>Alimentation sous-dimensionnée, chute de tension, disjoncteur limite</td><td>Mesurer en charge, rééquilibrer les lignes, remplacer l'alimentation</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>13.4 Remplacer un module</h3>
+  <ol class="steps">
+    <li><div><strong>Couper</strong> l'alimentation du cabinet (ou de l'écran) avant d'intervenir.</div></li>
+    <li><div><strong>Démonter</strong> par l'avant avec l'outil magnétique ou la ventouse, ou par l'arrière (vis / loquets). Débrancher nappe et alimentation.</div></li>
+    <li><div><strong>Vérifier</strong> que le module de rechange a la même référence, le même sens (flèche au dos) et le même lot si possible.</div></li>
+    <li><div><strong>Remonter</strong> sans forcer, affleurement vérifié, puis rallumer.</div></li>
+    <li><div><strong>Contrôler</strong> avec les mires ; charger les coefficients de calibration si besoin.</div></li>
+  </ol>
+
+  <h3>13.5 TP4 : diagnostic</h3>
+  <p>Le formateur crée cinq pannes sur le mur de formation (câble réseau débranché au milieu d'une chaîne, nappe mal insérée, carte réceptrice avec mauvais fichier, deux câbles inversés, alimentation d'un module coupée). Chaque stagiaire doit trouver et corriger chaque panne en moins de 10 minutes, en appliquant la méthode 13.2 et en notant son raisonnement.</p>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="mod" id="m14" data-title="Évaluation finale et glossaire">
+  <div class="mod-head"><div><div class="mod-num">Module 14</div><h2>Évaluation finale</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <p>Cliquez sur une réponse : la correction s'affiche. Seuil de validation conseillé : 16 / 20.</p>
+  <div class="quiz" id="quiz"></div>
+  <div class="score"><span>Score</span><b id="score">0 / 20</b><button class="btn ghost" id="resetQuiz" type="button">Recommencer</button></div>
+
+  <h3>Glossaire</h3>
+  <dl class="glos">
+    <dt>Pitch (P)</dt><dd>Pas de pixel, distance entre deux pixels en mm.</dd>
+    <dt>Cabinet</dt><dd>Caisson regroupant modules, carte réceptrice et alimentation.</dd>
+    <dt>Module</dt><dd>Circuit portant les LED et leurs drivers.</dd>
+    <dt>Driver IC</dt><dd>Circuit intégré qui pilote le courant des LED (MBI, ICN, FM, SM…).</dd>
+    <dt>HUB</dt><dd>Carte d'adaptation entre carte réceptrice et nappes des modules (HUB75, HUB320…).</dd>
+    <dt>Scan</dt><dd>Mode de balayage, part des lignes allumées simultanément (1/16…).</dd>
+    <dt>Nits</dt><dd>Unité de luminance, cd/m².</dd>
+    <dt>Refresh</dt><dd>Taux de rafraîchissement PWM des LED, en Hz.</dd>
+    <dt>Synchrone</dt><dd>L'écran affiche en direct la source vidéo.</dd>
+    <dt>Asynchrone</dt><dd>L'écran joue un contenu stocké dans un lecteur autonome.</dd>
+    <dt>Mapping</dt><dd>Correspondance entre position des cabinets et zone de l'image.</dd>
+    <dt>Serpentin</dt><dd>Parcours de câblage en aller-retour d'une rangée à l'autre.</dd>
+    <dt>Genlock</dt><dd>Synchronisation de l'écran sur une horloge vidéo de référence.</dd>
+    <dt>EDID</dt><dd>Données par lesquelles un écran annonce les résolutions acceptées.</dd>
+    <dt>Burn-in</dt><dd>Test de fonctionnement continu avant réception.</dd>
+    <dt>Front / rear service</dt><dd>Maintenance par l'avant / par l'arrière.</dd>
+    <dt>Bumper</dt><dd>Barre d'accroche pour suspendre un écran location.</dd>
+    <dt>WLL</dt><dd>Charge maximale d'utilisation d'un point d'accroche ou d'un accessoire.</dd>
+    <dt>GOB / COB</dt><dd>LED protégées par résine / puces nues sur le circuit.</dd>
+    <dt>Cathode commune</dt><dd>Alimentation séparée par couleur, économe en énergie.</dd>
+  </dl>
+</section>
+
+</main>
+</div>
+</div>
+<footer>Formation Écrans LED · Les valeurs sont des ordres de grandeur du marché. Référez-vous toujours à la notice du fabricant, aux normes en vigueur et à un bureau d'études pour les structures.</footer>
+
+<script>
+(function(){
+  /* ---------- Pixel strip in hero ---------- */
+  var px = document.getElementById('pixels');
+  var cols = ['#E0352A','#17A454','#2563EB'];
+  for (var i = 0; i < 48; i++){
+    var s = document.createElement('span');
+    var k = (Math.sin(i*0.55)+1)/2;
+    for (var c = 0; c < 3; c++){
+      var el = document.createElement('i');
+      var on = c === 0 ? k : c === 1 ? (Math.sin(i*0.55+2.1)+1)/2 : (Math.sin(i*0.55+4.2)+1)/2;
+      el.style.background = cols[c];
+      el.style.opacity = (0.15 + on*0.85).toFixed(2);
+      s.appendChild(el);
+    }
+    px.appendChild(s);
+  }
+
+  /* ---------- Serpentine grid ---------- */
+  var g = document.getElementById('grid');
+  var NS = 'http://www.w3.org/2000/svg';
+  var labels = [['A1','A2','A3','A4'],['A8','A7','A6','A5'],['B1','B2','B3','B4']];
+  for (var r = 0; r < 3; r++) for (var cc = 0; cc < 4; cc++){
+    var rect = document.createElementNS(NS,'rect');
+    rect.setAttribute('x', 20+cc*90); rect.setAttribute('y', 20+r*70);
+    rect.setAttribute('width', 80); rect.setAttribute('height', 60); rect.setAttribute('rx', 4);
+    rect.setAttribute('class', 'bx');
+    g.appendChild(rect);
+    var t = document.createElementNS(NS,'text');
+    t.setAttribute('x', 60+cc*90); t.setAttribute('y', 44+r*70);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('class','t');
+    t.textContent = labels[r][cc];
+    g.appendChild(t);
+  }
+
+  /* ---------- TOC + progress ---------- */
+  var mods = Array.prototype.slice.call(document.querySelectorAll('section.mod'));
+  var toc = document.getElementById('toc'), tocM = document.getElementById('tocMobile');
+  var KEY = 'formation-led-progress';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ state = {}; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+
+  mods.forEach(function(m, idx){
+    var li = document.createElement('li');
+    li.innerHTML = '<a href="#'+m.id+'"><span class="n">'+String(idx).padStart(2,'0')+'</span><span></span><span class="d"></span></a>';
+    li.querySelector('span:nth-child(2)').textContent = m.dataset.title;
+    toc.appendChild(li);
+    var li2 = document.createElement('li');
+    li2.innerHTML = '<a href="#'+m.id+'"></a>';
+    li2.firstChild.textContent = m.dataset.title;
+    tocM.appendChild(li2);
+    var btn = m.querySelector('.done-btn');
+    btn.addEventListener('click', function(){
+      state[m.id] = !state[m.id]; save(); render();
+    });
+  });
+  tocM.addEventListener('click', function(e){ if (e.target.tagName === 'A') tocM.closest('details').open = false; });
+
+  function render(){
+    var done = 0, countable = mods.length - 1;
+    mods.forEach(function(m, idx){
+      var on = !!state[m.id];
+      m.querySelector('.done-btn').setAttribute('aria-pressed', on ? 'true' : 'false');
+      m.querySelector('.done-btn').lastChild.nodeValue = on ? 'Terminé ✓' : 'Marquer terminé';
+      toc.children[idx].firstChild.classList.toggle('done', on);
+      if (on && idx > 0) done++;
+    });
+    document.querySelectorAll('.prog-txt').forEach(function(el){ el.textContent = done + ' / ' + countable; });
+    document.getElementById('progBar').style.width = (done / countable * 100) + '%';
+  }
+  mods.forEach(function(m){ var b = m.querySelector('.done-btn'); b.textContent = ''; b.appendChild(document.createTextNode('Marquer terminé')); });
+  render();
+
+  /* ---------- Calculator ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n, d){ return n.toLocaleString('fr-FR', {maximumFractionDigits: d||0, minimumFractionDigits: d||0}); };
+  $('cCab').addEventListener('change', function(){
+    var p = this.value.split('|'); $('cKg').value = p[1]; $('cWm').value = p[2]; calc();
+  });
+  ['cW','cH','cP','cWm','cKg','cBit','cPh'].forEach(function(id){ $(id).addEventListener('input', calc); });
+  function calc(){
+    var W = parseFloat($('cW').value)*1000, H = parseFloat($('cH').value)*1000, P = parseFloat($('cP').value);
+    var dims = $('cCab').value.split('|')[0].split('x'), cw = parseFloat(dims[0]), ch = parseFloat(dims[1]);
+    var wm = parseFloat($('cWm').value), kg = parseFloat($('cKg').value), cap = parseFloat($('cBit').value), ph = parseInt($('cPh').value,10);
+    if (!(W>0 && H>0 && P>0 && wm>0 && kg>0)) return;
+    var nx = Math.max(1, Math.round(W/cw)), ny = Math.max(1, Math.round(H/ch));
+    var pxX = Math.round(cw/P), pxY = Math.round(ch/P);
+    var resX = nx*pxX, resY = ny*pxY, pix = resX*resY;
+    var realW = nx*cw/1000, realH = ny*ch/1000, area = realW*realH;
+    var ports = Math.ceil(pix/cap);
+    var pmax = area*wm, pavg = pmax*0.33;
+    var amp = ph === 1 ? pmax/230 : pmax/(Math.sqrt(3)*400*0.95);
+    $('oCab').textContent = nx + ' × ' + ny + ' = ' + (nx*ny);
+    $('oSize').textContent = fmt(realW,2) + ' × ' + fmt(realH,2) + ' m';
+    $('oRes').textContent = resX + ' × ' + resY;
+    $('oPix').textContent = fmt(pix);
+    $('oPorts').textContent = ports + (ports > 1 ? ' ports' : ' port');
+    $('oArea').textContent = fmt(area,2) + ' m²';
+    $('oPow').textContent = fmt(pmax/1000,1) + ' / ' + fmt(pavg/1000,1) + ' kW';
+    $('oAmp').textContent = fmt(amp,1) + ' A' + (ph === 3 ? ' / phase' : '');
+    $('oKg').textContent = fmt(area*kg) + ' kg';
+    $('oDist').textContent = fmt(P,1) + ' m / ' + fmt(P*2,0) + '–' + fmt(P*3,0) + ' m';
+    var reco = [];
+    if (resX > 1920 || resY > 1080) reco.push('Résolution supérieure à 1920×1080 : processeur 4K ou mise à l’échelle nécessaire.');
+    if (resX > 3840 || resY > 2160) reco.push('Au-delà de 4K : plusieurs sorties ou processeur multi-entrées.');
+    reco.push('Prévoir ' + (ports + Math.max(1, Math.ceil(ports*0.2))) + ' ports avec marge et éventuelle redondance.');
+    if (ph === 1 && amp > 32) reco.push('Plus de 32 A en monophasé : passer en triphasé.');
+    var lines = Math.ceil(amp*(ph===3?3:1)/12.8);
+    reco.push('Environ ' + lines + ' départs de 16 A (chargés à 80 %).');
+    if (area*kg > 500) reco.push('Plus de 500 kg : faire valider structure et points d’accroche par un bureau d’études.');
+    $('oReco').innerHTML = reco.map(function(r){ return '• ' + r; }).join('<br>');
+  }
+  calc();
+
+  /* ---------- Quiz ---------- */
+  var Q = [
+    ['Pour un écran P3.9, quelle est la distance minimale de vision approximative ?', ['1 m','4 m','10 m','39 m'], 1, 'Distance minimale ≈ pas en mm exprimé en mètres : environ 3,9 m.'],
+    ['Combien de pixels environ un port Gigabit peut-il piloter en 8 bits à 60 Hz ?', ['65 000','250 000','650 000','2 millions'], 2, 'Environ 650 000 pixels (655 360 chez NovaStar).'],
+    ['Un écran de 6 m × 3 m en cabinets 500×500 compte combien de cabinets ?', ['36','72','18','144'], 1, '12 colonnes × 6 rangées = 72 cabinets.'],
+    ['Quelle est la résolution d’un cabinet 500×500 mm en P3.91 ?', ['192 × 192','128 × 128','256 × 256','160 × 160'], 1, '500 / 3,906 ≈ 128 pixels par côté.'],
+    ['Quelle luminosité viser pour un écran en plein soleil ?', ['800 nits','1 500 nits','≥ 5 000 nits','300 nits'], 2, 'En extérieur exposé : 5 000 à 8 000 nits.'],
+    ['L’écran est filmé pour un direct. Quel taux de rafraîchissement minimum ?', ['60 Hz','960 Hz','1 920 Hz','3 840 Hz'], 3, '3 840 Hz ou plus évite les bandes à la caméra.'],
+    ['Un écran est resté 6 mois dans un entrepôt humide. Que faire avant l’usage ?', ['Allumer à 100 % pour sécher','Préchauffage progressif à luminosité croissante','Le passer au sèche-cheveux','Rien'], 1, 'On monte la luminosité par paliers sur plusieurs heures pour évacuer l’humidité sans griller les LED.'],
+    ['Dans NovaLCT, que faut-il faire pour que la configuration survive à une coupure ?', ['Send to HW seulement','Save (enregistrer dans le matériel)','Fermer le logiciel','Débrancher l’USB'], 1, 'Send applique ; Save écrit dans la mémoire des cartes.'],
+    ['Le différentiel 30 mA déclenche dès l’allumage d’un grand écran. Cause probable ?', ['Contenu trop lumineux','Cumul des courants de fuite des alimentations','Câble réseau trop long','Mauvais gamma'], 1, 'Chaque alimentation fuit un peu : il faut répartir sur plusieurs différentiels.'],
+    ['Qu’est-ce qu’un contrôleur asynchrone ?', ['Un contrôleur qui affiche la source HDMI en direct','Un lecteur qui joue un contenu stocké, sans PC','Un convertisseur fibre','Un capteur de luminosité'], 1, 'Il joue des programmes planifiés depuis sa mémoire.'],
+    ['Tous les cabinets à partir du n° 5 d’une chaîne sont noirs. Où chercher d’abord ?', ['Le PC source','Le câble entre 4 et 5, puis la carte réceptrice du 5','Le cabinet n° 1','Le fichier vidéo'], 1, 'La chaîne est coupée à cet endroit : câble, carte ou alimentation du cabinet 5.'],
+    ['Un module neuf est plus clair que ses voisins. Pourquoi ?', ['Il est défectueux','Il manque les coefficients de calibration (ou autre lot)','Le câble réseau est mauvais','La source est en 4K'], 1, 'Chargez ses coefficients ou calibrez sur site.'],
+    ['IP65 en face avant signifie :', ['Résiste à l’immersion','Étanche aux poussières et aux jets d’eau','Protégé des chocs','Uniquement intérieur'], 1, '6 = étanche aux poussières, 5 = jets d’eau.'],
+    ['Quel type d’écran pour une vitrine qui doit laisser voir l’intérieur du magasin ?', ['Extérieur fixe P10','Transparent ou film LED','Sol LED','COB P0.9'], 1, 'Les écrans transparents laissent passer 50 à 90 % de la lumière.'],
+    ['Écran collé au mur sans accès arrière : quel mode de maintenance ?', ['Arrière (rear service)','Avant (front service)','Aucun','Par le dessus'], 1, 'Modules magnétiques démontés par l’avant.'],
+    ['Que contient le fichier .rcfgx de NovaStar ?', ['Les vidéos à diffuser','Les paramètres de la carte réceptrice (module, scan, driver)','Le planning publicitaire','Le mot de passe Wi-Fi'], 1, 'C’est la configuration matérielle du cabinet.'],
+    ['Pourquoi afficher des fonds sombres plutôt que blancs ?', ['Pour réduire consommation et fatigue visuelle','Parce que le blanc est interdit','Pour le moiré','Aucune raison'], 0, 'Moins de consommation, plus de durée de vie, meilleur contraste.'],
+    ['Quelle est la longueur maximale d’un câble Cat6 entre deux équipements ?', ['30 m','100 m','300 m','1 km'], 1, 'Au-delà : fibre optique.'],
+    ['Écran suspendu : quel élément est obligatoire en plus des points de levage ?', ['Un capteur de luminosité','Des élingues de sécurité indépendantes','Un deuxième PC','Un filtre anti-moiré'], 1, 'La sécurité secondaire est indispensable au-dessus des personnes.'],
+    ['Pourquoi remettre un plan de câblage vu de face ?', ['Pour la décoration','Pour diagnostiquer et reconfigurer rapidement','C’est facultatif','Pour le calcul de vent'], 1, 'C’est le document clé lors d’une panne.']
+  ];
+  var qz = document.getElementById('quiz'), scoreEl = document.getElementById('score');
+  var score = 0, answered = 0;
+  function buildQuiz(){
+    qz.innerHTML = ''; score = 0; answered = 0; scoreEl.textContent = '0 / ' + Q.length;
+    Q.forEach(function(q, qi){
+      var d = document.createElement('div'); d.className = 'q';
+      var p = document.createElement('p'); p.textContent = q[0]; d.appendChild(p);
+      var o = document.createElement('div'); o.className = 'opts';
+      q[1].forEach(function(a, ai){
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = a;
+        b.addEventListener('click', function(){
+          var btns = o.querySelectorAll('button');
+          btns.forEach(function(x){ x.disabled = true; });
+          btns[q[2]].classList.add('right');
+          if (ai === q[2]) score++; else b.classList.add('wrong');
+          answered++;
+          var ex = document.createElement('p'); ex.className = 'expl'; ex.textContent = q[3]; d.appendChild(ex);
+          scoreEl.textContent = score + ' / ' + Q.length + (answered === Q.length ? (score >= 16 ? ' · validé' : ' · à revoir') : '');
+        });
+        o.appendChild(b);
+      });
+      d.appendChild(o); qz.appendChild(d);
+    });
+  }
+  document.getElementById('resetQuiz').addEventListener('click', buildQuiz);
+  buildQuiz();
+})();
+</script>
