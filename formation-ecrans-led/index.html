@@ -2,219 +2,228 @@
 <meta name="description" content="Formation complète : installation de tous les types d'écrans LED et programmation (NovaStar, Colorlight, Huidu, contenus).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --ink:#10151C; --muted:#56616E; --line:#D6DCE3;
-  --accent:#0A5BD3; --accent-ink:#FFFFFF; --accent-soft:#E2EBF9;
+  --bg:#ECEEF1; --surface:#F7F8FA; --ink:#15191F; --muted:#56606C; --line:#CDD3DA;
+  --accent:#1650B8; --accent-soft:#DDE6F5; --amber:#A26709; --amber-soft:#F3E5C8;
+  --ok:#2C7A4A; --bad:#B3362B; --warn-soft:#F7E3DF;
   --r:#E0352A; --g:#17A454; --b:#2563EB;
-  --warn:#9A5B00; --warn-soft:#FBF0DC; --danger:#B42525; --danger-soft:#FBE6E4; --ok:#157A40; --ok-soft:#E0F3E8;
   --code-bg:#0E131A; --code-ink:#D8E2EE; --code-key:#7FB2FF;
-  --display:"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0B0F14; --surface:#131920; --surface-2:#18202A; --ink:#E5EAF0; --muted:#9AA6B4; --line:#25303C;
-    --accent:#6AA5FF; --accent-ink:#06101F; --accent-soft:#15253B;
-    --warn:#E8A948; --warn-soft:#2A2113; --danger:#FF8177; --danger-soft:#2E1716; --ok:#5ED58E; --ok-soft:#12271B;
-    --code-bg:#070A0E;
+    --bg:#12161B; --surface:#1A2027; --ink:#E5E9EE; --muted:#9AA5B1; --line:#303943;
+    --accent:#72A6FF; --accent-soft:#1B2B44; --amber:#E2AA4C; --amber-soft:#382D1B;
+    --ok:#6CC18C; --bad:#EE7A6C; --warn-soft:#3A201D; --code-bg:#080B0F;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0B0F14; --surface:#131920; --surface-2:#18202A; --ink:#E5EAF0; --muted:#9AA6B4; --line:#25303C;
-  --accent:#6AA5FF; --accent-ink:#06101F; --accent-soft:#15253B;
-  --warn:#E8A948; --warn-soft:#2A2113; --danger:#FF8177; --danger-soft:#2E1716; --ok:#5ED58E; --ok-soft:#12271B;
-  --code-bg:#070A0E;
+  --bg:#12161B; --surface:#1A2027; --ink:#E5E9EE; --muted:#9AA5B1; --line:#303943;
+  --accent:#72A6FF; --accent-soft:#1B2B44; --amber:#E2AA4C; --amber-soft:#382D1B;
+  --ok:#6CC18C; --bad:#EE7A6C; --warn-soft:#3A201D; --code-bg:#080B0F;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 64px}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px}
+main{min-width:0}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.1;margin:0}
+h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:800;font-stretch:72%;letter-spacing:-.01em;text-transform:uppercase}
+h2{font-size:clamp(1.7rem,3.4vw,2.3rem);font-weight:800;font-stretch:78%;text-transform:uppercase}
+h3{font-size:1.25rem;font-weight:700;font-stretch:90%;margin-top:22px}
+h4{font-size:1rem;margin:12px 0 0}
+p{margin:0}
+p,li{max-width:68ch}
+ul,ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+code,kbd,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 5px;background:var(--surface)}
+.label{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
-.wrap{max-width:1240px;margin-inline:auto}
-header.hero{padding-block:40px 28px;display:grid;gap:18px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,76px);line-height:.95;margin:0;letter-spacing:-.01em;text-wrap:balance;text-transform:uppercase}
-h1 .sub{display:block;color:var(--muted);font-weight:500;font-size:.42em;letter-spacing:.02em;margin-top:10px;text-transform:none}
-.lede{max-width:70ch;font-size:17px;color:var(--ink);margin:0}
-.pixels{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;max-width:520px}
-.pixels span{aspect-ratio:1;border-radius:2px;display:flex;gap:1px;padding:1px;background:#05070a}
-.pixels span i{flex:1;border-radius:1px}
-.facts{display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--mono);font-size:13px;color:var(--muted)}
-.facts b{color:var(--ink);font-weight:500}
+/* Sommaire */
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding-top:40px;max-height:100vh;overflow:auto}
+nav.toc ol{list-style:none;margin:12px 0 0;padding:0;gap:2px}
+nav.toc a{display:grid;grid-template-columns:2.2em 1fr 14px;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;text-decoration:none;color:var(--ink);font-size:.9rem;line-height:1.3}
+nav.toc a:hover{background:var(--accent-soft)}
+nav.toc .n{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+nav.toc .dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line)}
+nav.toc a.done .dot{background:var(--ok);border-color:var(--ok)}
+.progress{margin-top:16px;font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
 
-.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:36px;align-items:start}
-nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
-.toc h2{font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
-.progress{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:6px 0 4px;border:1px solid var(--line)}
-.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
-.progress-label{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px}
-.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.toc li a{display:grid;grid-template-columns:28px 1fr 14px;align-items:baseline;gap:4px;padding:5px 6px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px;line-height:1.3}
-.toc li a:hover{background:var(--surface-2)}
-.toc li a .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.toc li a .d{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);align-self:center}
-.toc li a.done .d{background:var(--ok);border-color:var(--ok)}
-details.toc-mobile{display:none}
+/* Hero : un mur LED */
+header.hero{padding-block:40px 32px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:20px}
+.wall{position:relative;background:#07090C;color:#F2F5F8;padding:30px 28px 34px;overflow:hidden;border:1px solid #000}
+.wall::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.07) 0 1.1px,transparent 1.6px) 0 0/6px 6px}
+.wall::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to right,transparent calc(25% - .5px),rgba(255,255,255,.14) calc(25% - .5px),rgba(255,255,255,.14) calc(25% + .5px),transparent calc(25% + .5px),transparent calc(50% - .5px),rgba(255,255,255,.14) calc(50% - .5px),rgba(255,255,255,.14) calc(50% + .5px),transparent calc(50% + .5px),transparent calc(75% - .5px),rgba(255,255,255,.14) calc(75% - .5px),rgba(255,255,255,.14) calc(75% + .5px),transparent calc(75% + .5px)),
+  linear-gradient(to bottom,transparent calc(50% - .5px),rgba(255,255,255,.14) calc(50% - .5px),rgba(255,255,255,.14) calc(50% + .5px),transparent calc(50% + .5px))}
+.osd{position:relative;z-index:1;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:.76rem;color:#9FB0C2}
+.osd .live{color:#5EE38E}
+.wall h1{position:relative;z-index:1;margin-block:26px 14px}
+.wall h1 .rgb{display:inline-flex;gap:.08em;vertical-align:.12em;margin-left:.2em}
+.wall h1 .rgb i{width:.2em;height:.62em;border-radius:1px;display:block}
+.wall .lede{position:relative;z-index:1;max-width:58ch;font-size:1.06rem;color:#D6DEE7}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.facts div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.facts b{font-family:var(--display);font-stretch:80%;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.facts span:last-child{font-size:.88rem;color:var(--muted)}
 
-main{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
-section.mod{min-width:0}
-section.mod{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px clamp(18px,3vw,40px);scroll-margin-top:16px}
-.mod-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
-.mod-num{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
-h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.4vw,38px);line-height:1.05;margin:4px 0 0;text-transform:uppercase;letter-spacing:.005em;text-wrap:balance}
-h3{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.15;margin:28px 0 8px;letter-spacing:.01em;text-wrap:balance}
-h4{font-size:16px;margin:18px 0 6px;font-weight:600}
-p,li{max-width:74ch}
-ul,ol{padding-left:22px}
-li{margin-block:3px}
-.done-btn{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
-.done-btn::before{content:"";width:10px;height:10px;border-radius:50%;border:1.5px solid var(--muted)}
-.done-btn[aria-pressed="true"]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
-.done-btn[aria-pressed="true"]::before{background:var(--ok);border-color:var(--ok)}
-.meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.objectifs{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:8px}
-.objectifs strong{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
-.objectifs ul{margin:6px 0 0}
-
-.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.45}
-th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:var(--surface-2);font-weight:600;font-size:13px;white-space:nowrap}
-tr:last-child td{border-bottom:0}
-td.num,th.num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px;white-space:nowrap}
-
-.note{border-radius:8px;padding:12px 16px;margin:14px 0;border:1px solid var(--line);background:var(--surface-2)}
-.note > strong:first-child{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
-.note.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
-.note.warn > strong:first-child{color:var(--warn)}
-.note.danger{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
-.note.danger > strong:first-child{color:var(--danger)}
-.note.tip{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
-.note.tip > strong:first-child{color:var(--accent)}
-.note p{margin:4px 0}
-
-.formula{font-family:var(--mono);font-size:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 16px;overflow-x:auto;white-space:pre;line-height:1.7}
-pre.code{font-family:var(--mono);font-size:13px;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:14px 16px;overflow-x:auto;line-height:1.6;margin:12px 0}
-pre.code b{color:var(--code-key);font-weight:500}
-code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
-kbd{font-family:var(--mono);font-size:.85em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface)}
-
-ol.steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:10px;margin:14px 0}
-ol.steps > li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;max-width:none}
-ol.steps > li::before{content:counter(s);font-family:var(--display);font-weight:700;font-size:20px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;line-height:1}
+/* Modules */
+section.mod{padding-block:48px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:16px;scroll-margin-top:16px}
+.mod-head{display:flex;flex-direction:column;gap:6px}
+.obj,.objectifs{background:var(--accent-soft);padding:14px 18px;border-radius:4px;max-width:68ch}
+.obj ul,.objectifs ul{margin-top:6px}
+.objectifs strong{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.drill{background:var(--amber-soft);border-left:3px solid var(--amber);padding:14px 18px;max-width:68ch;display:flex;flex-direction:column;gap:8px}
+.drill .label{color:var(--amber)}
+.keep{border-top:2px solid var(--ink);padding-top:10px;max-width:68ch;display:flex;flex-direction:column;gap:6px}
+.keep ul{list-style:none;padding:0}
+.keep li{display:grid;grid-template-columns:18px 1fr;gap:6px}
+.keep li::before{content:"";width:8px;height:8px;margin-top:9px;background:var(--accent);border-radius:1px}
+.note{padding:12px 16px;max-width:68ch;border:1px dashed var(--line)}
+.note > strong:first-child{display:block;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;font-weight:500;color:var(--accent)}
+.note p + p{margin-top:4px}
+.note.warn{border:0;border-left:3px solid var(--amber);background:var(--surface)}
+.note.warn > strong:first-child{color:var(--amber)}
+.note.danger{border:0;border-left:3px solid var(--bad);background:var(--warn-soft)}
+.note.danger > strong:first-child{color:var(--bad)}
+.formula{font-family:var(--mono);font-size:.88rem;background:var(--surface);border:1px solid var(--line);padding:12px 16px;overflow-x:auto;white-space:pre;line-height:1.7;max-width:100%}
+.tbl{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.93rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num,td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.88rem}
+.check-mod{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;width:max-content;max-width:100%;padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface)}
+.check-mod input{width:18px;height:18px;accent-color:var(--ok)}
+.check-mod:has(input:checked){border-color:var(--ok);color:var(--ok)}
+ol.steps{list-style:none;padding:0;counter-reset:s;gap:12px;max-width:74ch}
+ol.steps > li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:12px;max-width:none}
+ol.steps > li::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:.8rem;color:var(--accent);border-top:2px solid var(--accent);padding-top:3px;height:max-content}
 ol.steps > li > div > strong:first-child{display:block}
+ul.check{list-style:none;padding:0}
+ul.check li{display:grid;grid-template-columns:20px 1fr;gap:8px}
+ul.check li::before{content:"";width:13px;height:13px;border:1.5px solid var(--muted);border-radius:2px;margin-top:6px}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:14px 0}
-.card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface-2)}
-.card h4{margin:0 0 4px;font-family:var(--display);font-size:20px;font-weight:600}
-.card .spec{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px}
-.card p,.card ul{margin:4px 0;font-size:14px}
-.card ul{padding-left:18px}
+/* Familles d'écrans : liste, pas de cartes */
+.types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 36px;max-width:90ch}
+.types > div{padding-block:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.types h4{margin:0;font-family:var(--display);font-stretch:85%;font-size:1.2rem;font-weight:700}
+.types .spec{font-family:var(--mono);font-size:.76rem;color:var(--accent)}
+.types p,.types li{font-size:.94rem}
+.types ul{gap:2px}
+.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:90ch}
+.cols2 > div{background:var(--surface);border:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.cols2 h4{margin:0;font-family:var(--display);font-stretch:85%;font-size:1.2rem}
+.cols2 .spec{font-family:var(--mono);font-size:.76rem;color:var(--muted)}
+.cols2 p,.cols2 li{font-size:.94rem}
 
-.diagram{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:10px}
-.diagram svg{display:block;min-width:640px;width:100%;height:auto}
-.diagram figcaption{font-size:13px;color:var(--muted);padding:6px 4px 0}
-svg .bx{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+/* Schémas */
+figure.diagram{margin:0;max-width:80ch;display:flex;flex-direction:column;gap:8px}
+.diagram .scroll{overflow-x:auto;border:1px solid var(--line);background:var(--surface)}
+.diagram svg{display:block;min-width:600px;width:100%;height:auto}
+figcaption{font-size:.85rem;color:var(--muted)}
+svg .bx{fill:var(--bg);stroke:var(--ink);stroke-width:1.3}
 svg .bx-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
 svg .t{fill:var(--ink);font:600 13px var(--body)}
 svg .ts{fill:var(--muted);font:400 11px var(--mono)}
-svg .ln{stroke:var(--ink);stroke-width:1.6;fill:none}
+svg .ln{stroke:var(--ink);stroke-width:1.5;fill:none}
 svg .la{stroke:var(--accent);stroke-width:2.4;fill:none}
 svg .lb{stroke:var(--r);stroke-width:2.4;fill:none}
-svg .ld{stroke:var(--muted);stroke-width:1.6;fill:none;stroke-dasharray:5 4}
-svg .ar{fill:var(--ink)}
-svg .ara{fill:var(--accent)}
-svg .arb{fill:var(--r)}
+svg .ld{stroke:var(--muted);stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+svg .ar{fill:var(--ink)} svg .ara{fill:var(--accent)} svg .arb{fill:var(--r)}
 
-/* Calculator */
-.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;margin:16px 0;border:1px solid var(--line);border-radius:10px;padding:18px;background:var(--surface-2)}
-.calc fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
-.calc label{display:grid;gap:3px;font-size:13px;color:var(--muted)}
-.calc input,.calc select{font:500 15px var(--mono);padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);width:100%}
-.calc .full{grid-column:1/-1}
-.out{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:start}
-.out div{background:var(--surface);padding:10px 12px}
-.out span{display:block;font-size:12px;color:var(--muted)}
-.out b{font:500 18px var(--mono);font-variant-numeric:tabular-nums}
+/* Outils interactifs */
+.tool{background:var(--surface);border:1px solid var(--line);padding:18px;max-width:80ch;display:flex;flex-direction:column;gap:14px}
+.tool .row{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.tool label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);min-width:0}
+.tool input[type=number],.tool select{font:inherit;font-family:var(--mono);padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);width:9.5em;max-width:100%}
+.tool input[type=range]{width:220px;max-width:100%;accent-color:var(--accent)}
+.tool output{font-family:var(--mono);color:var(--ink)}
+.out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.out div{background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.out span{font-size:.78rem;color:var(--muted)}
+.out b{font-family:var(--mono);font-weight:500;font-size:1.02rem;font-variant-numeric:tabular-nums}
 .out .wide{grid-column:1/-1}
-.out .alert{color:var(--warn);font-size:13px;font-weight:500}
+.reco{font-size:.9rem;color:var(--ink)}
+.reco li{max-width:none}
+#pitchCanvas{width:100%;max-width:560px;aspect-ratio:2/1;height:auto;background:#07090C;display:block}
+.verdict{font-family:var(--mono);font-size:.9rem;padding:6px 10px;border-left:3px solid var(--accent);background:var(--bg)}
+
+pre.code{font-family:var(--mono);font-size:13px;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;overflow-x:auto}
 
 /* Quiz */
-.quiz{display:grid;gap:14px;counter-reset:q}
-.q{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface-2);counter-increment:q}
-.q > p{margin:0 0 8px;font-weight:600}
+.quiz{display:flex;flex-direction:column;gap:12px;counter-reset:q}
+.q{background:var(--surface);border:1px solid var(--line);padding:16px 18px;max-width:68ch;display:flex;flex-direction:column;gap:10px;counter-increment:q}
+.q > p{font-weight:600}
 .q > p::before{content:"Q" counter(q) " · ";font-family:var(--mono);color:var(--accent);font-weight:500}
-.q .opts{display:grid;gap:6px}
-.q button.opt{font:400 15px var(--body);text-align:left;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.q .opts{display:flex;flex-direction:column;gap:6px}
+.q button.opt{font:inherit;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);cursor:pointer}
 .q button.opt:hover:not(:disabled){border-color:var(--accent)}
 .q button.opt:disabled{cursor:default}
-.q button.opt.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:500}
-.q button.opt.wrong{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
-.q .expl{margin:8px 0 0;font-size:14px;color:var(--muted)}
-.score{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-family:var(--mono);font-size:14px;margin-top:8px}
-.score b{font-size:22px;font-family:var(--display)}
-.btn{font:500 14px var(--body);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:7px 14px;cursor:pointer}
-.btn.ghost{background:transparent;color:var(--accent)}
+.q button.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.q button.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.q .expl{font-size:.9rem;color:var(--muted)}
+.score{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.score b{font-family:var(--display);font-stretch:80%;font-size:1.6rem;font-weight:800}
+.btn{font:inherit;font-weight:600;padding:8px 16px;border:1.5px solid var(--ink);border-radius:4px;background:transparent;color:var(--ink);cursor:pointer;width:max-content}
+.btn:hover{background:var(--ink);color:var(--bg)}
+dl.glos{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:8px 20px;max-width:80ch;margin:0}
+dl.glos dt{font-family:var(--mono);font-weight:500;font-size:.9rem}
+dl.glos dd{margin:0}
+footer{max-width:1180px;margin:32px auto 0;color:var(--muted);font-size:.85rem}
 
-.check{list-style:none;padding:0;display:grid;gap:4px}
-.check li{display:grid;grid-template-columns:20px 1fr;gap:8px;max-width:none}
-.check li::before{content:"";width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;margin-top:5px}
-
-.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
-dl.glos{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:6px 18px;margin:0}
-dl.glos dt{font-weight:600;font-family:var(--mono);font-size:14px}
-dl.glos dd{margin:0;color:var(--ink)}
-footer{max-width:1240px;margin:40px auto 0;color:var(--muted);font-size:13px}
-
-@media (max-width: 900px){
-  .layout{grid-template-columns:minmax(0,1fr)}
-  nav.toc{display:none}
-  details.toc-mobile{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-  details.toc-mobile summary{cursor:pointer;font-family:var(--display);font-size:18px;text-transform:uppercase;font-weight:600}
-  details.toc-mobile ol{margin:8px 0 4px;padding-left:22px;font-size:15px}
-  .calc{grid-template-columns:1fr}
-  dl.glos{grid-template-columns:1fr}
-  dl.glos dd{margin-bottom:8px}
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0}
+  nav.toc{position:static;max-height:none;padding-top:24px;border-bottom:1px solid var(--line);padding-bottom:16px}
+  nav.toc ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 }
-@media (max-width: 480px){
-  .calc fieldset{grid-template-columns:1fr}
-  .out{grid-template-columns:1fr}
+@media (max-width:640px){
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .types,.cols2{grid-template-columns:1fr}
+  .out{grid-template-columns:repeat(2,minmax(0,1fr))}
+  dl.glos{grid-template-columns:1fr;gap:2px}
+  dl.glos dd{margin-bottom:10px}
+  .wall{padding:22px 18px 26px}
 }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
 </style>
 
 <div class="wrap">
-<header class="hero">
-  <div class="eyebrow">Formation technique · Niveau débutant → confirmé · 5 jours / 35 h</div>
-  <h1>Écrans LED<span class="sub">Installation de tous les types d'écrans et programmation, du câblage à la diffusion</span></h1>
-  <div class="pixels" id="pixels" aria-hidden="true"></div>
-  <p class="lede">Cette formation couvre tout le cycle d'un écran LED : choisir la technologie, dimensionner, monter la structure, câbler l'alimentation et les données, configurer les cartes (NovaStar, Colorlight, Huidu, Linsn), calibrer, diffuser du contenu, faire la recette puis maintenir et dépanner. Chaque module se termine par des points de contrôle. Cochez-les au fur et à mesure : votre progression reste enregistrée dans ce navigateur.</p>
-  <div class="facts">
-    <span><b>14</b> modules</span><span><b>1</b> calculateur de dimensionnement</span><span><b>4</b> travaux pratiques</span><span><b>20</b> questions d'évaluation</span>
-  </div>
-</header>
-
-<details class="toc-mobile"><summary>Sommaire · <span class="prog-txt">0 / 14</span></summary><ol id="tocMobile"></ol></details>
-
-<div class="layout">
 <nav class="toc" aria-label="Sommaire">
-  <h2>Sommaire</h2>
-  <div class="progress"><i id="progBar"></i></div>
-  <div class="progress-label"><span class="prog-txt">0 / 14</span> modules terminés</div>
+  <span class="label">Sommaire</span>
   <ol id="toc"></ol>
+  <div class="progress"><span id="prog-txt">0 / 14 modules validés</span><div class="bar"><i id="prog-bar"></i></div></div>
 </nav>
 
 <main>
+<header class="hero">
+  <div class="wall">
+    <div class="osd"><span class="live">● SIGNAL OK</span><span>P2.6 · 3840 Hz · 16 bits · 800 nits</span><span>2304×1344 · 60 Hz</span></div>
+    <h1>Formation<br>Écrans LED<span class="rgb" aria-hidden="true"><i style="background:#E0352A"></i><i style="background:#17A454"></i><i style="background:#2563EB"></i></span></h1>
+    <p class="lede">Installer tous les types d'écrans LED puis les programmer : choisir la technologie, dimensionner, monter la structure, câbler l'alimentation et les données, configurer NovaStar, Colorlight et Huidu, diffuser, faire la recette, maintenir et dépanner. Chaque module associe la théorie, un exercice pratique et une validation.</p>
+  </div>
+  <div class="facts">
+    <div><span class="label">Durée</span><b>35 h</b><span>5 jours</span></div>
+    <div><span class="label">Modules</span><b>14</b><span>+ évaluation et certification</span></div>
+    <div><span class="label">Pratique</span><b>50 %</b><span>sur un vrai mur LED</span></div>
+    <div><span class="label">Niveau</span><b>Débutant</b><span>vers technicien autonome</span></div>
+  </div>
+</header>
 
 <!-- ============ 0 ============ -->
 <section class="mod" id="m0" data-title="Programme et organisation">
-  <div class="mod-head"><div><div class="mod-num">Module 00</div><h2>Programme et organisation</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 00 · 1 h</span><h2>Programme et organisation</h2></div>
   <div class="objectifs"><strong>Public et prérequis</strong>
     <ul>
       <li>Techniciens audiovisuels, électriciens, intégrateurs, régisseurs, installateurs de signalétique, personnel d'église ou d'événementiel qui gère un mur LED.</li>
@@ -240,11 +249,12 @@ footer{max-width:1240px;margin:40px auto 0;color:var(--muted);font-size:13px}
     <li>1 PC Windows avec NovaLCT, SmartLCT, ViPlex Express, LEDVISION, HDPlayer, Resolume (version d'essai).</li>
     <li>Câbles Cat6 blindés, rallonges powerCON TRUE1, multimètre, pince ampèremétrique, niveau laser, tournevis, ventouse de module, bracelet antistatique.</li>
   </ul>
+  <label class="check-mod"><input type="checkbox" data-mod="m0"> Module validé</label>
 </section>
 
 <!-- ============ 1 ============ -->
 <section class="mod" id="m1" data-title="Fondamentaux de la technologie LED">
-  <div class="mod-head"><div><div class="mod-num">Module 01</div><h2>Fondamentaux de la technologie LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 01 · 2 h</span><h2>Fondamentaux de la technologie LED</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Expliquer comment un écran LED forme une image.</li><li>Lire une fiche technique et en comprendre chaque ligne.</li><li>Choisir un pas de pixel selon la distance de vision.</li></ul></div>
 
   <h3>1.1 Le pixel LED</h3>
@@ -298,33 +308,47 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
   </table></div>
   <div class="note tip"><strong>Règle de terrain</strong><p>Choisissez le pas pour le spectateur le plus proche qui compte, pas pour la moyenne. Un pas plus fin que nécessaire coûte cher (prix ≈ proportionnel au nombre de pixels) et demande plus de ports réseau.</p></div>
 
+  <div class="tool" id="viz">
+    <span class="label">Simulateur : ce que voit le spectateur</span>
+    <div class="row">
+      <label for="vP">Pas : <output id="vPo">2.6 mm</output><input id="vP" type="range" min="0.9" max="16" step="0.1" value="2.6"></label>
+      <label for="vD">Distance : <output id="vDo">5 m</output><input id="vD" type="range" min="1" max="40" step="0.5" value="5"></label>
+    </div>
+    <canvas id="pitchCanvas" width="560" height="280" aria-label="Rendu simulé d'un extrait d'écran selon le pas et la distance"></canvas>
+    <p class="verdict" id="vVerdict"></p>
+    <p style="font-size:.85rem;color:var(--muted)">Simulation basée sur l'acuité visuelle moyenne (1 minute d'arc). Extrait de 70 × 35 cm vu en gros plan : seul le lissage change avec la distance.</p>
+  </div>
+
   <h3>1.5 Rafraîchissement, caméra et moiré</h3>
   <ul>
     <li>Si l'écran est filmé (culte diffusé en direct, TV, streaming), visez <strong>≥ 3 840 Hz</strong> sinon des bandes noires défilent à l'image.</li>
     <li>Le <strong>moiré</strong> apparaît quand la grille de pixels interfère avec le capteur de la caméra : jouez sur la mise au point (léger flou de l'écran), l'angle, la focale et la distance.</li>
     <li>Réglez l'obturateur de la caméra sur un multiple de la fréquence d'image (1/50 en Europe, 1/60 aux États-Unis).</li>
   </ul>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Relevez sur trois fiches techniques le pas, la luminosité, le rafraîchissement, le scan et l'indice IP. Classez les écrans du plus adapté au moins adapté pour une église de 400 places.</li><li>Devant le mur de formation, reculez de 1 m à 15 m et notez la distance où les pixels cessent d'être visibles. Comparez avec le simulateur.</li><li>Filmez l'écran au smartphone à 1/50 puis 1/1000 s : observez les bandes et notez à partir de quelle vitesse elles apparaissent.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Distance minimale en mètres ≈ pas en millimètres.</li><li>Écran filmé : 3 840 Hz minimum.</li><li>Intérieur 600–1 500 nits, extérieur au soleil 5 000 nits et plus.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m1"> Module validé</label>
 </section>
 
 <!-- ============ 2 ============ -->
 <section class="mod" id="m2" data-title="Tous les types d'écrans LED">
-  <div class="mod-head"><div><div class="mod-num">Module 02</div><h2>Tous les types d'écrans LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 02 · 2 h</span><h2>Tous les types d'écrans LED</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Identifier chaque famille d'écran et ses contraintes de pose.</li><li>Recommander le bon type selon le lieu et l'usage.</li></ul></div>
 
-  <div class="cards">
-    <div class="card"><h4>Intérieur fixe</h4><div class="spec">P1.2–P4 · 600–1 200 nits · IP30–IP43</div><p>Mur d'image de hall, salle de conférence, église, magasin. Cabinets 640×480, 500×500 ou 600×337,5 (16:9).</p><ul><li>Pose sur cadre acier fixé au mur</li><li>Maintenance souvent par l'avant (aimants)</li></ul></div>
-    <div class="card"><h4>Extérieur fixe</h4><div class="spec">P3–P16 · 5 000–8 000 nits · IP65</div><p>Façade, panneau publicitaire, fronton de stade. Cabinets 960×960 ou 1 000×1 000 en acier ou aluminium.</p><ul><li>Structure calculée au vent, fondation</li><li>Parafoudre, ventilation ou clim, capteur de luminosité</li></ul></div>
-    <div class="card"><h4>Location (rental)</h4><div class="spec">P1.9–P4.8 · 1 000–5 000 nits · IP30–IP65</div><p>Scène, concert, salon. Cabinets 500×500 et 500×1 000 en aluminium moulé, verrous rapides, coins de protection.</p><ul><li>Suspension (bumpers, moteurs) ou pile au sol</li><li>Cintrage réglable (−10° à +10° selon modèle)</li></ul></div>
-    <div class="card"><h4>Pas fin / COB</h4><div class="spec">P0.6–P1.9 · 400–800 nits</div><p>Salle de contrôle, salle de réunion, studio. Tolérances de pose très serrées (joints &lt; 0,1 mm).</p><ul><li>Structure parfaitement plane, réglable</li><li>Maintenance avant, gants, antistatique</li></ul></div>
-    <div class="card"><h4>Transparent / grille / film</h4><div class="spec">P3.9–P15 · 50–90 % transparence</div><p>Vitrine, façade vitrée, scénographie. Barres LED fixées en haut et en bas, écran léger (≈ 12–18 kg/m²). Le film LED se colle directement sur le verre.</p><ul><li>Distance vitre–écran à respecter (dilatation, condensation)</li><li>Câblage caché dans les profilés</li></ul></div>
-    <div class="card"><h4>Flexible / souple</h4><div class="spec">P1.5–P4 · modules sur circuit souple</div><p>Colonnes, formes courbes, cylindres, vagues. Modules fixés par aimants sur une tôle acier formée.</p><ul><li>Rayon de courbure minimal à respecter (fiche)</li><li>Mapping de pixels spécifique</li></ul></div>
-    <div class="card"><h4>Sol LED (dance floor)</h4><div class="spec">P2.6–P6.25 · charge 1–2 t/m²</div><p>Scène, plateau TV, parcours interactif. Surface verre/PC antidérapante, pieds réglables, option capteurs de présence.</p><ul><li>Support parfaitement nivelé</li><li>Contrôler la charge admissible du plancher</li></ul></div>
-    <div class="card"><h4>Créatifs</h4><div class="spec">Cube, sphère, ruban, triangle, hexagone</div><p>Scénographie, muséographie, stands. Modules sur mesure, cartes réceptrices dédiées, mapping par logiciel média-serveur.</p><ul><li>Plan de pixel (pixel map) indispensable</li></ul></div>
-    <div class="card"><h4>Tout-en-un (All-in-one)</h4><div class="spec">108"–220" · P0.9–P1.9</div><p>« Téléviseur LED » livré avec processeur, lecteur, Android et haut-parleurs intégrés. Salles de réunion.</p><ul><li>Pose sur support mural ou pied fourni</li><li>Configuration simplifiée (pré-mappé usine)</li></ul></div>
-    <div class="card"><h4>Affiches / totems LED</h4><div class="spec">P1.8–P2.5 · format portrait</div><p>Magasins, galeries, halls. Lecteur asynchrone intégré (Wi-Fi/4G/USB), chaînables pour former un mur.</p></div>
-    <div class="card"><h4>Périmétriques de stade</h4><div class="spec">P6–P16 · 6 000+ nits · IP65</div><p>Bandeaux au bord du terrain. Mousse de protection, inclinaison, fixation au sol lestée ou vissée.</p></div>
-    <div class="card"><h4>Mobiles (camion, remorque)</h4><div class="spec">P3.9–P6 · vérins hydrauliques</div><p>Écran sur mât hydraulique, groupe électrogène embarqué. Mise à niveau par stabilisateurs, limite de vent stricte.</p></div>
-    <div class="card"><h4>Studio XR / production virtuelle</h4><div class="spec">P1.5–P2.6 · 7 680 Hz · genlock</div><p>Mur + plafond LED pour tournages. Exige synchronisation genlock, faible latence, calibration colorimétrique poussée.</p></div>
+  <div class="types">
+    <div><h4>Intérieur fixe</h4><div class="spec">P1.2–P4 · 600–1 200 nits · IP30–IP43</div><p>Mur d'image de hall, salle de conférence, église, magasin. Cabinets 640×480, 500×500 ou 600×337,5 (16:9).</p><ul><li>Pose sur cadre acier fixé au mur</li><li>Maintenance souvent par l'avant (aimants)</li></ul></div>
+    <div><h4>Extérieur fixe</h4><div class="spec">P3–P16 · 5 000–8 000 nits · IP65</div><p>Façade, panneau publicitaire, fronton de stade. Cabinets 960×960 ou 1 000×1 000 en acier ou aluminium.</p><ul><li>Structure calculée au vent, fondation</li><li>Parafoudre, ventilation ou clim, capteur de luminosité</li></ul></div>
+    <div><h4>Location (rental)</h4><div class="spec">P1.9–P4.8 · 1 000–5 000 nits · IP30–IP65</div><p>Scène, concert, salon. Cabinets 500×500 et 500×1 000 en aluminium moulé, verrous rapides, coins de protection.</p><ul><li>Suspension (bumpers, moteurs) ou pile au sol</li><li>Cintrage réglable (−10° à +10° selon modèle)</li></ul></div>
+    <div><h4>Pas fin / COB</h4><div class="spec">P0.6–P1.9 · 400–800 nits</div><p>Salle de contrôle, salle de réunion, studio. Tolérances de pose très serrées (joints &lt; 0,1 mm).</p><ul><li>Structure parfaitement plane, réglable</li><li>Maintenance avant, gants, antistatique</li></ul></div>
+    <div><h4>Transparent / grille / film</h4><div class="spec">P3.9–P15 · 50–90 % transparence</div><p>Vitrine, façade vitrée, scénographie. Barres LED fixées en haut et en bas, écran léger (≈ 12–18 kg/m²). Le film LED se colle directement sur le verre.</p><ul><li>Distance vitre–écran à respecter (dilatation, condensation)</li><li>Câblage caché dans les profilés</li></ul></div>
+    <div><h4>Flexible / souple</h4><div class="spec">P1.5–P4 · modules sur circuit souple</div><p>Colonnes, formes courbes, cylindres, vagues. Modules fixés par aimants sur une tôle acier formée.</p><ul><li>Rayon de courbure minimal à respecter (fiche)</li><li>Mapping de pixels spécifique</li></ul></div>
+    <div><h4>Sol LED (dance floor)</h4><div class="spec">P2.6–P6.25 · charge 1–2 t/m²</div><p>Scène, plateau TV, parcours interactif. Surface verre/PC antidérapante, pieds réglables, option capteurs de présence.</p><ul><li>Support parfaitement nivelé</li><li>Contrôler la charge admissible du plancher</li></ul></div>
+    <div><h4>Créatifs</h4><div class="spec">Cube, sphère, ruban, triangle, hexagone</div><p>Scénographie, muséographie, stands. Modules sur mesure, cartes réceptrices dédiées, mapping par logiciel média-serveur.</p><ul><li>Plan de pixel (pixel map) indispensable</li></ul></div>
+    <div><h4>Tout-en-un (All-in-one)</h4><div class="spec">108"–220" · P0.9–P1.9</div><p>« Téléviseur LED » livré avec processeur, lecteur, Android et haut-parleurs intégrés. Salles de réunion.</p><ul><li>Pose sur support mural ou pied fourni</li><li>Configuration simplifiée (pré-mappé usine)</li></ul></div>
+    <div><h4>Affiches / totems LED</h4><div class="spec">P1.8–P2.5 · format portrait</div><p>Magasins, galeries, halls. Lecteur asynchrone intégré (Wi-Fi/4G/USB), chaînables pour former un mur.</p></div>
+    <div><h4>Périmétriques de stade</h4><div class="spec">P6–P16 · 6 000+ nits · IP65</div><p>Bandeaux au bord du terrain. Mousse de protection, inclinaison, fixation au sol lestée ou vissée.</p></div>
+    <div><h4>Mobiles (camion, remorque)</h4><div class="spec">P3.9–P6 · vérins hydrauliques</div><p>Écran sur mât hydraulique, groupe électrogène embarqué. Mise à niveau par stabilisateurs, limite de vent stricte.</p></div>
+    <div><h4>Studio XR / production virtuelle</h4><div class="spec">P1.5–P2.6 · 7 680 Hz · genlock</div><p>Mur + plafond LED pour tournages. Exige synchronisation genlock, faible latence, calibration colorimétrique poussée.</p></div>
   </div>
 
   <h3>2.1 Arbre de décision rapide</h3>
@@ -336,14 +360,17 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
     <li><b>Filmé ?</b> Oui → ≥ 3 840 Hz, bon niveau de gris à faible luminosité.</li>
     <li><b>Contenu ?</b> Direct depuis un ordinateur / régie → contrôle synchrone. Programmes publicitaires planifiés → asynchrone.</li>
   </ol>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Pour cinq cas (église de 400 places, vitrine de pharmacie, façade de centre commercial, tournée de concerts, salle de contrôle), choisissez type, pas, luminosité et mode de contrôle. Justifiez chaque choix en trois lignes.</li><li>Comparez à l'oral vos choix avec ceux d'un autre stagiaire.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Le lieu impose le type : soleil, vitrine ou intérieur.</li><li>Temporaire → location. Permanent → fixe.</li><li>Forme libre → flexible ou créatif, avec un plan de pixels.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m2"> Module validé</label>
 </section>
 
 <!-- ============ 3 ============ -->
 <section class="mod" id="m3" data-title="Composants d'un écran LED">
-  <div class="mod-head"><div><div class="mod-num">Module 03</div><h2>Composants d'un écran LED</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 03 · 2 h</span><h2>Composants d'un écran LED</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Nommer chaque élément de la chaîne, de la source au pixel.</li><li>Différencier contrôle synchrone et asynchrone.</li></ul></div>
 
-  <figure class="diagram">
+  <figure class="diagram"><div class="scroll">
     <svg viewBox="0 0 780 190" role="img" aria-label="Chaîne du signal : source, processeur, câble réseau, carte réceptrice, carte HUB, modules">
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker>
@@ -381,7 +408,7 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
       <line class="ld" x1="460" y1="125" x2="460" y2="112"/>
       <line class="la" x1="560" y1="30" x2="740" y2="30" marker-end="url(#aha)"/>
       <text class="ts" x="700" y="24" text-anchor="end">vers cabinet suivant</text>
-    </svg>
+    </svg></div>
     <figcaption>La chaîne complète. Le signal réseau entre dans la carte réceptrice du premier cabinet, qui le renvoie au cabinet suivant (chaînage).</figcaption>
   </figure>
 
@@ -409,12 +436,12 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
   <p>Convertisseur 230 V AC → 5 V DC (ou 4,2 V / 3,8 V en cathode commune). Formats : 200 W (40 A) et 300 W (60 A). Une alimentation alimente en général 2 à 6 modules. Les cabinets location intègrent l'entrée et la sortie powerCON pour chaîner le secteur.</p>
 
   <h3>3.5 Contrôleurs : synchrone ou asynchrone</h3>
-  <div class="two">
-    <div class="card"><h4>Synchrone</h4><div class="spec">Image en temps réel depuis une source</div>
+  <div class="cols2">
+    <div><h4>Synchrone</h4><div class="spec">Image en temps réel depuis une source</div>
       <p>L'écran affiche exactement ce que reçoit l'entrée vidéo. Sans source, l'écran est noir.</p>
       <ul><li>Cartes émettrices : NovaStar MSD300/MSD600, Colorlight S2/S4</li><li>Contrôleurs : NovaStar MCTRL300, MCTRL660 Pro, MCTRL4K ; Colorlight X4/X8/X16</li><li>Processeurs tout-en-un (mise à l'échelle, couches) : NovaStar VX400/VX600/VX1000, série H, Colorlight Z6/X20</li></ul>
       <p>Pour : scène, église, événementiel, régie TV.</p></div>
-    <div class="card"><h4>Asynchrone</h4><div class="spec">Lecteur multimédia autonome</div>
+    <div><h4>Asynchrone</h4><div class="spec">Lecteur multimédia autonome</div>
       <p>Le contenu est chargé dans une mémoire interne (USB, Wi-Fi, 4G, réseau) et joué selon une programmation, sans PC.</p>
       <ul><li>NovaStar Taurus TB10 à TB60, TU series ; gestion cloud VNNOX</li><li>Colorlight C-series, A-series ; cloud Colorlight</li><li>Huidu HD-A3/A4/A6, HD-C16… ; logiciel HDPlayer</li><li>Linsn / Xixun (lecteurs Android)</li></ul>
       <p>Pour : affichage publicitaire, totems, pharmacies, commerces. Beaucoup de lecteurs ont un mode <b>synchrone/asynchrone commutable</b> (entrée HDMI).</p></div>
@@ -428,11 +455,14 @@ Distance maximale utile  ≈ hauteur de l'écran × 10 à 20 (lisibilité du tex
     <li><b>Séquenceur d'alimentation</b> : allume les départs électriques l'un après l'autre pour limiter l'appel de courant.</li>
     <li><b>Bumper / barre d'accroche, pieds de pile au sol, verrous d'angle, coins de protection</b> (location).</li>
   </ul>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Ouvrez un cabinet. Photographiez et nommez la carte réceptrice, la carte HUB, les alimentations, les modules et les nappes.</li><li>Relevez au dos d'un module la référence, le driver IC et le sens de montage.</li><li>Mesurez au multimètre la tension de sortie d'une alimentation, écran en noir puis en blanc.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>La chaîne : source → processeur → Cat6 → carte réceptrice → HUB → modules.</li><li>Le fichier de la carte réceptrice dépend du module exact.</li><li>Synchrone : image en direct. Asynchrone : lecteur autonome programmé.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m3"> Module validé</label>
 </section>
 
 <!-- ============ 4 ============ -->
 <section class="mod" id="m4" data-title="Étude préalable et dimensionnement">
-  <div class="mod-head"><div><div class="mod-num">Module 04</div><h2>Étude préalable et dimensionnement</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 04 · 3 h</span><h2>Étude préalable et dimensionnement</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Mener une visite technique complète.</li><li>Calculer la résolution, le nombre de cabinets, de ports, la puissance, le poids.</li></ul></div>
 
   <h3>4.1 Visite technique (site survey)</h3>
@@ -460,28 +490,30 @@ Courant tri / phase   = P ÷ (√3 × 400 × cos φ)     (cos φ ≈ 0,95 avec P
   <div class="note"><strong>Capacité d'un port Gigabit</strong><p>≈ 650 000 pixels (NovaStar : 655 360) en 8 bits à 60 Hz. En 10/12 bits ou à des fréquences plus hautes, la capacité est divisée (environ par 2 en 10 bits). Gardez une marge de 10 % pour pouvoir câbler proprement par rangées complètes.</p></div>
 
   <h3>4.3 Calculateur de dimensionnement</h3>
-  <div class="calc" id="calc">
-    <fieldset>
-      <label>Largeur souhaitée (m)<input id="cW" type="number" step="0.1" min="0.5" value="6"></label>
-      <label>Hauteur souhaitée (m)<input id="cH" type="number" step="0.1" min="0.5" value="3.5"></label>
-      <label>Pas de pixel (mm)<input id="cP" type="number" step="0.01" min="0.4" value="2.6"></label>
-      <label>Type de cabinet
+  <div class="tool" id="calc">
+    <span class="label">Calculateur de dimensionnement</span>
+    <div class="row">
+      <label for="cW">Largeur (m)<input id="cW" type="number" step="0.1" min="0.5" value="6"></label>
+      <label for="cH">Hauteur (m)<input id="cH" type="number" step="0.1" min="0.5" value="3.5"></label>
+      <label for="cP">Pas (mm)<input id="cP" type="number" step="0.01" min="0.4" value="2.6"></label>
+      <label for="cCab">Cabinet
         <select id="cCab">
           <option value="500x500|30|550">500×500 location</option>
           <option value="500x1000|28|550">500×1000 location</option>
-          <option value="600x337.5|25|450">600×337,5 pas fin 16:9</option>
-          <option value="640x480|28|500">640×480 intérieur fixe</option>
-          <option value="960x960|45|900">960×960 extérieur fixe</option>
+          <option value="600x337.5|25|450">600×337,5 pas fin</option>
+          <option value="640x480|28|500">640×480 intérieur</option>
+          <option value="960x960|45|900">960×960 extérieur</option>
           <option value="1000x500|16|650">1000×500 transparent</option>
         </select></label>
-      <label>Puissance max (W/m²)<input id="cWm" type="number" step="10" min="50" value="550"></label>
-      <label>Poids (kg/m²)<input id="cKg" type="number" step="1" min="1" value="30"></label>
-      <label>Profondeur de couleur
+    </div>
+    <div class="row">
+      <label for="cWm">Puissance max (W/m²)<input id="cWm" type="number" step="10" min="50" value="550"></label>
+      <label for="cKg">Poids (kg/m²)<input id="cKg" type="number" step="1" min="1" value="30"></label>
+      <label for="cBit">Couleur
         <select id="cBit"><option value="650000">8 bits · 60 Hz</option><option value="327000">10 bits · 60 Hz</option><option value="325000">8 bits · 120 Hz</option></select></label>
-      <label>Alimentation secteur
-        <select id="cPh"><option value="1">Monophasé 230 V</option><option value="3" selected>Triphasé 400 V</option></select></label>
-      <p class="meta full">Le type de cabinet pré-remplit puissance et poids avec des valeurs moyennes. Remplacez-les par celles de votre fiche technique.</p>
-    </fieldset>
+      <label for="cPh">Secteur
+        <select id="cPh"><option value="1">Mono 230 V</option><option value="3" selected>Tri 400 V</option></select></label>
+    </div>
     <div class="out" aria-live="polite">
       <div><span>Cabinets (L × H)</span><b id="oCab">–</b></div>
       <div><span>Taille réelle</span><b id="oSize">–</b></div>
@@ -491,10 +523,10 @@ Courant tri / phase   = P ÷ (√3 × 400 × cos φ)     (cos φ ≈ 0,95 avec P
       <div><span>Surface</span><b id="oArea">–</b></div>
       <div><span>Puissance max / moy.</span><b id="oPow">–</b></div>
       <div><span>Courant max</span><b id="oAmp">–</b></div>
-      <div><span>Poids écran (hors structure)</span><b id="oKg">–</b></div>
-      <div><span>Distance de vision min. / idéale</span><b id="oDist">–</b></div>
-      <div class="wide"><span>Recommandations</span><div id="oReco" class="alert"></div></div>
+      <div><span>Poids (hors structure)</span><b id="oKg">–</b></div>
     </div>
+    <ul class="reco" id="oReco"></ul>
+    <p class="label" style="text-transform:none;letter-spacing:0">Le choix du cabinet pré-remplit puissance et poids avec des moyennes du marché. Remplacez-les par les valeurs de votre fiche technique.</p>
   </div>
 
   <h3>4.4 Exemple corrigé (TP1)</h3>
@@ -508,11 +540,14 @@ Courant tri / phase   = P ÷ (√3 × 400 × cos φ)     (cos φ ≈ 0,95 avec P
     <li>Puissance : 21 m² × 550 W/m² ≈ <b>11,6 kW max</b>, ≈ 3,8 kW en moyenne. Triphasé : 11 550 / (1,732 × 400 × 0,95) ≈ <b>17,6 A par phase</b> → 3 départs 20 A équilibrés, un par phase.</li>
     <li>Poids : 21 m² × 30 kg/m² ≈ <b>630 kg</b> + structure + bumpers → faire valider les points d'accroche.</li>
   </ol>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Refaites l'exemple de l'église avec le calculateur, puis dimensionnez un écran extérieur de 8 × 4 m en P6, cabinets 960×960. Comparez ports, puissance et poids.</li><li>Réalisez la visite technique de la salle de formation avec la check-list 4.1 et rédigez une page de synthèse.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Toujours arrondir à un nombre entier de cabinets, puis recalculer la taille réelle.</li><li>Un port Gigabit ≈ 650 000 pixels. Gardez 10 à 20 % de marge.</li><li>La puissance moyenne vaut environ un tiers de la puissance max.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m4"> Module validé</label>
 </section>
 
 <!-- ============ 5 ============ -->
 <section class="mod" id="m5" data-title="Structures et fixations">
-  <div class="mod-head"><div><div class="mod-num">Module 05</div><h2>Structures et fixations</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 05 · 2 h</span><h2>Structures et fixations</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Choisir le système porteur adapté à chaque type d'écran.</li><li>Appliquer les règles de sécurité de levage et de travail en hauteur.</li></ul></div>
 
   <div class="note danger"><strong>Sécurité avant tout</strong><p>Toute structure fixe d'extérieur, tout accrochage en hauteur au-dessus du public et tout écran de plus de quelques centaines de kilos doit être validé par un bureau d'études (note de calcul) : charges permanentes, vent (Eurocode 1, NF EN 1991-1-4), neige, séisme selon zone. En France, les structures acier relèvent de la NF EN 1090 et le contrôle peut être demandé par un bureau de contrôle agréé.</p></div>
@@ -571,11 +606,14 @@ Courant tri / phase   = P ÷ (√3 × 400 × cos φ)     (cos φ ≈ 0,95 avec P
     <li>Harnais uniquement si aucune protection collective possible, avec point d'ancrage validé.</li>
     <li>Balisage au sol, casque pour tous dans la zone de levage, outils attachés.</li>
   </ul>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Montez 2 × 2 cabinets en pile au sol sur barre de base. Contrôlez le niveau au laser et mesurez les joints à la jauge d'épaisseur.</li><li>Calculez l'angle entre cabinets de 500 mm pour un arc de rayon 6 m (réponse : ≈ 4,8°) et réglez les verrous d'angle en conséquence.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Structure fixe extérieure ou écran suspendu : note de calcul obligatoire.</li><li>Suspension : élingues de sécurité indépendantes, personne sous la charge.</li><li>La planéité exigée dépend du pas : plus il est fin, plus c'est strict.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m5"> Module validé</label>
 </section>
 
 <!-- ============ 6 ============ -->
 <section class="mod" id="m6" data-title="Alimentation électrique">
-  <div class="mod-head"><div><div class="mod-num">Module 06</div><h2>Alimentation électrique</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 06 · 2 h</span><h2>Alimentation électrique</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Concevoir une distribution électrique fiable et conforme.</li><li>Éviter les pièges classiques : appel de courant, déclenchements différentiels, déséquilibre de phases.</li></ul></div>
 
   <div class="note danger"><strong>Habilitation</strong><p>Les raccordements au tableau électrique sont réalisés par une personne habilitée et dans le respect de la NF C 15-100 (installations fixes) ou de la réglementation événementielle locale. L'écran est un appareil de classe I : la terre est obligatoire sur chaque cabinet.</p></div>
@@ -613,15 +651,18 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li><b>Extinction</b> : noir sur l'écran → couper l'écran → couper processeur et source.</li>
     <li>Ne jamais afficher de plein blanc à 100 % au premier allumage.</li>
   </ul>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Répartissez un écran de 12 kW en triphasé : nombre de départs 16 A et affectation aux phases.</li><li>Mesurez à la pince le courant d'un cabinet en noir, en blanc 50 % et en blanc 100 %. Comparez avec la fiche technique.</li><li>Rédigez la séquence d'allumage et d'extinction à afficher en régie.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Terre obligatoire sur chaque cabinet.</li><li>Répartir les courants de fuite sur plusieurs différentiels.</li><li>Allumer départ par départ, jamais en plein blanc.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m6"> Module validé</label>
 </section>
 
 <!-- ============ 7 ============ -->
 <section class="mod" id="m7" data-title="Installation pas à pas, par type">
-  <div class="mod-head"><div><div class="mod-num">Module 07</div><h2>Installation pas à pas, par type</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 07 · 4 h</span><h2>Installation pas à pas, par type</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Dérouler une installation complète dans le bon ordre.</li><li>Appliquer les gestes spécifiques de chaque type d'écran.</li></ul></div>
 
   <h3>7.1 Outillage</h3>
-  <div class="two">
+  <div class="cols2">
     <ul>
       <li>Niveau laser croix + niveau à bulle 1 m, mètre, cordeau</li>
       <li>Visseuse, clés (Allen, plates, douilles), clé dynamométrique</li>
@@ -699,11 +740,14 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
   </ul>
 
   <div class="note warn"><strong>Humidité et stockage</strong><p>Un écran stocké longtemps ou dans un lieu humide absorbe l'humidité. Allumé directement à pleine luminosité, il peut griller des LED (pixels morts, « chenilles »). Faites un préchauffage progressif : par exemple 2 h à 10–20 %, puis 2 h à 40 %, puis 2 h à 70 %, puis 100 %. Suivez la procédure du fabricant.</p></div>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>En binôme, montez le mur de formation en suivant les 12 étapes. Chronométrez.</li><li>Remplissez la fiche d'autocontrôle : niveau, joints, verrous, terre, étiquetage.</li><li>Présentez votre montage au formateur qui vérifie trois points au hasard.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Tout part de la première rangée : elle doit être parfaite.</li><li>Tester les cabinets au sol avant de les monter.</li><li>Après un stockage humide, préchauffer par paliers de luminosité.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m7"> Module validé</label>
 </section>
 
 <!-- ============ 8 ============ -->
 <section class="mod" id="m8" data-title="Câblage des données">
-  <div class="mod-head"><div><div class="mod-num">Module 08</div><h2>Câblage des données</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 08 · 2 h</span><h2>Câblage des données</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Établir un plan de câblage lisible et efficace.</li><li>Mettre en place la redondance et les liaisons longue distance.</li></ul></div>
 
   <h3>8.1 Règles de base</h3>
@@ -715,7 +759,7 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li>Étiqueter : port (A, B, C…) et numéro dans la chaîne (A1, A2…).</li>
   </ul>
 
-  <figure class="diagram">
+  <figure class="diagram"><div class="scroll">
     <svg viewBox="0 0 440 250" role="img" aria-label="Exemple de câblage en serpentin avec deux ports et une boucle de secours">
       <defs>
         <marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ara"/></marker>
@@ -726,7 +770,7 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
       <polyline class="lb" points="4,190 60,190 150,190 240,190 330,190" marker-end="url(#ab)"/>
       <polyline class="ld" points="330,120 405,120 405,235 4,235"/>
       <text class="ts" x="408" y="180" transform="rotate(90 408 180)">secours</text>
-    </svg>
+    </svg></div>
     <figcaption>12 cabinets, 2 ports. Port A (bleu) : A1→A8 en serpentin sur les deux premières rangées. Port B (rouge) : B1→B4. En pointillé : câble de secours du dernier cabinet de A vers un port de secours du contrôleur.</figcaption>
   </figure>
 
@@ -745,11 +789,14 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 
   <h3>8.4 Plan de câblage à remettre</h3>
   <p>Un schéma vu <b>de face</b> (et indiquez-le), avec : la grille des cabinets, le numéro de chaque cabinet, le parcours de chaque port, les lignes électriques et leur disjoncteur, l'emplacement du contrôleur. C'est le document le plus utile lors d'une panne.</p>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Dessinez le plan de câblage vu de face d'un écran de 12 × 7 cabinets P2.6 sur 6 ports, avec boucles de secours.</li><li>Sur le mur de formation, câblez une boucle de secours, déclarez-la, puis débranchez un câble au milieu de la chaîne : l'image doit rester complète.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Cat6 : 100 m maximum. Au-delà, fibre.</li><li>Étiqueter chaque câble aux deux bouts.</li><li>Le plan de câblage vu de face est le document le plus utile en cas de panne.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m8"> Module validé</label>
 </section>
 
 <!-- ============ 9 ============ -->
 <section class="mod" id="m9" data-title="Programmation synchrone : NovaStar, Colorlight">
-  <div class="mod-head"><div><div class="mod-num">Module 09</div><h2>Programmation synchrone</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 09 · 4 h</span><h2>Programmation synchrone</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Configurer un écran de zéro avec NovaLCT (NovaStar) et LEDVISION (Colorlight).</li><li>Comprendre les fichiers de configuration et la sauvegarde matérielle.</li></ul></div>
 
   <h3>9.1 Les trois niveaux de configuration</h3>
@@ -798,20 +845,15 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 
   <div class="note warn"><strong>Avant toute modification</strong><p>Faites une lecture et un enregistrement de la configuration existante (<kbd>Read from HW</kbd> puis <kbd>Save to File</kbd>). Un mauvais fichier de carte réceptrice peut donner un écran brouillé. Avec la sauvegarde, on revient en arrière en deux minutes.</p></div>
 
-  <h3>9.5 TP2 : configurer un mur de 2 × 2 cabinets</h3>
-  <ol>
-    <li>Câbler 4 cabinets en serpentin sur le Port 1, en partant du coin haut gauche vu de face.</li>
-    <li>Se connecter à NovaLCT, lire et sauvegarder la configuration existante.</li>
-    <li>Charger le fichier <code>.rcfgx</code>, régler 3 840 Hz, envoyer et sauver.</li>
-    <li>Créer la connexion 2 × 2, envoyer. Afficher la mire de numérotation : chaque cabinet affiche son numéro.</li>
-    <li>Inverser volontairement deux câbles, observer, corriger dans le logiciel sans toucher au câblage.</li>
-    <li>Sauvegarder, couper le courant, rallumer : l'image doit revenir correcte.</li>
-  </ol>
+  
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Câblez 4 cabinets en serpentin sur le Port 1, en partant du coin haut gauche vu de face.</li><li>Connectez-vous à NovaLCT, lisez et sauvegardez la configuration existante.</li><li>Chargez le fichier <code>.rcfgx</code>, réglez 3 840 Hz, envoyez puis sauvegardez.</li><li>Créez la connexion 2 × 2, envoyez, affichez la mire numérotée : chaque cabinet doit montrer son numéro.</li><li>Inversez volontairement deux câbles, observez, corrigez dans le logiciel sans toucher au câblage.</li><li>Sauvegardez, coupez le courant, rallumez : l'image doit revenir correcte.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li><kbd>Send</kbd> applique, <kbd>Save</kbd> enregistre dans les cartes.</li><li>Toujours sauvegarder la configuration existante avant de la modifier.</li><li>Les fichiers de cartes réceptrices viennent du fabricant : archivez-les.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m9"> Module validé</label>
 </section>
 
 <!-- ============ 10 ============ -->
 <section class="mod" id="m10" data-title="Programmation asynchrone">
-  <div class="mod-head"><div><div class="mod-num">Module 10</div><h2>Programmation asynchrone</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 10 · 3 h</span><h2>Programmation asynchrone</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Créer, planifier et publier un programme sur un lecteur autonome.</li><li>Gérer un parc d'écrans à distance.</li></ul></div>
 
   <h3>10.1 NovaStar Taurus avec ViPlex</h3>
@@ -853,13 +895,15 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li>Pas de défilements rapides ni de clignotements en bordure de route (sécurité routière).</li>
   </ul>
 
-  <h3>10.6 TP3</h3>
-  <p>Créer une solution de 3 pages pour un totem 1080×1920 : page 1 vidéo 15 s, page 2 image + texte défilant 10 s, page 3 horloge + météo 8 s. Planifier lundi-samedi 8 h-21 h, luminosité 100 % en journée et 30 % après 19 h. Publier et vérifier.</p>
+  
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Créez une solution de 3 pages pour un totem 1080×1920 : vidéo 15 s, image et texte défilant 10 s, horloge et météo 8 s.</li><li>Planifiez du lundi au samedi de 8 h à 21 h, luminosité 100 % le jour et 30 % après 19 h.</li><li>Publiez, vérifiez la lecture, puis changez les mots de passe par défaut du lecteur.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Changer tous les mots de passe par défaut.</li><li>Planifier la luminosité, pas seulement les contenus.</li><li>Respecter le règlement local de publicité et l'extinction nocturne.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m10"> Module validé</label>
 </section>
 
 <!-- ============ 11 ============ -->
 <section class="mod" id="m11" data-title="Contenu et diffusion">
-  <div class="mod-head"><div><div class="mod-num">Module 11</div><h2>Contenu et diffusion</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 11 · 2 h</span><h2>Contenu et diffusion</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Envoyer une image pixel pour pixel sur l'écran.</li><li>Produire des contenus adaptés à la LED.</li></ul></div>
 
   <h3>11.1 Le principe du pixel pour pixel</h3>
@@ -894,11 +938,14 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 
   <h3>11.4 Mire de test pixel map</h3>
   <p>Créez une image à la résolution native avec : un contour de 1 px, une grille par cabinet, le numéro de chaque cabinet, un cercle (pour voir les déformations) et des dégradés. Elle permet de vérifier en une seconde que le mapping est juste.</p>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Créez une mire pixel map à la résolution du mur de formation : contour 1 px, grille par cabinet, numéros, cercle, dégradés.</li><li>Affichez-la depuis Resolume (Advanced Output) ou ProPresenter et vérifiez que le contour de 1 px est complet sur les quatre bords.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Toujours produire à la résolution native de l'écran.</li><li>Fonds sombres : moins de consommation, meilleur contraste.</li><li>Même fréquence d'image de la source au processeur.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m11"> Module validé</label>
 </section>
 
 <!-- ============ 12 ============ -->
 <section class="mod" id="m12" data-title="Calibration, réglages et recette">
-  <div class="mod-head"><div><div class="mod-num">Module 12</div><h2>Calibration, réglages et recette</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 12 · 2 h</span><h2>Calibration, réglages et recette</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Obtenir une image uniforme et fidèle.</li><li>Conduire une réception de chantier et remettre un dossier complet.</li></ul></div>
 
   <h3>12.1 Réglages d'image</h3>
@@ -948,11 +995,14 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li>Fiches techniques, notices, liste des pièces de rechange livrées.</li>
     <li>Procédure d'allumage / extinction simplifiée pour l'utilisateur, affichée près de la régie.</li>
   </ul>
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Faites la recette du mur de formation avec toutes les mires du tableau 12.3.</li><li>Remplissez un procès-verbal de recette et listez les réserves.</li><li>Réglez la luminosité pour une salle éclairée à 300 lux et justifiez la valeur.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Mires couleur, blanc, noir, dégradés et pixel map avant toute réception.</li><li>Burn-in de 24 à 72 h avant la réception.</li><li>Le dossier client comprend plans, fichiers de configuration et mots de passe.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m12"> Module validé</label>
 </section>
 
 <!-- ============ 13 ============ -->
 <section class="mod" id="m13" data-title="Maintenance et dépannage">
-  <div class="mod-head"><div><div class="mod-num">Module 13</div><h2>Maintenance et dépannage</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+  <div class="mod-head"><span class="label">Module 13 · 3 h</span><h2>Maintenance et dépannage</h2></div>
   <div class="objectifs"><strong>Objectifs</strong><ul><li>Planifier la maintenance préventive.</li><li>Diagnostiquer méthodiquement une panne, de la source au pixel.</li></ul></div>
 
   <h3>13.1 Maintenance préventive</h3>
@@ -1005,18 +1055,47 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     <li><div><strong>Contrôler</strong> avec les mires ; charger les coefficients de calibration si besoin.</div></li>
   </ol>
 
-  <h3>13.5 TP4 : diagnostic</h3>
-  <p>Le formateur crée cinq pannes sur le mur de formation (câble réseau débranché au milieu d'une chaîne, nappe mal insérée, carte réceptrice avec mauvais fichier, deux câbles inversés, alimentation d'un module coupée). Chaque stagiaire doit trouver et corriger chaque panne en moins de 10 minutes, en appliquant la méthode 13.2 et en notant son raisonnement.</p>
+  
+  <div class="drill"><span class="label">Exercice pratique</span><ol><li>Le formateur crée cinq pannes sur le mur : câble réseau débranché au milieu d'une chaîne, nappe mal insérée, carte réceptrice avec mauvais fichier, deux câbles inversés, alimentation d'un module coupée.</li><li>Trouvez et corrigez chaque panne en moins de 10 minutes en appliquant la méthode 13.2.</li><li>Notez votre raisonnement pour chaque panne et présentez-le au groupe.</li></ol></div>
+  <div class="keep"><span class="label">À retenir</span><ul><li>Délimiter, remonter la chaîne, permuter.</li><li>Couper l'alimentation avant toute intervention sur un module.</li><li>Garder 3 à 5 % de modules de rechange du même lot.</li></ul></div>
+  <label class="check-mod"><input type="checkbox" data-mod="m13"> Module validé</label>
 </section>
 
 <!-- ============ 14 ============ -->
-<section class="mod" id="m14" data-title="Évaluation finale et glossaire">
-  <div class="mod-head"><div><div class="mod-num">Module 14</div><h2>Évaluation finale</h2></div><button class="done-btn" aria-pressed="false">Terminé</button></div>
+<section class="mod" id="m14" data-title="Évaluation finale" data-noprog="1">
+  <div class="mod-head"><span class="label">Évaluation</span><h2>Évaluation finale</h2></div>
   <p>Cliquez sur une réponse : la correction s'affiche. Seuil de validation conseillé : 16 / 20.</p>
   <div class="quiz" id="quiz"></div>
-  <div class="score"><span>Score</span><b id="score">0 / 20</b><button class="btn ghost" id="resetQuiz" type="button">Recommencer</button></div>
+  <div class="score"><b id="score">0 / 20</b><button class="btn" id="resetQuiz" type="button">Recommencer le quiz</button></div>
+</section>
 
-  <h3>Glossaire</h3>
+<section class="mod" id="certif" data-title="Projet de certification" data-noprog="1">
+  <div class="mod-head"><span class="label">Certification</span><h2>Projet de fin de formation</h2></div>
+  <p>Pour valider la formation, chaque stagiaire (ou binôme) livre un mur LED opérationnel de 2 × 3 cabinets, de la caisse à la diffusion, devant le formateur.</p>
+  <ol>
+    <li><b>Étude :</b> fiche de dimensionnement (calculateur), plan de câblage données et électrique vu de face.</li>
+    <li><b>Installation :</b> montage, alignement, câblage, étiquetage, mise sous tension en séquence.</li>
+    <li><b>Programmation :</b> configuration NovaLCT ou LEDVISION de zéro, sauvegarde, puis un programme asynchrone planifié.</li>
+    <li><b>Diffusion :</b> mire pixel map et vidéo pixel pour pixel depuis un PC.</li>
+    <li><b>Dépannage :</b> deux pannes surprises à résoudre en 20 minutes.</li>
+    <li><b>Dossier :</b> PV de recette et dossier client complet.</li>
+  </ol>
+  <div class="tbl"><table>
+    <thead><tr><th>Critère</th><th>Points</th><th>Ce qui est évalué</th></tr></thead>
+    <tbody>
+      <tr><td>Étude et plans</td><td class="m">/15</td><td>Calculs justes, plan lisible, choix justifiés.</td></tr>
+      <tr><td>Sécurité</td><td class="m">/15</td><td>EPI, levage, terre, séquence d'allumage. Une faute grave est éliminatoire.</td></tr>
+      <tr><td>Qualité de montage</td><td class="m">/20</td><td>Niveau, joints, verrous, rangement des câbles.</td></tr>
+      <tr><td>Configuration</td><td class="m">/20</td><td>Mapping juste, sauvegarde matérielle, fichiers archivés.</td></tr>
+      <tr><td>Diffusion</td><td class="m">/10</td><td>Pixel pour pixel, fréquence, contenu adapté.</td></tr>
+      <tr><td>Dépannage</td><td class="m">/10</td><td>Méthode, rapidité, explication.</td></tr>
+      <tr><td>Dossier</td><td class="m">/10</td><td>PV, plans, identifiants, fichiers.</td></tr>
+      <tr><td><b>Total</b></td><td class="m"><b>/100</b></td><td>Validation à partir de 70, sans faute de sécurité.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section class="mod" id="gloss" data-title="Glossaire" data-noprog="1">
+  <div class="mod-head"><span class="label">Référence</span><h2>Glossaire</h2></div>
   <dl class="glos">
     <dt>Pitch (P)</dt><dd>Pas de pixel, distance entre deux pixels en mm.</dd>
     <dt>Cabinet</dt><dd>Caisson regroupant modules, carte réceptrice et alimentation.</dd>
@@ -1043,86 +1122,106 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
 
 </main>
 </div>
-</div>
 <footer>Formation Écrans LED · Les valeurs sont des ordres de grandeur du marché. Référez-vous toujours à la notice du fabricant, aux normes en vigueur et à un bureau d'études pour les structures.</footer>
 
 <script>
 (function(){
-  /* ---------- Pixel strip in hero ---------- */
-  var px = document.getElementById('pixels');
-  var cols = ['#E0352A','#17A454','#2563EB'];
-  for (var i = 0; i < 48; i++){
-    var s = document.createElement('span');
-    var k = (Math.sin(i*0.55)+1)/2;
-    for (var c = 0; c < 3; c++){
-      var el = document.createElement('i');
-      var on = c === 0 ? k : c === 1 ? (Math.sin(i*0.55+2.1)+1)/2 : (Math.sin(i*0.55+4.2)+1)/2;
-      el.style.background = cols[c];
-      el.style.opacity = (0.15 + on*0.85).toFixed(2);
-      s.appendChild(el);
-    }
-    px.appendChild(s);
-  }
-
-  /* ---------- Serpentine grid ---------- */
-  var g = document.getElementById('grid');
-  var NS = 'http://www.w3.org/2000/svg';
-  var labels = [['A1','A2','A3','A4'],['A8','A7','A6','A5'],['B1','B2','B3','B4']];
-  for (var r = 0; r < 3; r++) for (var cc = 0; cc < 4; cc++){
-    var rect = document.createElementNS(NS,'rect');
-    rect.setAttribute('x', 20+cc*90); rect.setAttribute('y', 20+r*70);
-    rect.setAttribute('width', 80); rect.setAttribute('height', 60); rect.setAttribute('rx', 4);
-    rect.setAttribute('class', 'bx');
-    g.appendChild(rect);
-    var t = document.createElementNS(NS,'text');
-    t.setAttribute('x', 60+cc*90); t.setAttribute('y', 44+r*70);
-    t.setAttribute('text-anchor','middle'); t.setAttribute('class','t');
-    t.textContent = labels[r][cc];
-    g.appendChild(t);
-  }
-
-  /* ---------- TOC + progress ---------- */
-  var mods = Array.prototype.slice.call(document.querySelectorAll('section.mod'));
-  var toc = document.getElementById('toc'), tocM = document.getElementById('tocMobile');
-  var KEY = 'formation-led-progress';
-  var state = {};
-  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ state = {}; }
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
-
-  mods.forEach(function(m, idx){
-    var li = document.createElement('li');
-    li.innerHTML = '<a href="#'+m.id+'"><span class="n">'+String(idx).padStart(2,'0')+'</span><span></span><span class="d"></span></a>';
-    li.querySelector('span:nth-child(2)').textContent = m.dataset.title;
-    toc.appendChild(li);
-    var li2 = document.createElement('li');
-    li2.innerHTML = '<a href="#'+m.id+'"></a>';
-    li2.firstChild.textContent = m.dataset.title;
-    tocM.appendChild(li2);
-    var btn = m.querySelector('.done-btn');
-    btn.addEventListener('click', function(){
-      state[m.id] = !state[m.id]; save(); render();
-    });
-  });
-  tocM.addEventListener('click', function(e){ if (e.target.tagName === 'A') tocM.closest('details').open = false; });
-
-  function render(){
-    var done = 0, countable = mods.length - 1;
-    mods.forEach(function(m, idx){
-      var on = !!state[m.id];
-      m.querySelector('.done-btn').setAttribute('aria-pressed', on ? 'true' : 'false');
-      m.querySelector('.done-btn').lastChild.nodeValue = on ? 'Terminé ✓' : 'Marquer terminé';
-      toc.children[idx].firstChild.classList.toggle('done', on);
-      if (on && idx > 0) done++;
-    });
-    document.querySelectorAll('.prog-txt').forEach(function(el){ el.textContent = done + ' / ' + countable; });
-    document.getElementById('progBar').style.width = (done / countable * 100) + '%';
-  }
-  mods.forEach(function(m){ var b = m.querySelector('.done-btn'); b.textContent = ''; b.appendChild(document.createTextNode('Marquer terminé')); });
-  render();
-
-  /* ---------- Calculator ---------- */
   var $ = function(id){ return document.getElementById(id); };
   var fmt = function(n, d){ return n.toLocaleString('fr-FR', {maximumFractionDigits: d||0, minimumFractionDigits: d||0}); };
+
+  /* Grille du schéma de câblage */
+  var g = $('grid'), NS = 'http://www.w3.org/2000/svg';
+  var labels = [['A1','A2','A3','A4'],['A8','A7','A6','A5'],['B1','B2','B3','B4']];
+  if (g) for (var r = 0; r < 3; r++) for (var c = 0; c < 4; c++){
+    var rect = document.createElementNS(NS,'rect');
+    rect.setAttribute('x', 20+c*90); rect.setAttribute('y', 20+r*70);
+    rect.setAttribute('width', 80); rect.setAttribute('height', 60); rect.setAttribute('rx', 3);
+    rect.setAttribute('class','bx'); g.appendChild(rect);
+    var t = document.createElementNS(NS,'text');
+    t.setAttribute('x', 60+c*90); t.setAttribute('y', 44+r*70);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('class','t');
+    t.textContent = labels[r][c]; g.appendChild(t);
+  }
+
+  /* Sommaire et progression */
+  var KEY = 'formation-led-progress-v2', state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ state = {}; }
+  var toc = $('toc');
+  var mods = [].slice.call(document.querySelectorAll('section.mod'));
+  var boxes = [].slice.call(document.querySelectorAll('input[data-mod]'));
+  mods.forEach(function(s){
+    var li = document.createElement('li'), a = document.createElement('a');
+    a.href = '#' + s.id; a.id = 't-' + s.id;
+    var n = document.createElement('span'); n.className = 'n';
+    n.textContent = s.dataset.noprog ? '—' : s.id.replace('m','').padStart(2,'0');
+    var tt = document.createElement('span'); tt.textContent = s.dataset.title;
+    var dot = document.createElement('span'); dot.className = 'dot';
+    a.appendChild(n); a.appendChild(tt); a.appendChild(dot);
+    li.appendChild(a); toc.appendChild(li);
+  });
+  function render(){
+    var done = 0;
+    boxes.forEach(function(b){
+      var on = !!state[b.dataset.mod]; b.checked = on;
+      var a = $('t-' + b.dataset.mod); if (a) a.classList.toggle('done', on);
+      if (on) done++;
+    });
+    $('prog-txt').textContent = done + ' / ' + boxes.length + ' modules validés';
+    $('prog-bar').style.width = (done / boxes.length * 100) + '%';
+  }
+  boxes.forEach(function(b){
+    b.addEventListener('change', function(){
+      state[b.dataset.mod] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  /* Simulateur de pas */
+  var cv = $('pitchCanvas');
+  if (cv){
+    var ctx = cv.getContext('2d');
+    var src = document.createElement('canvas'), sctx = src.getContext('2d');
+    var W = 700, H = 350; // extrait de 700 × 350 mm
+    function drawViz(){
+      var p = parseFloat($('vP').value), d = parseFloat($('vD').value);
+      $('vPo').textContent = p.toFixed(1) + ' mm'; $('vDo').textContent = fmt(d, d % 1 ? 1 : 0) + ' m';
+      var cols = Math.max(8, Math.round(W / p)), rows = Math.max(4, Math.round(H / p));
+      src.width = cols; src.height = rows;
+      var grd = sctx.createLinearGradient(0, 0, cols, rows);
+      grd.addColorStop(0, '#1b3bd6'); grd.addColorStop(.5, '#c21d7a'); grd.addColorStop(1, '#f39b1a');
+      sctx.fillStyle = grd; sctx.fillRect(0, 0, cols, rows);
+      sctx.fillStyle = '#ffffff';
+      sctx.font = '700 ' + Math.round(rows * 0.55) + 'px Archivo, Arial, sans-serif';
+      sctx.textAlign = 'center'; sctx.textBaseline = 'middle';
+      sctx.fillText('LED', cols / 2, rows / 2 + rows * 0.03);
+      var img = sctx.getImageData(0, 0, cols, rows).data;
+      var cw = cv.width, ch = cv.height, s = cw / cols;
+      var blur = Math.max(0, 0.29 * d * (cw / W));
+      ctx.save(); ctx.filter = 'none';
+      ctx.fillStyle = '#07090C'; ctx.fillRect(0, 0, cw, ch);
+      ctx.filter = blur > 0.3 ? 'blur(' + (blur * 0.5).toFixed(2) + 'px)' : 'none';
+      var dot = Math.max(0.6, s * 0.62);
+      for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++){
+        var i = (y * cols + x) * 4;
+        ctx.fillStyle = 'rgb(' + img[i] + ',' + img[i+1] + ',' + img[i+2] + ')';
+        ctx.fillRect(x * s + (s - dot) / 2, y * s + (s - dot) / 2, dot, dot);
+      }
+      ctx.restore();
+      var smooth = p / 0.29; // distance (m) où l'œil ne sépare plus les pixels
+      var v;
+      if (d < p) v = 'Trop près : distance inférieure au minimum (' + fmt(p,1) + ' m). La grille de pixels est très visible.';
+      else if (d < smooth) v = 'Acceptable pour la vidéo : pixels encore perceptibles jusqu’à ≈ ' + fmt(smooth,0) + ' m. Le texte fin reste granuleux.';
+      else v = 'Image lisse : au-delà de ≈ ' + fmt(smooth,0) + ' m, l’œil ne distingue plus les pixels.';
+      $('vVerdict').textContent = v;
+    }
+    $('vP').addEventListener('input', drawViz); $('vD').addEventListener('input', drawViz);
+    drawViz();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawViz);
+  }
+
+  /* Calculateur */
   $('cCab').addEventListener('change', function(){
     var p = this.value.split('|'); $('cKg').value = p[1]; $('cWm').value = p[2]; calc();
   });
@@ -1130,38 +1229,36 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
   function calc(){
     var W = parseFloat($('cW').value)*1000, H = parseFloat($('cH').value)*1000, P = parseFloat($('cP').value);
     var dims = $('cCab').value.split('|')[0].split('x'), cw = parseFloat(dims[0]), ch = parseFloat(dims[1]);
-    var wm = parseFloat($('cWm').value), kg = parseFloat($('cKg').value), cap = parseFloat($('cBit').value), ph = parseInt($('cPh').value,10);
-    if (!(W>0 && H>0 && P>0 && wm>0 && kg>0)) return;
+    var wm = parseFloat($('cWm').value), kg = parseFloat($('cKg').value), cap = parseFloat($('cBit').value), ph = parseInt($('cPh').value, 10);
+    if (!(W > 0 && H > 0 && P > 0 && wm > 0 && kg > 0)) return;
     var nx = Math.max(1, Math.round(W/cw)), ny = Math.max(1, Math.round(H/ch));
-    var pxX = Math.round(cw/P), pxY = Math.round(ch/P);
-    var resX = nx*pxX, resY = ny*pxY, pix = resX*resY;
+    var resX = nx*Math.round(cw/P), resY = ny*Math.round(ch/P), pix = resX*resY;
     var realW = nx*cw/1000, realH = ny*ch/1000, area = realW*realH;
-    var ports = Math.ceil(pix/cap);
-    var pmax = area*wm, pavg = pmax*0.33;
+    var ports = Math.ceil(pix/cap), pmax = area*wm, pavg = pmax*0.33;
     var amp = ph === 1 ? pmax/230 : pmax/(Math.sqrt(3)*400*0.95);
     $('oCab').textContent = nx + ' × ' + ny + ' = ' + (nx*ny);
     $('oSize').textContent = fmt(realW,2) + ' × ' + fmt(realH,2) + ' m';
     $('oRes').textContent = resX + ' × ' + resY;
     $('oPix').textContent = fmt(pix);
-    $('oPorts').textContent = ports + (ports > 1 ? ' ports' : ' port');
+    $('oPorts').textContent = ports;
     $('oArea').textContent = fmt(area,2) + ' m²';
     $('oPow').textContent = fmt(pmax/1000,1) + ' / ' + fmt(pavg/1000,1) + ' kW';
-    $('oAmp').textContent = fmt(amp,1) + ' A' + (ph === 3 ? ' / phase' : '');
+    $('oAmp').textContent = fmt(amp,1) + ' A' + (ph === 3 ? ' /ph' : '');
     $('oKg').textContent = fmt(area*kg) + ' kg';
-    $('oDist').textContent = fmt(P,1) + ' m / ' + fmt(P*2,0) + '–' + fmt(P*3,0) + ' m';
     var reco = [];
-    if (resX > 1920 || resY > 1080) reco.push('Résolution supérieure à 1920×1080 : processeur 4K ou mise à l’échelle nécessaire.');
-    if (resX > 3840 || resY > 2160) reco.push('Au-delà de 4K : plusieurs sorties ou processeur multi-entrées.');
-    reco.push('Prévoir ' + (ports + Math.max(1, Math.ceil(ports*0.2))) + ' ports avec marge et éventuelle redondance.');
+    if (resX > 3840 || resY > 2160) reco.push('Au-delà de la 4K : plusieurs sorties ou processeur multi-entrées.');
+    else if (resX > 1920 || resY > 1080) reco.push('Résolution supérieure à 1920×1080 : processeur 4K ou mise à l’échelle.');
+    reco.push('Prévoir ' + (ports + Math.max(1, Math.ceil(ports*0.2))) + ' ports avec marge et redondance.');
     if (ph === 1 && amp > 32) reco.push('Plus de 32 A en monophasé : passer en triphasé.');
-    var lines = Math.ceil(amp*(ph===3?3:1)/12.8);
-    reco.push('Environ ' + lines + ' départs de 16 A (chargés à 80 %).');
-    if (area*kg > 500) reco.push('Plus de 500 kg : faire valider structure et points d’accroche par un bureau d’études.');
-    $('oReco').innerHTML = reco.map(function(r){ return '• ' + r; }).join('<br>');
+    reco.push('Environ ' + Math.ceil(amp*(ph === 3 ? 3 : 1)/12.8) + ' départs de 16 A chargés à 80 %.');
+    reco.push('Distance de vision : minimum ' + fmt(P,1) + ' m, confort ' + fmt(P*2,0) + ' à ' + fmt(P*3,0) + ' m.');
+    if (area*kg > 500) reco.push('Plus de 500 kg : structure et accroches validées par un bureau d’études.');
+    var ul = $('oReco'); ul.innerHTML = '';
+    reco.forEach(function(r){ var li = document.createElement('li'); li.textContent = r; ul.appendChild(li); });
   }
   calc();
 
-  /* ---------- Quiz ---------- */
+  /* Quiz */
   var Q = [
     ['Pour un écran P3.9, quelle est la distance minimale de vision approximative ?', ['1 m','4 m','10 m','39 m'], 1, 'Distance minimale ≈ pas en mm exprimé en mètres : environ 3,9 m.'],
     ['Combien de pixels environ un port Gigabit peut-il piloter en 8 bits à 60 Hz ?', ['65 000','250 000','650 000','2 millions'], 2, 'Environ 650 000 pixels (655 360 chez NovaStar).'],
@@ -1184,11 +1281,10 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
     ['Écran suspendu : quel élément est obligatoire en plus des points de levage ?', ['Un capteur de luminosité','Des élingues de sécurité indépendantes','Un deuxième PC','Un filtre anti-moiré'], 1, 'La sécurité secondaire est indispensable au-dessus des personnes.'],
     ['Pourquoi remettre un plan de câblage vu de face ?', ['Pour la décoration','Pour diagnostiquer et reconfigurer rapidement','C’est facultatif','Pour le calcul de vent'], 1, 'C’est le document clé lors d’une panne.']
   ];
-  var qz = document.getElementById('quiz'), scoreEl = document.getElementById('score');
-  var score = 0, answered = 0;
+  var qz = $('quiz'), scoreEl = $('score'), score = 0, answered = 0;
   function buildQuiz(){
     qz.innerHTML = ''; score = 0; answered = 0; scoreEl.textContent = '0 / ' + Q.length;
-    Q.forEach(function(q, qi){
+    Q.forEach(function(q){
       var d = document.createElement('div'); d.className = 'q';
       var p = document.createElement('p'); p.textContent = q[0]; d.appendChild(p);
       var o = document.createElement('div'); o.className = 'opts';
@@ -1201,14 +1297,15 @@ Exemple : 230 V × 16 A × 0,8 = 2 944 W ; cabinet 500×500 à 150 W max → 19 
           if (ai === q[2]) score++; else b.classList.add('wrong');
           answered++;
           var ex = document.createElement('p'); ex.className = 'expl'; ex.textContent = q[3]; d.appendChild(ex);
-          scoreEl.textContent = score + ' / ' + Q.length + (answered === Q.length ? (score >= 16 ? ' · validé' : ' · à revoir') : '');
+          scoreEl.textContent = score + ' / ' + Q.length + (answered === Q.length ? (score >= 16 ? ' · validé' : ' · à retravailler') : '');
         });
         o.appendChild(b);
       });
       d.appendChild(o); qz.appendChild(d);
     });
   }
-  document.getElementById('resetQuiz').addEventListener('click', buildQuiz);
+  $('resetQuiz').addEventListener('click', buildQuiz);
   buildQuiz();
 })();
+
 </script>
