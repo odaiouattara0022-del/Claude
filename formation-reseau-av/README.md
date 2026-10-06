@@ -7,10 +7,12 @@ Formation complète sur le réseau appliqué à l'audio-vidéo (Dante, AES67, ND
 | Fichier | Contenu |
 | --- | --- |
 | `formation-reseau-av.html` | L'application de formation : tableau de bord et mode suivi (objectifs du jour, série, frise), programme sur 5 jours, 12 modules en volets (cours, antisèche, pièges, pratique), 2 études de conception, 32 flashcards, 36 questions de quiz, examen blanc, 7 scénarios de panne, ressources. |
+| `Formation-Reseau-AV.pdf` | Le support complet en PDF (63 pages A4) : couverture, sommaire cliquable, 12 modules avec antisèches, pièges et pratique, études de conception, travaux pratiques, check-list, salle de panne, quiz, fiches mémo, missions du simulateur, corrigés et glossaire. |
 | `regie-ip-lab.html` | Régie IP Lab : simulateur de deux switchs en syntaxe Cisco IOS, avec 7 missions guidées et l'état du son, de la vidéo et de la lumière calculé en direct. |
 | `source/app-template.html` | Structure, style et logique de l'application de formation. |
 | `source/data.js` | Contenu pédagogique : domaines, antisèches, pièges, pratique, questions, flashcards, pannes, schémas. |
 | `source/secs.json` | Texte des cours de chaque module. |
+| `source/pdf/` | Générateur du PDF : `extract.js` (extraction des données), `build_print.py` (mise en page, mode d’emploi en tête du fichier), `print.css` (style d’impression), `topdf.js` (impression avec Chromium). |
 | `source/build.py` | Reconstruit `formation-reseau-av.html` à partir des trois fichiers ci-dessus. |
 
 ## Utilisation

@@ -1,0 +1,114 @@
+@page{size:A4;margin:18mm 17mm 20mm 17mm;
+  @top-left{content:"Formation Réseau pour l’audio-vidéo";font:8pt 'Liberation Sans',sans-serif;color:#7A8A85}
+  @top-right{content:"AV/IP";font:bold 8pt 'DejaVu Sans Mono',monospace;color:#0A7C70}
+  @bottom-right{content:counter(page) " / " counter(pages);font:8pt 'DejaVu Sans Mono',monospace;color:#7A8A85}
+  @bottom-left{content:"Support de formation · octobre 2026";font:8pt 'Liberation Sans',sans-serif;color:#9AA8A3}}
+@page cover{margin:0;@top-left{content:none}@top-right{content:none}@bottom-right{content:none}@bottom-left{content:none}}
+@page partp{@top-left{content:none}@top-right{content:none}}
+:root{--ink:#14201D;--muted:#55645F;--line:#C9D4D0;--soft:#EEF3F1;--accent:#0A7C70;--accent-soft:#DDEFEB;--warn:#8A5300;--warn-soft:#FBF1DF;--warn-line:#E6C68C;--code:#0E1714;--code-ink:#D2EEDF}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:'Liberation Sans',Arial,sans-serif;font-size:10pt;line-height:1.5;color:var(--ink)}
+a{color:var(--accent);text-decoration:none}
+h1,h2,h3,h4{font-family:'Liberation Sans',Arial,sans-serif;color:var(--ink);break-after:avoid}
+h2{font-size:20pt;line-height:1.15;margin:2pt 0 10pt;letter-spacing:-.2pt}
+h3{font-size:12pt;margin:16pt 0 6pt;color:var(--accent)}
+h4{font-size:9pt;letter-spacing:.8pt;text-transform:uppercase;margin:0 0 6pt;color:var(--accent)}
+p{margin:0 0 7pt;orphans:3;widows:3}
+ul,ol{margin:0 0 8pt;padding-left:16pt}
+li{margin:2pt 0}
+b,strong{font-weight:700}
+code{font-family:'DejaVu Sans Mono',monospace;font-size:8.6pt;background:var(--soft);border:.5pt solid var(--line);border-radius:2pt;padding:0 2pt}
+.kicker{font:bold 7.5pt 'DejaVu Sans Mono',monospace;letter-spacing:1.2pt;text-transform:uppercase;color:var(--accent);margin-bottom:3pt}
+.lead{font-size:11.5pt;line-height:1.45;border-left:2.5pt solid var(--accent);padding-left:9pt;margin:0 0 12pt}
+.note{font-size:9pt;color:var(--muted);margin-top:10pt}
+.small{font-size:9pt}
+
+/* Couverture */
+.cover{page:cover;height:297mm;background:#0B1210;color:#E2ECE8;padding:26mm 22mm;display:flex;flex-direction:column;justify-content:space-between;break-after:page;position:relative;overflow:hidden}
+.cover::after{content:"";position:absolute;right:-40mm;top:60mm;width:150mm;height:150mm;border:1.2pt solid #1E4A42;border-radius:50%}
+.cover::before{content:"";position:absolute;right:-10mm;top:90mm;width:90mm;height:90mm;border:1.2pt solid #2C6E62;border-radius:50%}
+.cv-top{font:bold 9pt 'DejaVu Sans Mono',monospace;letter-spacing:2pt;text-transform:uppercase;color:#3DC3B1}
+.cv-mid{position:relative;z-index:1}
+.cv-tag{font:bold 14pt 'DejaVu Sans Mono',monospace;color:#3DC3B1;margin-bottom:10pt}
+.cover h1{font-size:46pt;line-height:1;margin:0 0 16pt;color:#F2F7F5;letter-spacing:-1pt;text-transform:uppercase}
+.cover p{font-size:13pt;line-height:1.45;max-width:125mm;color:#BFD2CB}
+.cv-facts{display:flex;gap:10mm;position:relative;z-index:1}
+.cv-facts div{display:flex;flex-direction:column;border-top:1.5pt solid #3DC3B1;padding-top:5pt;min-width:26mm}
+.cv-facts b{font:bold 24pt 'DejaVu Sans Mono',monospace;color:#F2F7F5}
+.cv-facts span{font-size:9pt;color:#9DB3AB}
+.cv-bot{font-size:9pt;color:#7F968E;position:relative;z-index:1}
+
+/* Sommaire */
+.toc{break-after:page}
+.toc ol{list-style:none;padding:0;margin:8pt 0 0}
+.toc li{padding:3.5pt 0;border-bottom:.5pt solid var(--line)}
+.toc li.l0{font-weight:700;margin-top:9pt;border-bottom:1pt solid var(--ink)}
+.toc li.l1{padding-left:12pt;font-size:9.5pt}
+.toc a{color:var(--ink);display:block}
+
+/* Pages de partie */
+.part{page:partp;break-before:page;break-after:page;height:250mm;display:flex;flex-direction:column;justify-content:center;border-left:4pt solid var(--accent);padding-left:14mm}
+.part-num{font:bold 12pt 'DejaVu Sans Mono',monospace;color:var(--accent);letter-spacing:2pt;text-transform:uppercase}
+.part h1{font-size:36pt;line-height:1.05;margin:6pt 0 12pt;text-transform:uppercase;letter-spacing:-.5pt}
+.part-intro{font-size:12pt;max-width:130mm;color:var(--muted)}
+
+/* Chapitres */
+.chap{break-before:page}
+.chap+.chap.avoid{break-before:page}
+.mod-head{display:flex;gap:10pt;align-items:center;margin-bottom:8pt;padding-bottom:8pt;border-bottom:1pt solid var(--line)}
+.mod-num{font:bold 30pt 'DejaVu Sans Mono',monospace;color:var(--accent);line-height:1}
+.mod-head h2{margin:0}
+
+/* Tableaux */
+.tbl{margin:4pt 0 12pt}
+table{border-collapse:collapse;width:100%;font-size:8.8pt;line-height:1.35}
+th,td{text-align:left;padding:4pt 6pt;border-bottom:.5pt solid var(--line);vertical-align:top}
+th{font-size:7pt;letter-spacing:.7pt;text-transform:uppercase;color:var(--muted);background:var(--soft);border-bottom:1pt solid var(--ink)}
+tr{break-inside:avoid}
+thead{display:table-header-group}
+td.k{font-family:'DejaVu Sans Mono',monospace;font-size:8.2pt;color:var(--accent);white-space:nowrap}
+td.m{font-family:'DejaVu Sans Mono',monospace;color:var(--muted);width:9mm}
+
+/* Code et schémas */
+pre.cli{font-family:'DejaVu Sans Mono',monospace;font-size:7.8pt;line-height:1.42;background:var(--code);color:var(--code-ink);border-radius:4pt;padding:7pt 10pt;margin:4pt 0 10pt;white-space:pre-wrap;break-inside:avoid}
+pre.cli .prompt{color:#7FD9C5;font-weight:bold}
+.formula{font-family:'DejaVu Sans Mono',monospace;background:var(--soft);border:.5pt solid var(--line);border-radius:3pt;padding:6pt 9pt;margin:4pt 0 9pt;color:var(--accent);font-size:9.5pt}
+.caption{font-size:8.8pt;color:var(--muted);font-style:italic}
+
+/* Encadrés */
+.keep{background:var(--accent-soft);border-radius:4pt;padding:8pt 11pt;margin:6pt 0 11pt;break-inside:avoid}
+.keep>b:first-child{font:bold 7.5pt 'DejaVu Sans Mono',monospace;letter-spacing:1pt;text-transform:uppercase;color:var(--accent)}
+.keep ul{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6pt;margin:4pt 0 10pt}
+.card{border:.5pt solid var(--line);border-radius:4pt;padding:6pt 8pt;font-size:9pt;break-inside:avoid}
+.card b{display:block;color:var(--accent)}
+.recap{margin-top:14pt;border-top:1.5pt solid var(--ink);padding-top:8pt}
+.recap-block{break-inside:avoid;margin-bottom:10pt}
+.recap-block.trap{background:var(--warn-soft);border:.5pt solid var(--warn-line);border-radius:4pt;padding:8pt 11pt}
+.recap-block.trap h4{color:var(--warn)}
+.recap-block.trap ul{margin-bottom:0}
+table.anti td{padding:3pt 6pt}
+.checklist{list-style:none;padding:0}
+.checklist li{display:flex;gap:8pt;align-items:flex-start;padding:5pt 0;border-bottom:.5pt solid var(--line);font-size:10.5pt}
+.box{display:inline-block;width:10pt;height:10pt;border:1pt solid var(--ink);border-radius:1.5pt;flex:none;margin-top:2pt}
+.checklist label{flex:1}
+
+/* Pannes et quiz */
+.panne{border:.5pt solid var(--line);border-radius:5pt;padding:9pt 11pt;margin:0 0 11pt;break-inside:avoid}
+.panne-head{display:flex;align-items:baseline;gap:8pt;margin-bottom:5pt}
+.panne-head h3{margin:0;flex:1;color:var(--ink)}
+.pn{font:bold 8pt 'DejaVu Sans Mono',monospace;color:var(--warn);text-transform:uppercase;letter-spacing:.8pt}
+.tag{font:7.5pt 'DejaVu Sans Mono',monospace;color:var(--muted);border:.5pt solid var(--line);border-radius:8pt;padding:1pt 6pt}
+.panne .q{font-weight:700;margin:6pt 0 3pt}
+ol.opts{list-style:none;padding-left:0;margin:0}
+ol.opts li{padding:1.5pt 0}
+ol.opts li b{color:var(--accent);display:inline-block;width:12pt}
+.panne.sol h3{margin-top:0;color:var(--ink)}
+.qmod{border-bottom:.5pt solid var(--line);padding-bottom:3pt}
+.qq{break-inside:avoid;margin-bottom:8pt}
+.qq p{margin:0 0 2pt;font-weight:700}
+.qn{color:var(--accent);font-family:'DejaVu Sans Mono',monospace}
+.mission{break-inside:avoid;margin-bottom:10pt}
+.mission h3{margin-top:10pt}
+table.memo td{font-size:9pt}
