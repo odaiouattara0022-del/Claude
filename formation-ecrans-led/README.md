@@ -7,12 +7,14 @@ Formation interactive sur l'installation de tous les types d'écrans LED et leur
 | Fichier | Contenu |
 | --- | --- |
 | `formation-ecrans-led.html` | L'application de formation : accueil par jour, 15 modules découpés en étapes, 16 ateliers interactifs (simulateurs NovaLCT, LEDVISION et HDPlayer, jeu de câblage, recherche de défauts, arbre de dépannage, chiffrage…), quiz de validation par module, évaluation finale, projet de certification, glossaire, suivi des stagiaires et attestation. |
+| `formation-ecrans-led.pdf` | Support complet à imprimer (62 pages A4) : tous les modules, les ateliers en version papier, les questions de contrôle, l'évaluation finale (35 questions), le projet de certification, le glossaire, un PV de recette, une fiche d'intervention et tous les corrigés. |
 | `source/contenu.html` | Texte des cours de chaque module. |
 | `source/extras.py` | Étapes complémentaires et module 14 (chiffrage, contrats, logistique). |
 | `source/widgets.py` | Structure HTML des ateliers. |
 | `source/app2.js` | Logique : navigation, quiz et banques de questions, ateliers, simulateurs, suivi, attestation, espace formateur. |
 | `source/app.css` | Présentation. |
 | `source/build.py` | Reconstruit `formation-ecrans-led.html` à partir des fichiers ci-dessus. |
+| `source/pdf/` | Génère la version imprimable : `python3 source/pdf/pdfbuild.py`, puis impression en PDF avec Chromium. |
 
 ## Utilisation
 

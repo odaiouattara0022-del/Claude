@@ -1,0 +1,139 @@
+@page{size:A4;margin:18mm 17mm 20mm 17mm;
+  @bottom-left{content:"Formation Écrans LED";font:8.5pt "Liberation Sans",sans-serif;color:#6b7480}
+  @bottom-right{content:counter(page) " / " counter(pages);font:8.5pt "DejaVu Sans Mono",monospace;color:#6b7480}}
+@page cover{margin:0;@bottom-left{content:none}@bottom-right{content:none}}
+:root{--ink:#15191F;--muted:#56606C;--line:#CDD3DA;--soft:#F2F4F7;--accent:#1650B8;--asoft:#E3EAF7;--amber:#9A5F07;--asoft2:#F6EBD4;--bad:#B3362B;--badsoft:#F8E6E3;--ok:#2C7A4A}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font:10pt/1.5 "Liberation Sans","DejaVu Sans",sans-serif;color:var(--ink)}
+h1,h2,h3,h4{font-family:"DejaVu Sans",sans-serif;line-height:1.15;margin:0;break-after:avoid}
+h2{font-size:21pt;font-weight:700;text-transform:uppercase;letter-spacing:-.02em}
+h3{font-size:13pt;font-weight:700;margin:16pt 0 6pt;color:var(--ink);letter-spacing:-.01em}
+h4{font-size:10.5pt;margin:10pt 0 4pt}
+p{margin:0 0 6pt;orphans:3;widows:3}
+ul,ol{margin:0 0 8pt;padding-left:16pt}
+li{margin:2pt 0}
+code,kbd,.mono{font-family:"DejaVu Sans Mono",monospace;font-size:8.5pt}
+code{background:var(--soft);border:.5pt solid var(--line);border-radius:2pt;padding:0 2pt}
+kbd{border:.5pt solid var(--line);border-bottom-width:1.2pt;border-radius:2pt;padding:0 3pt}
+.label{font-family:"DejaVu Sans Mono",monospace;font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* Couverture */
+.cover{page:cover;height:297mm;display:flex;flex-direction:column;break-after:page}
+.cover .wall{flex:1;background:#07090C;color:#F2F5F8;padding:28mm 20mm 20mm;position:relative;
+  background-image:radial-gradient(circle,rgba(255,255,255,.08) 0 .45mm,transparent .6mm);background-size:2.4mm 2.4mm;display:flex;flex-direction:column;justify-content:flex-end}
+.osd{display:flex;justify-content:space-between;font:8pt "DejaVu Sans Mono",monospace;color:#9FB0C2;position:absolute;top:16mm;left:20mm;right:20mm}
+.osd .live{color:#5EE38E}
+.cover h1{font-size:52pt;font-weight:700;text-transform:uppercase;letter-spacing:-.03em;line-height:.95;margin-bottom:8mm}
+.cover .lede{font-size:14pt;color:#D6DEE7;max-width:140mm}
+.cover .rgb{display:flex;gap:2mm;margin-top:10mm}
+.cover .rgb i{width:4mm;height:14mm;display:block}
+.cover .facts{display:grid;grid-template-columns:repeat(4,1fr);border-top:1pt solid var(--line)}
+.cover .facts div{padding:7mm 8mm;border-right:.5pt solid var(--line);display:flex;flex-direction:column;gap:1mm}
+.cover .facts span{font:7.5pt "DejaVu Sans Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cover .facts b{font:700 20pt "DejaVu Sans",sans-serif}
+.cover .facts em{font-style:normal;font-size:9pt;color:var(--muted)}
+.coverfoot{margin:0;padding:4mm 8mm 8mm;font-size:8.5pt;color:var(--muted)}
+
+/* Sommaire */
+.toc{break-after:page}
+.toc h2{margin-bottom:10pt}
+
+/* Modules */
+section.mod{break-before:page}
+.mhead{display:flex;gap:12pt;align-items:flex-end;border-bottom:2pt solid var(--ink);padding-bottom:8pt;margin-bottom:12pt}
+.mnum{font:700 40pt/1 "DejaVu Sans",sans-serif;color:var(--accent);letter-spacing:-.04em;min-width:58pt}
+.meta{font:7.5pt "DejaVu Sans Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 3pt}
+.block{margin-bottom:6pt}
+.objectifs{background:var(--asoft);padding:8pt 12pt;border-radius:3pt;margin-bottom:6pt;break-inside:avoid}
+.objectifs strong{font:7.5pt "DejaVu Sans Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.objectifs ul{margin:4pt 0 0}
+.drill{background:var(--asoft2);border-left:2.5pt solid var(--amber);padding:8pt 12pt;margin:6pt 0;break-inside:avoid}
+.drill .label{color:var(--amber);display:block;margin-bottom:3pt}
+.drill ol{margin:0}
+.keep{border-top:1.5pt solid var(--ink);padding-top:6pt;margin-top:8pt;break-inside:avoid}
+.keep .label{display:block;margin-bottom:3pt}
+.keep ul{list-style:none;padding:0;margin:0}
+.keep li{padding-left:12pt;position:relative}
+.keep li::before{content:"";position:absolute;left:0;top:5pt;width:5pt;height:5pt;background:var(--accent)}
+.note{border:.75pt dashed var(--line);padding:7pt 10pt;margin:8pt 0;break-inside:avoid}
+.note > strong:first-child{display:block;font:7.5pt "DejaVu Sans Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:2pt;font-weight:400}
+.note p:last-child{margin:0}
+.note.warn{border:0;border-left:2.5pt solid var(--amber);background:var(--soft)}
+.note.warn > strong:first-child{color:var(--amber)}
+.note.danger{border:0;border-left:2.5pt solid var(--bad);background:var(--badsoft)}
+.note.danger > strong:first-child{color:var(--bad)}
+.formula{font:8.5pt/1.65 "DejaVu Sans Mono",monospace;background:var(--soft);border:.5pt solid var(--line);padding:7pt 10pt;white-space:pre-wrap;margin:6pt 0;break-inside:avoid}
+.tbl{margin:6pt 0 8pt}
+table{border-collapse:collapse;width:100%;font-size:8.8pt;line-height:1.4}
+th,td{text-align:left;padding:4pt 6pt;border-bottom:.5pt solid var(--line);vertical-align:top}
+th{font:7pt "DejaVu Sans Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;border-bottom:1pt solid var(--ink)}
+tr{break-inside:avoid}
+td.num,td.m{font-family:"DejaVu Sans Mono",monospace;font-size:8pt;white-space:nowrap}
+thead{display:table-header-group}
+ol.steps{list-style:none;padding:0;counter-reset:s}
+ol.steps > li{counter-increment:s;display:grid;grid-template-columns:22pt 1fr;gap:6pt;margin:5pt 0;break-inside:avoid}
+ol.steps > li::before{content:counter(s,decimal-leading-zero);font:8pt "DejaVu Sans Mono",monospace;color:var(--accent);border-top:1.5pt solid var(--accent);padding-top:2pt;height:max-content}
+ol.steps > li > div > strong:first-child{display:block}
+ul.check{list-style:none;padding:0}
+ul.check li{padding-left:16pt;position:relative;margin:4pt 0}
+ul.check li::before{content:"";position:absolute;left:0;top:2pt;width:8pt;height:8pt;border:1pt solid var(--muted);border-radius:1.5pt}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:10pt;margin:6pt 0}
+.cols2 > div{border:.5pt solid var(--line);padding:7pt 9pt;break-inside:avoid;background:var(--soft)}
+.cols2 h4{margin-top:0}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:6pt 14pt}
+.types > div{border-top:.75pt solid var(--line);padding-top:5pt;break-inside:avoid}
+.types h4{margin:0;font-size:10.5pt}
+.types .spec{font:7.5pt "DejaVu Sans Mono",monospace;color:var(--accent);margin-bottom:2pt}
+.types p,.types li{font-size:9pt}
+.types ul{margin:2pt 0 0}
+figure.diagram{margin:8pt 0;break-inside:avoid}
+figure.diagram .scroll{border:.5pt solid var(--line);background:var(--soft);padding:4pt}
+figure.diagram svg{width:100%;height:auto;display:block;max-height:70mm}
+figcaption{font-size:8.5pt;color:var(--muted);margin-top:3pt}
+svg .bx{fill:#fff;stroke:#15191F;stroke-width:1.3}
+svg .t{fill:#15191F;font:600 13px "DejaVu Sans",sans-serif}
+svg .ts{fill:#56606C;font:400 10px "DejaVu Sans Mono",monospace}
+svg .la{stroke:#1650B8;stroke-width:2.4;fill:none}
+svg .lb{stroke:#E0352A;stroke-width:2.4;fill:none}
+svg .ld{stroke:#56606C;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+svg .ln{stroke:#15191F;stroke-width:1.5;fill:none}
+svg .ar{fill:#15191F} svg .ara{fill:#1650B8} svg .arb{fill:#E0352A}
+svg .bx-acc{fill:#E3EAF7;stroke:#1650B8;stroke-width:1.6}
+
+/* Ateliers et quiz */
+.block.lab{border:1pt solid var(--amber);border-radius:3pt;padding:8pt 12pt 6pt;margin:12pt 0;background:#FFFCF6}
+.block.lab h3{margin-top:0}
+.tag{font:7.5pt "DejaVu Sans Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0 0 2pt}
+.ex{border:.75pt dashed var(--amber);padding:7pt 10pt;margin:6pt 0;line-height:2;break-inside:avoid}
+.block.quiz{margin-top:12pt}
+.hint{font-size:8.5pt;color:var(--muted)}
+ol.qz{padding-left:18pt;columns:2;column-gap:18pt}
+ol.qz > li{margin:0 0 7pt;break-inside:avoid}
+ol.qz > li > p{font-weight:700;margin:0 0 2pt}
+ul.opt{list-style:none;padding:0;margin:0}
+ul.opt li{display:flex;gap:6pt;align-items:baseline;margin:1.5pt 0}
+.box{display:inline-block;min-width:13pt;height:12pt;border:.75pt solid var(--muted);border-radius:2pt;font:7.5pt/11pt "DejaVu Sans Mono",monospace;text-align:center;color:var(--muted)}
+ul.order{list-style:none;padding:0;columns:2;column-gap:16pt}
+ul.order li{display:flex;gap:8pt;align-items:center;margin:4pt 0;break-inside:avoid}
+.blank{display:inline-block;width:20pt;height:16pt;border:.75pt solid var(--muted);border-radius:2pt}
+.grid6,.grid3,.grid2{display:grid;gap:3pt;margin:6pt 0;max-width:150mm}
+.grid6{grid-template-columns:repeat(6,1fr)} .grid3{grid-template-columns:repeat(3,1fr);max-width:90mm} .grid2{grid-template-columns:repeat(2,1fr);max-width:60mm}
+.grid6 div,.grid3 div,.grid2 div{aspect-ratio:1;border:1pt solid var(--ink);background:#fff}
+.treebox{font-size:9pt}
+.tq{font-weight:700;margin:4pt 0 2pt}
+ul.tree{list-style:none;padding-left:10pt;border-left:1pt solid var(--line);margin:0 0 4pt}
+ul.tree > li{margin:4pt 0;break-inside:avoid}
+.ans{display:inline-block;font:8pt "DejaVu Sans Mono",monospace;background:var(--asoft);color:var(--accent);padding:0 4pt;border-radius:2pt;margin-bottom:2pt}
+.leaf{border-left:2pt solid var(--ok);background:#EAF4EE;padding:3pt 7pt;margin:2pt 0 4pt}
+dl.glos{display:grid;grid-template-columns:42mm 1fr;gap:4pt 12pt;margin:0}
+dl.glos dt{font:700 8.5pt "DejaVu Sans Mono",monospace}
+dl.glos dd{margin:0}
+table.form td{height:20pt}
+table.form td:first-child{width:62mm;color:var(--muted)}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:14pt;margin-top:10pt}
+.sign div{border:.75pt solid var(--line);height:30mm;padding:5pt 8pt;font-size:8.5pt;color:var(--muted)}
+.answers h4{color:var(--accent);margin-top:10pt;break-after:avoid}
+ul.key{list-style:none;padding:0;font-size:8.8pt}
+ul.key li{margin:2pt 0;break-inside:avoid}
+.score,.btn,.msg,button{display:none!important}
