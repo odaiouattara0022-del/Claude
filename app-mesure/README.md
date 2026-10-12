@@ -36,3 +36,7 @@ L'app doit être servie en **HTTPS** (requis pour la caméra, les capteurs et le
 ## Fichiers
 
 `index.html`, `styles.css`, `app.js` (aucune dépendance), `manifest.webmanifest`, `sw.js` (hors ligne + cache de ~3 000 tuiles de carte), `icons/`. Fonds de carte : imagerie Esri World Imagery et OpenStreetMap.
+
+## Tests
+
+`node app-mesure/tests/suite.js` (Playwright) : 48 vérifications de bout en bout sur iPhone SE, 13 et 15 Pro Max — mesure photo sur une image de test en perspective, visée simulée par capteurs, niveau, règle, carte et GPS simulés, plan, conservation des données.

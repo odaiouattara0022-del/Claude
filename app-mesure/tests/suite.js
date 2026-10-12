@@ -1,0 +1,260 @@
+// Tests de bout en bout de Toise : node tests/suite.js (Playwright requis)
+// Photo de test : mur en perspective, carte bancaire à coins arrondis, porte de 830 mm (positions exactes dans truth.json)
+const path = require('path');
+let pw;
+try { pw = require('playwright'); } catch { pw = require('/opt/node22/lib/node_modules/playwright'); }
+const { chromium, devices } = pw;
+const fs = require('fs');
+process.chdir(__dirname);
+const T = require('./truth.json');
+const URL = 'file://' + path.resolve(__dirname, '..', 'index.html');
+const tilePng = fs.readFileSync('tile.png');
+fs.mkdirSync('out', { recursive: true });
+
+let fails = 0;
+const ok = (cond, msg, extra = '') => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg + (extra ? '  → ' + extra : '')); if (!cond) fails++; };
+const near = (a, b, tol) => Math.abs(a - b) <= tol;
+const parseNum = (t) => parseFloat(String(t).replace(/[^\d,.-]/g, '').replace(',', '.'));
+
+async function newPage(b, dev, opts = {}) {
+  const ctx = await b.newContext({ ...devices[dev], ...opts });
+  await ctx.route(/arcgisonline|openstreetmap/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: tilePng }));
+  const p = await ctx.newPage();
+  p.errs = [];
+  p.on('pageerror', (e) => p.errs.push(e.message));
+  p.on('console', (m) => { if (m.type() === 'error') p.errs.push(m.text()); });
+  await p.goto(URL);
+  return { ctx, p };
+}
+
+const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(async ([a, b, g, n, j]) => {
+  for (let i = 0; i < n; i++) {
+    window.dispatchEvent(Object.assign(new Event('deviceorientation'), { alpha: a, beta: b + (Math.random() - 0.5) * j, gamma: g }));
+    await new Promise((r) => setTimeout(r, 16));
+  }
+}, [alpha, beta, gamma, n, jitter]);
+
+(async () => {
+  const b = await chromium.launch();
+
+  console.log('\n1. Tous les écrans, 3 tailles d\'iPhone');
+  for (const dev of ['iPhone SE', 'iPhone 13', 'iPhone 15 Pro Max']) {
+    const { ctx, p } = await newPage(b, dev);
+    for (const s of ['photo', 'height', 'terrain', 'plan', 'tools', 'history']) {
+      await p.click(`[data-screen=${s}]`);
+      await p.waitForTimeout(350);
+      const ov = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth, document.body.scrollHeight, innerHeight]);
+      if (ov[0] > ov[1]) ok(false, `${dev} ${s} : débordement horizontal`, ov.join('/'));
+      await p.screenshot({ path: `out/s-${dev.replace(/ /g, '')}-${s}.png` });
+    }
+    await p.click('[data-screen=tools]'); await p.click('[data-tool-screen=ruler]'); await p.waitForTimeout(200);
+    await p.screenshot({ path: `out/s-${dev.replace(/ /g, '')}-ruler.png` });
+    ok(p.errs.length === 0, `${dev} : aucun écran en erreur`, p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n2. Photo');
+  {
+    const { ctx, p } = await newPage(b, 'iPhone 13');
+    await p.setInputFiles('#photoInputLib', 'persp.jpg');
+    await p.waitForTimeout(1200);
+    const tap = async ([ix, iy]) => {
+      const [x, y] = await p.evaluate(([a, c]) => { const r = Photo.canvas.getBoundingClientRect(); const s = Photo.toScr([a, c]); return [s[0] + r.left, s[1] + r.top]; }, [ix, iy]);
+      await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.up();
+    };
+    await p.evaluate(([cx, cy]) => { const s = 2; Photo.view = { s, x: Photo.cw / 2 - cx * s, y: Photo.ch / 2 - cy * s }; Photo.draw(); }, [620, 1145]);
+    for (const c of T.card) await tap([c[0] + 2, c[1] - 1.5]);
+    ok(await p.evaluate(() => !!Photo.toPlane && Photo.ref.every((q) => q.snapped)), 'référence posée et affinée automatiquement');
+    await p.evaluate(() => Photo.fit());
+    await tap([T.doorL[0] + 5, T.doorL[1]]); await tap([T.doorR[0] - 4, T.doorR[1]]);
+    const L = await p.evaluate(() => Photo.value('line', Photo.shapes[0].pts.map(Photo.toPlane)));
+    ok(near(L, 830, 12), 'porte de 830 mm mesurée', L.toFixed(1) + ' mm');
+    // surface : rectangle de la porte (4 coins visibles en bas : on prend un rectangle intérieur)
+    await p.click('[data-tool=area]');
+    const P = (x, y) => p.evaluate(([x, y]) => { const H = Photo.toPlane; return null; }, [x, y]);
+    for (const q of [[1300, 1600], [2000, 1650], [1950, 1900], [1300, 1850]]) await tap(q);
+    await tap([1300, 1600]);
+    ok(await p.evaluate(() => Photo.shapes[1] && Photo.shapes[1].done && Photo.shapes[1].pts.length === 4), 'surface fermée en touchant le 1er point');
+    await p.click('[data-tool=angle]');
+    for (const q of [[1200, 600], [1200, 1000], [1700, 600]]) await tap(q);
+    const rows = await p.$$eval('#photoResults li', (l) => l.map((x) => x.textContent));
+    ok(rows.length === 4 && rows[0].includes('±') && rows[1].includes('m²') && rows[2].includes('°'), 'résultats : longueur, surface, angle avec marges', rows.slice(0, 3).join(' | '));
+    await p.click('#photoResults li:nth-child(3) .row-del');
+    ok(await p.evaluate(() => Photo.shapes.length === 2), 'suppression d\'une mesure depuis la liste');
+    await p.click('#undoBtn');
+    ok(await p.evaluate(() => Photo.shapes[1].pts.length === 3 && !Photo.shapes[1].done), 'annuler retire le dernier point');
+    for (const u of ['mm', 'm', 'in', 'ft', 'cm']) { await p.click('#unitBtn'); }
+    ok(await p.textContent('#unitBtn') === 'cm', 'cycle des unités');
+    await p.click('#savePhotoBtn'); await p.fill('#sheetNote', 'Porte test'); await p.press('#sheetNote', 'Enter');
+    ok(await p.evaluate(() => History.items.length === 1 && !!History.items[0].img), 'enregistrement avec photo annotée (touche Entrée)');
+    // référence longueur connue en mètres
+    await p.click('#newPhotoBtn'); await p.setInputFiles('#photoInputLib', 'persp.jpg'); await p.waitForTimeout(800);
+    await p.selectOption('#refSelect', 'line');
+    await tap([T.doorL[0] + 3, T.doorL[1]]); await tap([T.doorR[0] - 3, T.doorR[1]]);
+    ok(!(await p.isHidden('#sheet')), 'demande de la longueur de référence');
+    await p.fill('#sheetNote', '0,83 m'); await p.click('#sheetOk');
+    ok(await p.evaluate(() => Photo.lineRefLen === 830 && !!Photo.toPlane), 'longueur « 0,83 m » comprise', String(await p.evaluate(() => Photo.lineRefLen)));
+    await p.selectOption('#refSelect', 'custom');
+    await p.fill('#customW', '2000'); await p.fill('#customH', '1000,5');
+    ok(await p.evaluate(() => JSON.stringify(Photo.refDims().slice(0, 2)) === '[2000,1000.5]'), 'rectangle personnalisé avec virgule');
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n3. Visée');
+  {
+    const { ctx, p } = await newPage(b, 'iPhone 13');
+    await p.click('[data-screen=height]');
+    await p.evaluate(() => Sensors.start());
+    await p.fill('#eyeH', '1,50');
+    // Hauteur : base à -30°, sommet à +20° → d = 2,598 m, h = 2,445 m
+    await orient(p, 0, 60, 0, 10); await p.click('#markBtn'); await orient(p, 0, 60, 0, 40);
+    await orient(p, 0, 110, 0, 10); await p.click('#markBtn'); await orient(p, 0, 110, 0, 40);
+    let d = parseNum(await p.textContent('#hVal1')), h = parseNum(await p.textContent('#hVal2'));
+    ok(near(d, 259.8, 0.5) && near(h, 244.5, 0.5), 'hauteur 2,445 m / distance 2,598 m', `${await p.textContent('#hVal1')} ; ${await p.textContent('#hVal2')} ${await p.textContent('#hTol2')}`);
+    await p.fill('#knownD', '2,598');
+    h = parseNum(await p.textContent('#hVal2'));
+    ok(near(h, 244.5, 0.5), 'distance connue avec virgule', await p.textContent('#hVal2') + ' ' + await p.textContent('#hTol2'));
+    // instable : la capture attend
+    await p.click('#heightReset');
+    await orient(p, 0, 60, 0, 10, 3); await p.click('#markBtn'); await orient(p, 0, 60, 0, 30, 3);
+    ok(await p.textContent('#markBtn') === 'Tenez immobile…', 'pas de capture tant que le téléphone bouge');
+    await orient(p, 0, 60, 0, 40);
+    ok(await p.textContent('#markBtn') === 'Viser le sommet', 'capture dès que c\'est stable');
+    // Surface au sol 10×10 m, coins visés dans le désordre
+    await p.click('[data-hmode=floor]'); await p.click('#heightReset');
+    const el = -Math.atan(1.5 / Math.hypot(5, 5)) * 180 / Math.PI;
+    for (const hd of [45, 225, 135, 315]) { await orient(p, (360 - hd) % 360, 90 + el, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + el, 0, 40); }
+    const area = parseNum(await p.textContent('#hVal1'));
+    ok(near(area, 100, 0.5), 'surface au sol 100 m² malgré l\'ordre de visée', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
+    ok(await p.isVisible('#shotSketch'), 'croquis vu de dessus affiché');
+    await p.screenshot({ path: 'out/r-floor.png' });
+    await p.click('#shotUndo');
+    ok(await p.evaluate(() => Height.shots.length === 3), 'annuler le dernier point visé');
+    // Distance entre 2 points
+    await p.click('[data-hmode=dist]'); await p.click('#heightReset');
+    for (const [hd, r] of [[0, 8], [60, 12]]) { const e = -Math.atan(1.5 / r) * 180 / Math.PI; await orient(p, (360 - hd) % 360, 90 + e, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + e, 0, 40); }
+    d = parseNum(await p.textContent('#hVal1'));
+    ok(near(d, 10.583, 0.01), 'distance A–B 10,583 m', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n4. Outils : niveau et règle');
+  {
+    const { ctx, p } = await newPage(b, 'iPhone 13');
+    await p.click('[data-screen=tools]'); await p.click('[data-tool-screen=level]');
+    await orient(p, 0, 0, 2, 40, 0.001);
+    ok(await p.textContent('#levelMain') === '2,00°' && (await p.textContent('#levelStable')).includes('stable'), 'surface : 2,00° stable', await p.textContent('#levelMain') + ' ' + await p.textContent('#levelSub'));
+    // calibrage : biais de +0,4° sur X → lecture 0,4 puis -0,4+... après retournement
+    await orient(p, 0, 0, 0.4, 40, 0.001); await p.click('#calibBtn');
+    await orient(p, 0, 0, 0.4, 40, 0.001); await p.click('#calibBtn');
+    await orient(p, 0, 0, 0.4, 40, 0.001);
+    ok(await p.textContent('#levelMain') === '0,00°', 'après calibrage, le biais est retiré', await p.textContent('#levelMain'));
+    await p.evaluate(() => { Level.calib = { x: 0, y: 0, e: 0 }; });
+    await orient(p, 0, 80, 0, 40, 0.001);
+    ok(!(await p.isHidden('#levelEdge')), 'bascule automatique en mode chant');
+    await p.click('[data-tool-screen=ruler]'); await p.waitForTimeout(300);
+    const box = await p.locator('#curB').boundingBox();
+    const y0 = box.y + box.height / 2, x = box.x + box.width - 25;
+    await p.mouse.move(x, y0); await p.mouse.down();
+    const vals = [];
+    for (let dy = 0; dy <= 80; dy += 4) { await p.mouse.move(x, y0 + dy); vals.push(parseNum(await p.textContent('#rulerVal'))); }
+    await p.mouse.up();
+    const jumps = vals.slice(1).map((v, i) => v - vals[i]);
+    ok(Math.max(...jumps) < 1.5 && jumps.every((j) => j >= 0), 'curseur de règle sans saut, réglage fin puis rapide', vals.map((v) => v.toFixed(1)).join(' '));
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n5. Terrain (carte intégrée)');
+  {
+    const { ctx, p } = await newPage(b, 'iPhone 13', { geolocation: { latitude: 48.85296, longitude: 2.3501, accuracy: 4 }, permissions: ['geolocation'] });
+    await p.click('[data-screen=terrain]');
+    await p.waitForTimeout(1500);
+    ok(await p.evaluate(() => Terrain.map && Terrain.map.loaded > 0), 'carte affichée (tuiles chargées)');
+    // rectangle 100 m × 60 m
+    const c = [48.85296, 2.3501], dLat = 30 / 111320, dLon = 50 / (111320 * Math.cos(c[0] / 57.29578));
+    await p.evaluate(([c]) => Terrain.map.setView(c, 17), [c]);
+    await p.waitForTimeout(200);
+    const scr = (ll) => p.evaluate((ll) => { const r = Terrain.map.canvas.getBoundingClientRect(); const s = Terrain.map.toScreen(ll); return [s[0] + r.left, s[1] + r.top]; }, ll);
+    const corners = [[-1, -1], [-1, 1], [1, 1], [1, -1]].map(([a, o]) => [c[0] + a * dLat, c[1] + o * dLon]);
+    for (const ll of corners) { const [x, y] = await scr(ll); await p.mouse.click(x, y); }
+    let A = await p.evaluate(() => Terrain.result().area);
+    ok(near(A, 6000, 60), 'parvis 100 × 60 m = 6 000 m² (posé au doigt)', A.toFixed(1) + ' m² ' + await p.textContent('#tTol1'));
+    // insérer un point au milieu d'un côté
+    const m = await p.evaluate(() => { const S = Terrain.pts.map((q) => Terrain.map.toScreen(q)); const r = Terrain.map.canvas.getBoundingClientRect(); return [(S[0][0] + S[1][0]) / 2 + r.left, (S[0][1] + S[1][1]) / 2 + r.top]; });
+    await p.mouse.move(m[0], m[1]); await p.mouse.down(); await p.mouse.move(m[0] - 20, m[1], { steps: 5 }); await p.mouse.up();
+    ok(await p.evaluate(() => Terrain.pts.length === 5), 'poignée « + » : point inséré et déplacé');
+    await p.click('#tUndo');
+    ok(await p.evaluate(() => Terrain.pts.length === 4), 'retirer le point sélectionné');
+    A = await p.evaluate(() => Terrain.result().area);
+    ok(near(A, 6000, 60), 'surface revenue à 6 000 m²', A.toFixed(1));
+    // déplacer un sommet : glissement démultiplié
+    const v = await scr(await p.evaluate(() => [Terrain.pts[2][0], Terrain.pts[2][1]]));
+    await p.mouse.move(v[0], v[1]); await p.mouse.down(); await p.mouse.move(v[0] + 40, v[1], { steps: 8 }); await p.mouse.up();
+    const moved = await scr(await p.evaluate(() => [Terrain.pts[2][0], Terrain.pts[2][1]]));
+    ok(near(moved[0] - v[0], 20, 2), 'sommet déplacé de moitié du geste (précision)', (moved[0] - v[0]).toFixed(1) + ' px');
+    // zoom et déplacement
+    const z0 = await p.evaluate(() => Terrain.map.zoom);
+    await p.click('#mapZoomIn'); await p.click('#mapZoomIn');
+    ok(await p.evaluate((z0) => Terrain.map.zoom === Math.round(z0) + 2, z0), 'boutons de zoom');
+    await p.click('#mapFit');
+    ok(await p.evaluate(() => Terrain.pts.every((q) => { const s = Terrain.map.toScreen(q); return s[0] > 0 && s[1] > 0 && s[0] < Terrain.map.w && s[1] < Terrain.map.h; })), 'cadrer toute la forme');
+    const ctr = await p.evaluate(() => [...Terrain.map.center]);
+    const bb = await p.locator('.map-canvas').boundingBox();
+    await p.mouse.move(bb.x + 60, bb.y + 60); await p.mouse.down(); await p.mouse.move(bb.x + 160, bb.y + 110, { steps: 6 }); await p.mouse.up();
+    ok(await p.evaluate((c0) => Terrain.map.center[1] < c0[1] && Terrain.pts.length === 4, ctr), 'glisser déplace la carte sans poser de point');
+    // mode distance
+    await p.click('[data-tmode=line]');
+    const [len, exp] = await p.evaluate(() => [Terrain.result().len / 1000, geoLen(Terrain.pts, false)]);
+    ok(near(len, exp, 0.01) && near(len, 260, 30), 'mode distance (ligne brisée, 3 côtés)', len.toFixed(2) + ' m');
+    await p.click('[data-tmode=area]');
+    // point GPS moyenné
+    await p.click('#mapLocate'); await p.waitForTimeout(500);
+    await p.click('#gpsPoint');
+    await p.waitForTimeout(10500);
+    ok(await p.evaluate(() => Terrain.pts.length === 5 && Terrain.pts[4].src === 'gps'), 'point GPS moyenné ajouté', await p.evaluate(() => JSON.stringify({ n: Terrain.pts.length, last: Terrain.pts[Terrain.pts.length - 1], src: Terrain.pts.map((q) => q.src), toast: document.getElementById('toast').textContent, btn: document.getElementById('gpsPoint').textContent })));
+    await p.screenshot({ path: 'out/r-terrain.png' });
+    // persistance
+    await p.reload(); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => Terrain.pts.length === 5 && Terrain.pts[4].src === 'gps'), 'points conservés après redémarrage');
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n6. Plan');
+  {
+    const { ctx, p } = await newPage(b, 'iPhone 13');
+    await p.click('[data-screen=plan]');
+    await p.fill('#planName', 'Église test');
+    await p.click('#addPiece');
+    let ids = await p.$$eval('.piece-fields input', (l) => l.map((i) => i.id));
+    await p.fill('#' + ids[0], '30'); await p.fill('#' + ids[1], '12,5'); await p.fill('#' + ids[2], '18');
+    await p.selectOption('#pieceType', 'half'); await p.click('#addPiece');
+    ids = await p.$$eval('.piece-fields input', (l) => l.map((i) => i.id));
+    await p.fill('#' + ids[3], '12,5');
+    await p.selectOption('#pieceType', 'rect'); await p.click('#addPiece');
+    ids = await p.$$eval('.piece-fields input', (l) => l.map((i) => i.id));
+    await p.fill('#' + ids[5], '1'); await p.fill('#' + ids[6], '1');
+    await p.click('.piece:nth-child(3) .piece-opts .btn:nth-child(1)'); // retirée
+    for (let i = 0; i < 5; i++) await p.click('.piece:nth-child(3) .piece-opts .btn:nth-child(2)'); // × 6 piliers
+    const exp = 30 * 12.5 + Math.PI * 12.5 * 12.5 / 8 - 6;
+    ok(near(parseNum(await p.textContent('#planArea')), exp, 0.11), 'surface nef + abside − 6 piliers', await p.textContent('#planArea') + ` (attendu ${exp.toFixed(1)})`);
+    ok((await p.textContent('#planVol')).includes('incomplet'), 'volume signalé incomplet sans hauteur pour l\'abside');
+    await p.fill('#ceilH', '12');
+    const vexp = 30 * 12.5 * 18 + (Math.PI * 12.5 * 12.5 / 8) * 12 - 6 * 12;
+    ok(near(parseNum((await p.textContent('#planVol')).replace(/\s/g, '')), vexp, 1), 'volume avec hauteur par forme', await p.textContent('#planVol') + ` (attendu ${vexp.toFixed(0)})`);
+    await p.reload(); await p.click('[data-screen=plan]');
+    ok(await p.evaluate(() => Plan.data.pieces.length === 3) && await p.inputValue('#planName') === 'Église test', 'plan conservé après redémarrage');
+    await p.click('#planSave'); await p.click('#sheetOk');
+    ok(await p.evaluate(() => History.items[0].kind.startsWith('Plan')), 'plan enregistré dans les mesures');
+    await p.screenshot({ path: 'out/r-plan.png' });
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log(`\n${fails ? '✘ ' + fails + ' échec(s)' : '✔ Tous les tests passent'}`);
+  await b.close();
+  process.exit(fails ? 1 : 0);
+})();
