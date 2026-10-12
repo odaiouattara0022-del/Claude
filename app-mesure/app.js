@@ -2796,8 +2796,8 @@ function show(name) {
   document.querySelectorAll('.tab').forEach((t) => { if (t.classList.contains('active')) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
   $('screenTitle').textContent = isTool ? '' : TITLES[name];
   if (name !== 'height') Height.stop();
-  if (name !== 'terrain' && !Terrain.auto && !Terrain.collecting) Terrain.stopWatch();
   else if (Height.wanted) Height.start();
+  if (name !== 'terrain' && !Terrain.auto && !Terrain.collecting) Terrain.stopWatch();
   if (Sensors.started) $('sensorBtn').hidden = true;
   if (name === 'ruler') requestAnimationFrame(() => {
     Ruler.resize();
