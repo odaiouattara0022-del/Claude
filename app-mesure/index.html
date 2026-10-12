@@ -18,6 +18,10 @@
 <div id="app">
   <header class="top">
     <h1 id="screenTitle">Photo</h1>
+    <div class="seg mini" id="toolSeg" hidden>
+      <button class="seg-b" data-tool-screen="level">Niveau</button>
+      <button class="seg-b" data-tool-screen="ruler">Règle</button>
+    </div>
     <button class="chip" id="unitBtn" aria-label="Changer d'unité">cm</button>
   </header>
 
@@ -29,7 +33,7 @@
           <svg viewBox="0 0 120 80"><rect x="18" y="14" width="84" height="54" rx="4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4"/><rect x="30" y="26" width="34" height="22" rx="2" fill="var(--accent)" opacity=".85"/><path d="M70 56 L96 30" stroke="var(--accent)" stroke-width="2.5"/><circle cx="70" cy="56" r="3.5" fill="var(--accent)"/><circle cx="96" cy="30" r="3.5" fill="var(--accent)"/></svg>
         </div>
         <h2>Mesurer sur une photo</h2>
-        <p>Posez un objet de taille connue (carte bancaire, feuille A4…) <b>à plat, dans le même plan</b> que ce que vous mesurez. Toise corrige la perspective à partir de ses 4 coins.</p>
+        <p>Placez un objet de taille connue <b>dans le même plan</b> que ce que vous mesurez : carte bancaire, feuille A4, praticable de scène… Toise corrige la perspective et affine chaque point au sous-pixel.</p>
         <label class="btn primary file-btn">
           <input type="file" id="photoInput" accept="image/*" capture="environment">
           Prendre une photo
@@ -38,6 +42,11 @@
           <input type="file" id="photoInputLib" accept="image/*">
           Choisir dans la photothèque
         </label>
+        <ul class="tips">
+          <li>Plus la référence est grande et proche de l'objet, plus la mesure est précise.</li>
+          <li>Photographiez bien de face, en zoom ×2 en reculant : moins de déformation.</li>
+          <li>Zoomez à deux doigts avant de placer les points.</li>
+        </ul>
       </div>
 
       <div class="photo-work" id="photoWork" hidden>
@@ -51,10 +60,13 @@
             <select id="refSelect" aria-label="Objet de référence">
               <option value="card">Carte bancaire 85,6 × 54 mm</option>
               <option value="a4">Feuille A4 210 × 297 mm</option>
+              <option value="a3">Feuille A3 297 × 420 mm</option>
               <option value="letter">Lettre US 216 × 279 mm</option>
               <option value="bill">Billet 20 € 133 × 72 mm</option>
               <option value="tile">Carreau 30 × 30 cm</option>
-              <option value="custom">Personnalisé…</option>
+              <option value="deck">Praticable de scène 2 × 1 m</option>
+              <option value="pallet">Palette Europe 120 × 80 cm</option>
+              <option value="custom">Rectangle personnalisé…</option>
               <option value="line">Longueur connue (2 points)</option>
             </select>
             <div class="custom" id="customRef" hidden>
@@ -70,6 +82,7 @@
           </div>
           <div class="actions">
             <button class="btn small" id="undoBtn">Annuler</button>
+            <button class="btn small" id="snapBtn">Aimant : oui</button>
             <button class="btn small" id="resetRefBtn">Référence</button>
             <button class="btn small" id="newPhotoBtn">Nouvelle photo</button>
             <button class="btn small primary" id="savePhotoBtn">Enregistrer</button>
@@ -79,11 +92,12 @@
       </div>
     </section>
 
-    <!-- ============ HAUTEUR ============ -->
+    <!-- ============ VISÉE ============ -->
     <section class="screen" id="s-height" hidden>
       <div class="cam" id="camBox">
         <video id="camVideo" playsinline muted autoplay></video>
         <div class="crosshair" aria-hidden="true"><span></span></div>
+        <div class="cam-top"><span class="stable" id="hudStable">○ capteurs inactifs</span><span class="floor" id="hudFloor"></span></div>
         <div class="cam-hud">
           <div class="hud-angle"><span id="hudAngle">--</span>°</div>
           <div class="hud-hint" id="heightHint">Visez la base de l'objet</div>
@@ -91,22 +105,103 @@
         <button class="btn" id="camStart">Activer la caméra et les capteurs</button>
       </div>
       <div class="panel">
-        <div class="field-row">
-          <label for="eyeH">Hauteur du téléphone</label>
-          <div class="num-input"><input type="number" id="eyeH" inputmode="decimal" step="0.01" value="1.50"><span>m</span></div>
+        <div class="seg">
+          <button class="seg-b active" data-hmode="height">Hauteur</button>
+          <button class="seg-b" data-hmode="dist">Distance</button>
+          <button class="seg-b" data-hmode="floor">Surface au sol</button>
         </div>
         <div class="field-row">
+          <label for="eyeH">Hauteur de l'objectif</label>
+          <div class="num-input"><input type="number" id="eyeH" inputmode="decimal" step="0.01" value="1.50"><span>m</span></div>
+        </div>
+        <div class="field-row" id="knownRow">
           <label for="knownD">Distance connue <small>(facultatif)</small></label>
           <div class="num-input"><input type="number" id="knownD" inputmode="decimal" step="0.01" placeholder="auto"><span>m</span></div>
         </div>
         <div class="readouts">
-          <div><small>Distance</small><b id="outDist">—</b></div>
-          <div><small>Hauteur</small><b id="outHeight">—</b></div>
+          <div><small id="hLabel1">Distance</small><b id="hVal1">—</b><span class="tol" id="hTol1"></span></div>
+          <div><small id="hLabel2">Hauteur</small><b id="hVal2">—</b><span class="tol" id="hTol2"></span></div>
         </div>
+        <p class="note" id="heightTip" hidden></p>
         <div class="actions">
           <button class="btn primary big" id="markBtn">Viser la base</button>
+          <button class="btn small" id="shotUndo">Annuler le point</button>
           <button class="btn small" id="heightReset">Recommencer</button>
           <button class="btn small" id="heightSave">Enregistrer</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TERRAIN ============ -->
+    <section class="screen" id="s-terrain" hidden>
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-msg" id="mapMsg">Chargement de la carte satellite…</div>
+        <div class="gps-chip" id="gpsChip" hidden></div>
+      </div>
+      <div class="panel">
+        <div class="seg">
+          <button class="seg-b active" data-tmode="area">Surface</button>
+          <button class="seg-b" data-tmode="line">Distance</button>
+        </div>
+        <div class="readouts">
+          <div><small id="tLabel1">Surface</small><b id="tVal1">—</b><span class="tol" id="tTol1"></span></div>
+          <div><small id="tLabel2">Périmètre</small><b id="tVal2">—</b><span class="tol" id="tTol2"></span></div>
+        </div>
+        <p class="note mono" id="tExtra"></p>
+        <div class="actions">
+          <button class="btn small primary" id="gpsPoint">Point GPS ici</button>
+          <button class="btn small" id="gpsAuto">Marche auto</button>
+          <button class="btn small" id="tLayer">Vue plan</button>
+          <button class="btn small" id="tUndo">Annuler</button>
+          <button class="btn small" id="tClear">Effacer</button>
+          <button class="btn small" id="tCopy">Coordonnées</button>
+          <button class="btn small" id="tSave">Enregistrer</button>
+        </div>
+        <p class="note">Touchez la carte pour poser les coins (un parvis, une toiture, un terrain de festival) puis glissez-les pour ajuster. À l'extérieur, ajoutez aussi votre position GPS à chaque coin.</p>
+      </div>
+    </section>
+
+    <!-- ============ PLAN ============ -->
+    <section class="screen" id="s-plan" hidden>
+      <div class="plan-scroll">
+        <input type="text" id="planName" class="plan-name" placeholder="Nom du lieu (ex. : église, salle, chapiteau)" maxlength="80">
+        <p class="note">Décomposez le lieu en formes simples : nef, chœur, abside, transepts, scène… Retirez ce qui n'est pas utilisable (piliers, régie).</p>
+        <ul class="pieces" id="pieces"></ul>
+        <div class="add-row">
+          <select id="pieceType" aria-label="Forme à ajouter">
+            <option value="rect">Rectangle</option>
+            <option value="tri">Triangle</option>
+            <option value="trap">Trapèze</option>
+            <option value="circle">Cercle</option>
+            <option value="half">Demi-cercle (abside)</option>
+            <option value="free">Surface connue (m²)</option>
+          </select>
+          <button class="btn small primary" id="addPiece">Ajouter</button>
+        </div>
+        <button class="btn small" id="addLast" disabled>Ajouter la dernière surface mesurée</button>
+
+        <div class="plan-totals">
+          <div class="field-row">
+            <label for="ceilH">Hauteur moyenne sous plafond</label>
+            <div class="num-input"><input type="number" id="ceilH" inputmode="decimal" step="0.1" placeholder="—"><span>m</span></div>
+          </div>
+          <div class="readouts">
+            <div><small>Surface totale</small><b id="planArea">0 m²</b></div>
+            <div><small>Volume</small><b id="planVol">—</b></div>
+          </div>
+          <div class="field-row">
+            <label for="reserve">Surface réservée <small>(scène, régie, circulations)</small></label>
+            <div class="num-input"><input type="number" id="reserve" inputmode="decimal" step="1" value="15"><span>%</span></div>
+          </div>
+          <h3 class="cap-title">Capacité estimée</h3>
+          <ul class="cap" id="capList"></ul>
+          <p class="note">Estimation indicative pour l'organisation. La capacité autorisée d'un lieu recevant du public est fixée par la réglementation (issues de secours, commission de sécurité).</p>
+        </div>
+        <div class="actions">
+          <button class="btn small" id="planCopy">Copier</button>
+          <button class="btn small danger" id="planReset">Nouveau plan</button>
+          <button class="btn small primary" id="planSave">Enregistrer</button>
         </div>
       </div>
     </section>
@@ -124,6 +219,7 @@
         <div class="level-read">
           <div class="big-num" id="levelMain">--°</div>
           <div class="sub-num" id="levelSub">Posez le téléphone</div>
+          <div class="stable" id="levelStable"></div>
         </div>
       </div>
       <div class="panel">
@@ -158,9 +254,13 @@
           <button class="btn small primary" id="rulerSave">Enregistrer</button>
         </div>
         <div class="calib" id="rulerCalib" hidden>
-          <p>Posez une carte bancaire sur l'écran, bord gauche contre le trait du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord (85,60 mm).</p>
-          <input type="range" id="rulerSlider" min="120" max="200" step="0.05">
-          <button class="btn small primary" id="calibDone">Terminé</button>
+          <p>Posez une carte bancaire sur l'écran, bord contre le trait du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord (85,60 mm).</p>
+          <input type="range" id="rulerSlider" min="100" max="220" step="0.05" aria-label="Échelle de la règle">
+          <div class="actions">
+            <button class="btn small" id="ppiMinus" aria-label="Réduire">−</button>
+            <button class="btn small" id="ppiPlus" aria-label="Agrandir">+</button>
+            <button class="btn small primary" id="calibDone">Terminé</button>
+          </div>
         </div>
       </div>
     </section>
@@ -175,16 +275,17 @@
       <ul class="hist" id="histList"></ul>
       <div class="hist-empty" id="histEmpty">
         <p>Aucune mesure enregistrée.</p>
-        <p class="note">Les mesures restent sur cet appareil, avec photo annotée, note et date.</p>
+        <p class="note">Les mesures restent sur cet appareil, avec photo annotée, note, marge d'erreur et date.</p>
       </div>
     </section>
   </main>
 
   <nav class="tabs" aria-label="Outils">
     <button class="tab active" data-screen="photo"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Photo</button>
-    <button class="tab" data-screen="height"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 20V8l5-4 5 4v12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M20 4v16" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2 2"/></svg>Hauteur</button>
-    <button class="tab" data-screen="level"><svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M9 8v8M15 8v8" stroke="currentColor" stroke-width="1.2"/></svg>Niveau</button>
-    <button class="tab" data-screen="ruler"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 7v4M11 7v3M15 7v4M19 7v3" stroke="currentColor" stroke-width="1.5"/></svg>Règle</button>
+    <button class="tab" data-screen="height"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5" stroke="currentColor" stroke-width="1.7"/></svg>Visée</button>
+    <button class="tab" data-screen="terrain"><svg viewBox="0 0 24 24"><path d="M4 17l4-11 8 3 4 9-9 3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.6" fill="currentColor"/><circle cx="20" cy="18" r="1.6" fill="currentColor"/></svg>Terrain</button>
+    <button class="tab" data-screen="plan"><svg viewBox="0 0 24 24"><path d="M3 20V9h6V4h6v5h6v11z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9v11M15 9v11" stroke="currentColor" stroke-width="1.2"/></svg>Plan</button>
+    <button class="tab" data-screen="tools"><svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>Outils</button>
     <button class="tab" data-screen="history"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.5"/></svg>Mesures</button>
   </nav>
 </div>

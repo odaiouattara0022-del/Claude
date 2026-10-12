@@ -1,12 +1,13 @@
 'use strict';
 
 /* ================================================================
-   Toise — outils de mesure pour iPhone (PWA, 100 % hors ligne)
+   Toise — outils de mesure pour iPhone (PWA)
    ================================================================ */
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const DEG = 180 / Math.PI;
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 const store = {
   get(key, fallback) {
@@ -19,6 +20,26 @@ const store = {
   },
 };
 
+/* ---------------- Statistiques (incertitudes Monte-Carlo) ---------------- */
+
+// Générateur pseudo-aléatoire à graine fixe : les marges affichées restent stables d'un rendu à l'autre
+function rng(seed = 12345) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gaussFrom(rand) {
+  return () => Math.sqrt(-2 * Math.log(rand() || 1e-12)) * Math.cos(2 * Math.PI * rand());
+}
+function meanStd(a) {
+  const m = a.reduce((s, v) => s + v, 0) / a.length;
+  const v = a.reduce((s, x) => s + (x - m) ** 2, 0) / Math.max(1, a.length - 1);
+  return [m, Math.sqrt(v)];
+}
+
 /* ---------------- Unités et formatage ---------------- */
 
 const UNITS = ['cm', 'mm', 'm', 'in', 'ft'];
@@ -29,31 +50,45 @@ function num(v, digits) {
   return v.toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
-function fmtLen(mm, u = unit) {
+// tol (mm, facultatif) : ajoute des décimales quand la mesure est assez précise pour les justifier
+function fmtLen(mm, u = unit, tol = Infinity) {
   if (!isFinite(mm)) return '—';
   switch (u) {
-    case 'mm': return num(mm, mm < 100 ? 1 : 0) + ' mm';
-    case 'cm': return num(mm / 10, 1) + ' cm';
-    case 'm': return num(mm / 1000, mm < 10000 ? 3 : 2) + ' m';
-    case 'in': return num(mm / 25.4, 2) + ' in';
+    case 'mm': return num(mm, tol < 0.1 ? 2 : (tol < 1 || mm < 100) ? 1 : 0) + ' mm';
+    case 'cm': return mm >= 10000 ? num(mm / 1000, tol < 10 ? 3 : 2) + ' m' : num(mm / 10, tol < 1 ? 2 : 1) + ' cm';
+    case 'm': return num(mm / 1000, tol < 1 ? 4 : (tol < 10 || mm < 10000) ? 3 : 2) + ' m';
+    case 'in': return num(mm / 25.4, tol < 0.25 ? 3 : 2) + ' in';
     case 'ft': {
       const inches = mm / 25.4;
       let ft = Math.floor(inches / 12);
       let rest = inches - ft * 12;
       if (rest >= 11.95) { ft += 1; rest = 0; }
-      return `${ft}′ ${num(rest, 1)}″`;
+      return `${ft}′ ${num(rest, tol < 2.5 ? 2 : 1)}″`;
     }
   }
 }
 
+function fmtTol(mm, u = unit) {
+  if (!isFinite(mm)) return '';
+  if (u === 'in' || u === 'ft') return '± ' + num(mm / 25.4, mm < 25.4 ? 3 : 2) + ' in';
+  if (mm < 1) return '± ' + num(mm, 2) + ' mm';
+  if (mm < 10) return '± ' + num(mm, 1) + ' mm';
+  if (mm < 1000) return '± ' + num(mm / 10, 1) + ' cm';
+  return '± ' + num(mm / 1000, 2) + ' m';
+}
+
 function fmtArea(mm2, u = unit) {
   if (!isFinite(mm2)) return '—';
+  const m2 = mm2 / 1e6;
   switch (u) {
     case 'mm':
-    case 'cm': return mm2 >= 1e6 ? num(mm2 / 1e6, 3) + ' m²' : num(mm2 / 100, 1) + ' cm²';
-    case 'm': return num(mm2 / 1e6, 3) + ' m²';
+    case 'cm':
+    case 'm':
+      if (m2 >= 10000) return num(m2 / 10000, 4) + ' ha';
+      if (m2 >= 1) return num(m2, m2 >= 1000 ? 0 : m2 >= 100 ? 1 : 3) + ' m²';
+      return u === 'm' ? num(m2, 4) + ' m²' : num(mm2 / 100, 1) + ' cm²';
     case 'in': return num(mm2 / 645.16, 1) + ' in²';
-    case 'ft': return num(mm2 / 92903.04, 2) + ' ft²';
+    case 'ft': return m2 >= 4046.86 ? num(m2 / 4046.86, 3) + ' acres' : num(mm2 / 92903.04, 2) + ' ft²';
   }
 }
 
@@ -66,25 +101,30 @@ $('unitBtn').addEventListener('click', () => {
   store.set('unit', unit);
   Photo.refresh();
   Height.render();
-  Ruler.draw();
+  Ruler.draw(); Ruler.place();
+  Terrain.render();
+  Plan.totals();
 });
 
 /* ---------------- Toast et feuille d'enregistrement ---------------- */
 
 let toastTimer;
-function toast(msg) {
+function toast(msg, ms = 2400) {
   const t = $('toast');
   t.textContent = msg;
   t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+  toastTimer = setTimeout(() => { t.hidden = true; }, ms);
 }
 
 let sheetCb = null;
-function askSave(kind, value, cb) {
-  $('sheetTitle').textContent = 'Enregistrer : ' + kind;
+function askSave(kind, value, cb, opts = {}) {
+  $('sheetTitle').textContent = opts.title || 'Enregistrer : ' + kind;
   $('sheetValue').textContent = value;
   $('sheetNote').value = '';
+  $('sheetNote').placeholder = opts.placeholder || 'Note (ex. : largeur porte salon)';
+  $('sheetNote').inputMode = opts.inputMode || 'text';
+  $('sheetOk').textContent = opts.ok || 'Enregistrer';
   $('sheet').hidden = false;
   sheetCb = cb;
 }
@@ -98,7 +138,7 @@ $('sheetOk').addEventListener('click', () => {
 /* ---------------- Capteurs (orientation) ---------------- */
 
 const Sensors = {
-  up: null,             // vecteur « haut » dans le repère de l'appareil
+  up: null,             // vecteur « haut » lissé, repère de l'appareil
   listeners: new Set(),
   started: false,
 
@@ -110,7 +150,7 @@ const Sensors = {
         const res = await DeviceOrientationEvent.requestPermission();
         if (res !== 'granted') { toast('Accès aux capteurs refusé. Réglages › Safari › Mouvement et orientation.'); return false; }
       }
-    } catch (e) {
+    } catch {
       toast('Touchez le bouton pour autoriser les capteurs.');
       return false;
     }
@@ -126,12 +166,20 @@ const Sensors = {
     const raw = [-Math.cos(b) * Math.sin(g), Math.sin(b), Math.cos(b) * Math.cos(g)];
     if (!this.up) this.up = raw;
     else {
-      const k = 0.3;
-      const u = this.up.map((v, i) => v + (raw[i] - v) * k);
+      const u = this.up.map((v, i) => v + (raw[i] - v) * 0.3);
       const n = Math.hypot(...u) || 1;
       this.up = u.map((v) => v / n);
     }
-    this.listeners.forEach((fn) => fn(this.up));
+    // Axe de la caméra (−z appareil) dans le repère terrestre : élévation et cap (gyroscopique, relatif)
+    let cam;
+    if (e.alpha != null) {
+      const a = e.alpha / DEG, ca = Math.cos(a), sa = Math.sin(a);
+      const cb = Math.cos(b), sb = Math.sin(b), cg = Math.cos(g), sg = Math.sin(g);
+      const X = -ca * sg - sa * sb * cg, Y = -sa * sg + ca * sb * cg, Z = -cb * cg;
+      cam = { elev: Math.asin(clamp(Z, -1, 1)) * DEG, head: (Math.atan2(X, Y) * DEG + 360) % 360 };
+    } else cam = { elev: Math.asin(clamp(-raw[2], -1, 1)) * DEG, head: null };
+    const t = performance.now();
+    this.listeners.forEach((fn) => fn(this.up, raw, t, cam));
   },
 
   on(fn) { this.listeners.add(fn); },
@@ -220,12 +268,189 @@ $('clearAll').addEventListener('click', () => {
 });
 
 /* ================================================================
+   VISION — affinage sous-pixel des points sur la photo
+   ================================================================ */
+
+const Vision = {
+  cv: document.createElement('canvas'),
+
+  // Patch en niveaux de gris : pixel (i, j) = pixel image (x0 + i, y0 + j), centre en +0,5
+  patch(img, x0, y0, w, h) {
+    const c = this.cv; c.width = w; c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, x0, y0, w, h, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    const g = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) g[i] = (0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2]) / 255;
+    return { g, w, h, x0, y0 };
+  },
+
+  fits(img, x0, y0, w, h) { return x0 >= 0 && y0 >= 0 && x0 + w <= img.naturalWidth && y0 + h <= img.naturalHeight; },
+
+  sample(P, x, y) {
+    const fx = x - P.x0 - 0.5, fy = y - P.y0 - 0.5;
+    const ix = Math.floor(fx), iy = Math.floor(fy);
+    if (ix < 0 || iy < 0 || ix >= P.w - 1 || iy >= P.h - 1) return NaN;
+    const ax = fx - ix, ay = fy - iy, i = iy * P.w + ix, g = P.g;
+    return (g[i] * (1 - ax) + g[i + 1] * ax) * (1 - ay) + (g[i + P.w] * (1 - ax) + g[i + P.w + 1] * ax) * ay;
+  },
+
+  // Bord le plus net le long de « dir » autour de p (profil d'intensité, sommet de gradient parabolique)
+  edgeAlong(img, p, dir, S) {
+    const R = Math.ceil(S + 4), n = 2 * R + 1;
+    const x0 = Math.floor(p[0]) - R, y0 = Math.floor(p[1]) - R;
+    if (!this.fits(img, x0, y0, n, n)) return null;
+    const P = this.patch(img, x0, y0, n, n);
+    const step = 0.5, m = Math.ceil(S / step) + 2;
+    const raw = [];
+    for (let k = -m; k <= m; k++) raw.push(this.sample(P, p[0] + dir[0] * k * step, p[1] + dir[1] * k * step));
+    const prof = raw.map((v, k) => (k === 0 || k === raw.length - 1) ? v : (raw[k - 1] + 2 * v + raw[k + 1]) / 4);
+    const der = prof.map((v, k) => (k === 0 || k === prof.length - 1) ? 0 : Math.abs(prof[k + 1] - prof[k - 1]) / (2 * step));
+    let best = -1, bk = -1;
+    const sig2 = 2 * (S * 0.7) ** 2;
+    for (let k = 2; k < der.length - 2; k++) {
+      if (!isFinite(der[k])) continue;
+      const s = (k - m) * step;
+      if (Math.abs(s) > S) continue;
+      const sc = der[k] * Math.exp(-(s * s) / sig2);
+      if (sc > best) { best = sc; bk = k; }
+    }
+    if (bk < 0) return null;
+    const a0 = der[bk - 1], a1 = der[bk], a2 = der[bk + 1], den = a0 - 2 * a1 + a2;
+    const off = den < 0 ? clamp(0.5 * (a0 - a2) / den, -0.5, 0.5) : 0;
+    const s = (bk - m + off) * step;
+    return { p: [p[0] + dir[0] * s, p[1] + dir[1] * s], strength: a1 };
+  },
+
+  // Droite par moindres carrés totaux, avec rejet des points aberrants
+  fitLine(pts) {
+    let cur = pts;
+    for (let pass = 0; pass < 3; pass++) {
+      if (cur.length < 6) return null;
+      const cx = cur.reduce((s, p) => s + p[0], 0) / cur.length;
+      const cy = cur.reduce((s, p) => s + p[1], 0) / cur.length;
+      let sxx = 0, sxy = 0, syy = 0;
+      for (const [x, y] of cur) { sxx += (x - cx) ** 2; sxy += (x - cx) * (y - cy); syy += (y - cy) ** 2; }
+      const th = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+      const nrm = [-Math.sin(th), Math.cos(th)];
+      const res = cur.map(([x, y]) => (x - cx) * nrm[0] + (y - cy) * nrm[1]);
+      const mad = [...res].map(Math.abs).sort((a, b) => a - b)[Math.floor(res.length / 2)] * 1.4826;
+      const lim = Math.max(0.8, 3 * mad);
+      const keep = cur.filter((_, i) => Math.abs(res[i]) <= lim);
+      if (keep.length === cur.length || pass === 2) {
+        const rms = Math.sqrt(res.reduce((s, r) => s + r * r, 0) / res.length);
+        return { n: nrm, d: cx * nrm[0] + cy * nrm[1], rms, count: cur.length };
+      }
+      cur = keep;
+    }
+  },
+
+  intersect(l1, l2) {
+    const det = l1.n[0] * l2.n[1] - l1.n[1] * l2.n[0];
+    if (Math.abs(det) < 1e-6) return null;
+    return [(l1.d * l2.n[1] - l1.n[1] * l2.d) / det, (l1.n[0] * l2.d - l1.d * l2.n[0]) / det];
+  },
+
+  // Affine les 4 coins d'une référence rectangulaire : ajuste une droite sur chaque bord,
+  // puis intersecte les bords (insensible aux coins arrondis d'une carte bancaire)
+  refineQuad(img, q, hint = 6) {
+    const first = this.refineQuadOnce(img, q, hint);
+    if (!first) return null;
+    return this.refineQuadOnce(img, first, 3) || first;
+  },
+
+  refineQuadOnce(img, q, hint) {
+    const lines = [];
+    for (let i = 0; i < 4; i++) {
+      const a = q[i], b = q[(i + 1) % 4], L = dist(a, b);
+      if (L < 24) return null;
+      const nrm = [-(b[1] - a[1]) / L, (b[0] - a[0]) / L];
+      const S = clamp(Math.max(L * 0.04, hint), 3, 40);
+      const K = Math.round(clamp(L / 6, 14, 60));
+      const pts = [];
+      for (let k = 0; k < K; k++) {
+        const u = 0.12 + 0.76 * k / (K - 1);
+        const r = this.edgeAlong(img, [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u], nrm, S);
+        if (r && r.strength > 0.015) pts.push(r.p);
+      }
+      const line = this.fitLine(pts);
+      if (!line) return null;
+      lines.push(line);
+    }
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const prev = lines[(i + 3) % 4], next = lines[i];
+      const c = this.intersect(prev, next);
+      const minSide = Math.min(dist(q[0], q[1]), dist(q[1], q[2]));
+      if (!c || dist(c, q[i]) > Math.max(10, hint * 2, minSide * 0.08)) return null;
+      c.sig = Math.max(0.12, 2 * Math.hypot(prev.rms / Math.sqrt(prev.count), next.rms / Math.sqrt(next.count)));
+      c.snapped = true;
+      out.push(c);
+    }
+    return out;
+  },
+
+  // Coin net le plus proche (Shi-Tomasi) puis affinage sous-pixel (méthode de Förstner)
+  refineCorner(img, p, searchR) {
+    const r = Math.round(clamp(searchR, 3, 30)), w = 4, R = r + w + 3, n = 2 * R + 1;
+    const x0 = Math.round(p[0]) - R, y0 = Math.round(p[1]) - R;
+    if (!this.fits(img, x0, y0, n, n)) return null;
+    const { g } = this.patch(img, x0, y0, n, n);
+    const gx = new Float32Array(n * n), gy = new Float32Array(n * n);
+    for (let y = 1; y < n - 1; y++) for (let x = 1; x < n - 1; x++) {
+      const i = y * n + x;
+      gx[i] = (g[i - n + 1] + 2 * g[i + 1] + g[i + n + 1] - g[i - n - 1] - 2 * g[i - 1] - g[i + n - 1]) / 8;
+      gy[i] = (g[i + n - 1] + 2 * g[i + n] + g[i + n + 1] - g[i - n - 1] - 2 * g[i - n] - g[i - n + 1]) / 8;
+    }
+    let best = -1, bx = R, by = R, bestRaw = 0;
+    const sig2 = 2 * (r * 0.7) ** 2;
+    for (let y = R - r; y <= R + r; y++) for (let x = R - r; x <= R + r; x++) {
+      let a = 0, b = 0, c = 0;
+      for (let v = -2; v <= 2; v++) for (let u = -2; u <= 2; u++) {
+        const i = (y + v) * n + x + u; a += gx[i] * gx[i]; b += gx[i] * gy[i]; c += gy[i] * gy[i];
+      }
+      const tr = (a + c) / 2, minEig = tr - Math.sqrt(Math.max(0, tr * tr - (a * c - b * b)));
+      const sc = minEig * Math.exp(-((x - R) ** 2 + (y - R) ** 2) / sig2);
+      if (sc > best) { best = sc; bx = x; by = y; bestRaw = minEig; }
+    }
+    if (bestRaw < 0.006) return null;
+    let qx = bx, qy = by;
+    for (let it = 0; it < 12; it++) {
+      let a = 0, b = 0, c = 0, ux = 0, uy = 0;
+      const ix = Math.round(qx), iy = Math.round(qy);
+      for (let v = -w; v <= w; v++) for (let u = -w; u <= w; u++) {
+        const x = ix + u, y = iy + v;
+        if (x < 1 || y < 1 || x > n - 2 || y > n - 2) continue;
+        const i = y * n + x, wt = Math.exp(-(u * u + v * v) / (2 * 2.5 * 2.5));
+        const xx = gx[i] * gx[i] * wt, xy = gx[i] * gy[i] * wt, yy = gy[i] * gy[i] * wt;
+        a += xx; b += xy; c += yy;
+        ux += xx * x + xy * y; uy += xy * x + yy * y;
+      }
+      const det = a * c - b * b;
+      if (det < 1e-10) break;
+      const nx = (c * ux - b * uy) / det, ny = (a * uy - b * ux) / det;
+      const moved = Math.hypot(nx - qx, ny - qy);
+      qx = nx; qy = ny;
+      if (moved < 0.01) break;
+    }
+    if (Math.hypot(qx - R, qy - R) > r + 1.5) return null;
+    const out = [x0 + qx + 0.5, y0 + qy + 0.5];
+    out.sig = 0.25; out.snapped = true;
+    return out;
+  },
+};
+
+/* ================================================================
    PHOTO — mesure avec correction de perspective (homographie)
    ================================================================ */
 
+// Dimensions (mm) et tolérance de fabrication (écart-type, mm)
 const REFS = {
-  card: [85.6, 53.98], a4: [210, 297], letter: [215.9, 279.4],
-  bill: [133, 72], tile: [300, 300],
+  card: [85.6, 53.98, 0.05], a4: [210, 297, 0.7], letter: [215.9, 279.4, 0.7],
+  bill: [133, 72, 0.2], tile: [300, 300, 0.5], a3: [297, 420, 1],
+  deck: [2000, 1000, 2], pallet: [1200, 800, 3],
 };
 
 function solveLinear(A, b) {
@@ -245,20 +470,23 @@ function solveLinear(A, b) {
   return M.map((row, i) => row[n] / row[i]);
 }
 
+// Homographie avec normalisation des coordonnées (stabilité numérique sur les photos 48 Mpx)
 function homography(src, dst) {
+  const cx = src.reduce((s, p) => s + p[0], 0) / 4, cy = src.reduce((s, p) => s + p[1], 0) / 4;
+  const sc = Math.SQRT2 / (src.reduce((s, p) => s + Math.hypot(p[0] - cx, p[1] - cy), 0) / 4 || 1);
   const A = [], b = [];
   for (let i = 0; i < 4; i++) {
-    const [x, y] = src[i], [u, v] = dst[i];
+    const x = (src[i][0] - cx) * sc, y = (src[i][1] - cy) * sc, [u, v] = dst[i];
     A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
     A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
   }
   const h = solveLinear(A, b);
-  return h ? [...h, 1] : null;
-}
-
-function applyH(H, [x, y]) {
-  const w = H[6] * x + H[7] * y + H[8];
-  return [(H[0] * x + H[1] * y + H[2]) / w, (H[3] * x + H[4] * y + H[5]) / w];
+  if (!h) return null;
+  return (p) => {
+    const x = (p[0] - cx) * sc, y = (p[1] - cy) * sc;
+    const w = h[6] * x + h[7] * y + 1;
+    return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w];
+  };
 }
 
 function orderConvex(pts) {
@@ -267,7 +495,7 @@ function orderConvex(pts) {
   return [...pts].sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
 }
 
-const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const withSig = (p, src) => { p.sig = src.sig; p.snapped = src.snapped; return p; };
 
 const Photo = {
   img: null,
@@ -279,6 +507,8 @@ const Photo = {
   toPlane: null,    // fonction image → mm
   shapes: [],       // {type, pts, done}
   tool: 'line',
+  snap: store.get('snap', true),
+  lineRefLen: null,
   pointers: new Map(),
   drag: null,
   pinch: null,
@@ -300,9 +530,13 @@ const Photo = {
       this.computeRef();
     });
     ['customW', 'customH'].forEach((id) => $(id).addEventListener('input', () => this.computeRef()));
-    $('resetRefBtn').addEventListener('click', () => { this.ref = []; this.computeRef(); });
+    $('resetRefBtn').addEventListener('click', () => { this.ref = []; this.lineRefLen = null; this.computeRef(); });
     $('undoBtn').addEventListener('click', () => this.undo());
     $('savePhotoBtn').addEventListener('click', () => this.save());
+    const sb = $('snapBtn');
+    const paintSnap = () => { sb.textContent = 'Aimant : ' + (this.snap ? 'oui' : 'non'); sb.classList.toggle('on', this.snap); };
+    paintSnap();
+    sb.addEventListener('click', () => { this.snap = !this.snap; store.set('snap', this.snap); paintSnap(); });
     document.querySelectorAll('.tool').forEach((b) => b.addEventListener('click', () => {
       this.finishOpen();
       this.tool = b.dataset.tool;
@@ -323,9 +557,11 @@ const Photo = {
     const im = new Image();
     im.onload = () => {
       this.img = im;
-      this.ref = []; this.shapes = []; this.toPlane = null;
+      this.ref = []; this.shapes = []; this.toPlane = null; this.lineRefLen = null;
       $('photoEmpty').hidden = true; $('photoWork').hidden = false;
       requestAnimationFrame(() => { this.resize(); this.fit(); this.refresh(); });
+      const mp = im.naturalWidth * im.naturalHeight / 1e6;
+      toast(`Photo ${im.naturalWidth} × ${im.naturalHeight} (${num(mp, 1)} Mpx) chargée en pleine résolution`);
     };
     im.onerror = () => toast('Image illisible');
     im.src = url;
@@ -333,6 +569,7 @@ const Photo = {
 
   resize() {
     const r = this.canvas.getBoundingClientRect();
+    if (!r.width) return;
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = Math.round(r.width * dpr);
     this.canvas.height = Math.round(r.height * dpr);
@@ -356,33 +593,65 @@ const Photo = {
     const v = $('refSelect').value;
     if (v === 'custom') {
       const w = parseFloat($('customW').value), h = parseFloat($('customH').value);
-      return w > 0 && h > 0 ? [w, h] : null;
+      return w > 0 && h > 0 ? [w, h, 0.5] : null;
     }
     return REFS[v];
   },
 
-  computeRef() {
-    this.toPlane = null;
-    const v = $('refSelect').value;
-    if (v === 'line' && this.ref.length === 2) {
-      const L = parseFloat(this.lineRefLen);
-      if (L > 0) {
-        const s = L / dist(this.ref[0], this.ref[1]);
-        this.toPlane = ([x, y]) => [x * s, y * s];
-      }
-    } else if (this.ref.length === 4) {
-      const dims = this.refDims();
-      if (dims) {
-        const q = orderConvex(this.ref);
-        const e0 = dist(q[0], q[1]) + dist(q[2], q[3]);
-        const e1 = dist(q[1], q[2]) + dist(q[3], q[0]);
-        const big = Math.max(...dims), small = Math.min(...dims);
-        const [W, Hh] = e0 >= e1 ? [big, small] : [small, big];
-        const H = homography(q, [[0, 0], [W, 0], [W, Hh], [0, Hh]]);
-        if (H) this.toPlane = (p) => applyH(H, p);
-      }
+  // Construit la fonction image → plan réel (mm) ; pure, réutilisée par la simulation d'incertitude
+  buildToPlane(ref, dims, lineLen) {
+    if ($('refSelect').value === 'line') {
+      if (ref.length !== 2 || !(lineLen > 0)) return null;
+      const s = lineLen / dist(ref[0], ref[1]);
+      return ([x, y]) => [x * s, y * s];
     }
+    if (ref.length !== 4 || !dims) return null;
+    const q = orderConvex(ref);
+    const e0 = dist(q[0], q[1]) + dist(q[2], q[3]);
+    const e1 = dist(q[1], q[2]) + dist(q[3], q[0]);
+    const big = Math.max(dims[0], dims[1]), small = Math.min(dims[0], dims[1]);
+    const [W, H] = e0 >= e1 ? [big, small] : [small, big];
+    return homography(q, [[0, 0], [W, 0], [W, H], [0, H]]);
+  },
+
+  computeRef() {
+    this.toPlane = this.buildToPlane(this.ref, this.refDims(), this.lineRefLen);
     this.refresh();
+  },
+
+  /* --- Affinage automatique --- */
+
+  searchR() { return clamp(14 / this.view.s, 3, 40); },
+
+  refineRef() {
+    if (!this.snap || !this.img) return;
+    if (this.ref.length === 4 && $('refSelect').value !== 'line') {
+      const q = orderConvex(this.ref);
+      const r = Vision.refineQuad(this.img, q, Math.max(...this.ref.map((p) => (p.sig || 1) * 3), this.searchR() * 0.6));
+      if (r) { this.ref = r; toast('Référence affinée au sous-pixel'); }
+      else toast('Bords de la référence peu nets : placez les coins en zoomant', 3000);
+    } else if (this.ref.length === 2 && $('refSelect').value === 'line') {
+      this.refineSegment(this.ref);
+    }
+  },
+
+  refineSegment(pts) {
+    const [a, b] = pts, L = dist(a, b);
+    if (L < 10) return;
+    const d = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    pts.forEach((p, i) => {
+      if (p.snapped) return;
+      const r = Vision.edgeAlong(this.img, p, d, this.searchR());
+      if (r && r.strength > 0.03) { r.p.sig = 0.3; r.p.snapped = true; pts[i] = r.p; }
+    });
+  },
+
+  refinePoint(h) {
+    if (!this.snap || !h.shape) return;
+    const s = h.shape;
+    if (s.type === 'line') { if (s.pts.length === 2) { s.pts[h.i].snapped = false; this.refineSegment(s.pts); } return; }
+    const r = Vision.refineCorner(this.img, s.pts[h.i], this.searchR());
+    if (r) s.pts[h.i] = r;
   },
 
   /* --- Interaction --- */
@@ -409,6 +678,9 @@ const Photo = {
     return s && !s.done ? s : null;
   },
 
+  // Incertitude de pointage manuel : ~0,8 point d'écran au zoom courant (avec loupe)
+  manualSig() { return Math.max(0.4, 0.8 / this.view.s); },
+
   down(e) {
     if (!this.img) return;
     this.canvas.setPointerCapture(e.pointerId);
@@ -416,26 +688,27 @@ const Photo = {
     this.pointers.set(e.pointerId, sp);
 
     if (this.pointers.size === 2) {
-      if (this.drag && this.drag.created) this.removeHandle(this.drag.handle);
+      if (this.drag && this.drag.created && !this.drag.moved) this.removeHandle(this.drag.handle);
       this.drag = null; this.loupe.hidden = true;
       const [a, b] = [...this.pointers.values()];
       const c = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
       this.pinch = { d0: dist(a, b), s0: this.view.s, imgC: this.toImg(...c) };
-      this.draw();
+      this.refresh();
       return;
     }
     if (this.pointers.size > 2) return;
 
     const h = this.hit(sp);
-    if (h) { this.drag = { handle: h, start: sp, created: false }; }
+    if (h) this.drag = { handle: h, start: sp, origin: [...h.arr[h.i]], created: false, moved: false };
     else {
       const p = this.toImg(...sp);
+      p.sig = this.manualSig();
       const handle = this.addPoint(p);
       if (!handle) return;
-      this.drag = { handle, start: sp, created: true };
+      this.drag = { handle, start: sp, origin: [...p], created: true, moved: false };
     }
-    this.showLoupe(sp);
-    this.refresh();
+    this.showLoupe(this.drag.handle.arr[this.drag.handle.i]);
+    this.draw();
   },
 
   move(e) {
@@ -446,49 +719,56 @@ const Photo = {
       const [a, b] = [...this.pointers.values()];
       const c = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
       const minS = Math.min(this.cw / this.img.naturalWidth, this.ch / this.img.naturalHeight) * 0.5;
-      const s = clamp(this.pinch.s0 * dist(a, b) / this.pinch.d0, minS, 20);
+      const s = clamp(this.pinch.s0 * dist(a, b) / this.pinch.d0, minS, 30);
       this.view = { s, x: c[0] - this.pinch.imgC[0] * s, y: c[1] - this.pinch.imgC[1] * s };
       this.draw();
       return;
     }
     if (this.drag) {
-      const { arr, i } = this.drag.handle;
-      arr[i] = this.toImg(...sp);
-      if (arr === this.ref) this.computeRef(); else this.refresh();
-      this.showLoupe(sp);
+      // Glissement démultiplié (×0,4) : le doigt ne cache pas le point et chaque pixel compte
+      const d = this.drag, k = 0.4;
+      if (dist(sp, d.start) > 3) d.moved = true;
+      const { arr, i } = d.handle;
+      const p = [d.origin[0] + (sp[0] - d.start[0]) * k / this.view.s, d.origin[1] + (sp[1] - d.start[1]) * k / this.view.s];
+      p.sig = this.manualSig(); p.snapped = false;
+      arr[i] = p;
+      if (arr === this.ref) this.toPlane = this.buildToPlane(this.ref, this.refDims(), this.lineRefLen);
+      this.showLoupe(p);
+      this.refresh();
     }
   },
 
   up(e) {
+    if (!this.pointers.has(e.pointerId)) return;
     this.pointers.delete(e.pointerId);
-    if (this.pinch) { if (this.pointers.size < 2) this.pinch = null; return; }
+    if (this.pinch) { if (this.pointers.size < 2) this.pinch = null; this.refresh(); return; }
     if (this.drag) {
       const d = this.drag;
       const sh = d.handle.shape;
-      // Toucher le premier point d'une surface ferme le polygone
-      if (!d.created && sh && sh.type === 'area' && !sh.done && d.handle.i === 0 &&
-          sh.pts.length >= 3 && dist(d.start, this.pos(e)) < 8) sh.done = true;
+      const isRef = d.handle.arr === this.ref;
       this.drag = null;
       this.loupe.hidden = true;
-      if (d.handle.arr === this.ref) this.computeRef();
-      if (this.ref.length === this.refNeeded() && $('refSelect').value === 'line' && !this.toPlane) this.askLineLen();
+      // Toucher le premier point d'une surface ferme le polygone
+      if (!d.created && !d.moved && sh && sh.type === 'area' && !sh.done && d.handle.i === 0 && sh.pts.length >= 3) {
+        sh.done = true;
+      } else if (isRef) {
+        if (this.ref.length === this.refNeeded()) this.refineRef();
+      } else {
+        this.refinePoint(d.handle);
+      }
+      if (isRef) this.computeRef();
+      if (this.ref.length === 2 && $('refSelect').value === 'line' && !this.lineRefLen) this.askLineLen();
       this.refresh();
     }
   },
 
   askLineLen() {
-    askSave('longueur de référence', 'Entrez la longueur réelle entre les 2 points, en mm, puis validez.', (note) => {
-      const v = parseFloat(note.replace(',', '.'));
-      if (v > 0) { this.lineRefLen = v; this.computeRef(); }
+    askSave('', 'Entrez la longueur réelle entre les 2 points, avec l\'unité : 830 mm, 92 cm, 12,5 m… (mm par défaut)', (v) => {
+      const mt = v.replace(',', '.').match(/([\d.]+)\s*(mm|cm|m)?/i);
+      const L = mt ? parseFloat(mt[1]) * ({ mm: 1, cm: 10, m: 1000 }[(mt[2] || 'mm').toLowerCase()]) : NaN;
+      if (L > 0) { this.lineRefLen = L; this.computeRef(); }
       else toast('Longueur invalide');
-    });
-    $('sheetTitle').textContent = 'Longueur de référence';
-    $('sheetNote').placeholder = 'ex. : 800';
-    $('sheetNote').inputMode = 'decimal';
-    $('sheetOk').textContent = 'Valider';
-    const restore = () => { $('sheetNote').placeholder = 'Note (ex. : largeur porte salon)'; $('sheetNote').inputMode = 'text'; $('sheetOk').textContent = 'Enregistrer'; };
-    $('sheetOk').addEventListener('click', restore, { once: true });
-    $('sheetCancel').addEventListener('click', restore, { once: true });
+    }, { title: 'Longueur de référence', placeholder: 'ex. : 12,5 m', inputMode: 'text', ok: 'Valider' });
   },
 
   addPoint(p) {
@@ -510,7 +790,7 @@ const Photo = {
 
   removeHandle(h) {
     h.arr.splice(h.i, 1);
-    if (h.shape && h.shape.pts.length === 0) this.shapes.splice(this.shapes.indexOf(h.shape), 1);
+    if (h.shape) { h.shape.done = false; if (!h.shape.pts.length) this.shapes.splice(this.shapes.indexOf(h.shape), 1); }
     if (h.arr === this.ref) this.computeRef();
   },
 
@@ -532,33 +812,61 @@ const Photo = {
 
   /* --- Calculs --- */
 
-  measure(s) {
-    const P = s.pts.map(this.toPlane);
-    if (s.type === 'line' && P.length === 2) return { label: 'Longueur', text: fmtLen(dist(P[0], P[1])), mm: dist(P[0], P[1]) };
-    if (s.type === 'area' && P.length >= 3) {
-      let a = 0, per = 0;
-      for (let i = 0; i < P.length; i++) {
-        const j = (i + 1) % P.length;
-        a += P[i][0] * P[j][1] - P[j][0] * P[i][1];
-        if (s.done || j !== 0) per += dist(P[i], P[j]);
-      }
-      return { label: 'Surface', text: `${fmtArea(Math.abs(a) / 2)} · périm. ${fmtLen(per)}` };
+  value(type, P) {
+    if (type === 'line') return P.length === 2 ? dist(P[0], P[1]) : null;
+    if (type === 'area') {
+      if (P.length < 3) return null;
+      let a = 0;
+      for (let i = 0; i < P.length; i++) { const j = (i + 1) % P.length; a += P[i][0] * P[j][1] - P[j][0] * P[i][1]; }
+      return Math.abs(a) / 2;
     }
-    if (s.type === 'angle' && P.length === 3) {
+    if (type === 'angle') {
+      if (P.length !== 3) return null;
       const v1 = [P[0][0] - P[1][0], P[0][1] - P[1][1]], v2 = [P[2][0] - P[1][0], P[2][1] - P[1][1]];
-      const ang = Math.acos(clamp((v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2)), -1, 1)) * DEG;
-      return { label: 'Angle', text: fmtDeg(ang) };
+      return Math.acos(clamp((v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2)), -1, 1)) * DEG;
     }
     return null;
   },
 
-  // Incertitude : ±1,5 px de pointage par extrémité, convertis en mm au point mesuré
-  precision() {
-    if (!this.toPlane || !this.img) return null;
-    const c = [this.img.naturalWidth / 2, this.img.naturalHeight / 2];
-    const a = this.toPlane(c), b = this.toPlane([c[0] + 1, c[1]]);
-    const zoomFactor = Math.max(1, 1 / this.view.s);
-    return dist(a, b) * 1.5 * Math.SQRT2 * Math.min(zoomFactor, 4);
+  perimeter(P, closed) {
+    let per = 0;
+    for (let i = 0; i < P.length - (closed ? 0 : 1); i++) per += dist(P[i], P[(i + 1) % P.length]);
+    return per;
+  },
+
+  // Propagation complète des erreurs : pointage de chaque point (référence comprise)
+  // et tolérance de l'objet de référence, par simulation (300 tirages). Renvoie ±2σ (95 %).
+  uncertainty(s) {
+    const dims = this.refDims();
+    const g = gaussFrom(rng(7));
+    const jit = (p) => { const k = p.sig ?? 1; return [p[0] + g() * k, p[1] + g() * k]; };
+    const vals = [];
+    for (let n = 0; n < 300; n++) {
+      const ref = this.ref.map(jit);
+      const d = dims && [dims[0] + g() * dims[2], dims[1] + g() * dims[2]];
+      const L = this.lineRefLen && this.lineRefLen + g() * 0.5;
+      const tp = this.buildToPlane(ref, d, L);
+      if (!tp) continue;
+      const v = this.value(s.type, s.pts.map(jit).map(tp));
+      if (v != null && isFinite(v)) vals.push(v);
+    }
+    return vals.length > 20 ? 2 * meanStd(vals)[1] : null;
+  },
+
+  measure(s) {
+    const P = s.pts.map(this.toPlane);
+    const v = this.value(s.type, P);
+    if (v == null) return null;
+    const tol = this.drag || this.pinch ? s.lastTol : this.uncertainty(s);
+    s.lastTol = tol;
+    if (s.type === 'line') {
+      return { label: 'Longueur', short: fmtLen(v, unit, tol ?? Infinity), tol: tol != null ? fmtTol(tol) : '', rel: tol / v };
+    }
+    if (s.type === 'area') {
+      return { label: 'Surface', short: fmtArea(v), tol: tol != null ? '± ' + fmtArea(tol) : '',
+        extra: 'périm. ' + fmtLen(this.perimeter(P, s.done)), rel: tol / v };
+    }
+    return { label: 'Angle', short: fmtDeg(v, tol != null && tol < 0.2 ? 2 : 1), tol: tol != null ? '± ' + fmtDeg(tol, 2) : '', rel: tol / 90 };
   },
 
   /* --- Rendu --- */
@@ -568,37 +876,42 @@ const Photo = {
     const step = $('photoStep');
     if (this.ref.length < needed) {
       step.textContent = needed === 4
-        ? `1. Touchez les 4 coins de la référence (${this.ref.length}/4)`
+        ? `1. Touchez les 4 coins de la référence (${this.ref.length}/4) · zoomez à 2 doigts`
         : `1. Touchez les 2 extrémités de la longueur connue (${this.ref.length}/2)`;
     } else if (!this.toPlane) {
       step.textContent = needed === 4 ? '1. Indiquez la taille de la référence' : '1. Indiquez la longueur de référence';
     } else {
       const hint = { line: 'Touchez 2 points', area: 'Touchez les sommets, puis le 1er pour fermer', angle: 'Touchez 3 points (sommet au milieu)' }[this.tool];
-      step.textContent = '2. ' + hint + ' · pincez pour zoomer';
+      step.textContent = '2. ' + hint + ' · glissez pour ajuster finement';
     }
     $('measureTools').hidden = !this.toPlane;
 
     const ul = $('photoResults');
     ul.textContent = '';
+    let worst = 0;
     if (this.toPlane) {
       let n = 0;
       for (const s of this.shapes) {
         const m = this.measure(s);
         if (!m) continue;
         n++;
+        if (m.rel > worst) worst = m.rel;
         const li = document.createElement('li');
         const a = document.createElement('span'); a.textContent = `${m.label} ${n}`;
-        const b = document.createElement('span'); b.textContent = m.text;
+        const b = document.createElement('span');
+        const strong = document.createElement('b'); strong.textContent = m.short;
+        const t = document.createElement('small'); t.textContent = ' ' + m.tol + (m.extra ? ' · ' + m.extra : '');
+        b.append(strong, t);
         li.append(a, b); ul.append(li);
-        s.labelText = m.text;
+        s.labelText = m.short;
+        if (s.type === 'area' && s.done) setLastArea(this.value('area', s.pts.map(this.toPlane)) / 1e6, 'Photo');
       }
-      const p = this.precision();
-      if (p != null) {
-        const li = document.createElement('li');
-        li.className = 'precision';
-        li.textContent = `Précision estimée : ± ${fmtLen(p)} par point. Zoomez pour l'améliorer.`;
-        ul.append(li);
-      }
+      const li = document.createElement('li');
+      li.className = 'precision';
+      if (!n) li.textContent = 'Marge à 95 % calculée pour chaque mesure (pointage + référence).';
+      else if (worst > 0.02) li.textContent = 'Pour réduire la marge : zoomez avant de placer les points, prenez une référence plus grande (A4) et proche de l\'objet, photographiez bien de face.';
+      else li.textContent = 'Marges à 95 % : pointage, perspective et tolérance de la référence inclus.';
+      ul.append(li);
     }
     this.draw();
   },
@@ -609,45 +922,48 @@ const Photo = {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
     if (!this.img) return;
+    ctx.imageSmoothingEnabled = view.s * scale < 3; // pixels nets au fort zoom
     ctx.drawImage(this.img, view.x, view.y, this.img.naturalWidth * view.s, this.img.naturalHeight * view.s);
     const S = (p) => [p[0] * view.s + view.x, p[1] * view.s + view.y];
     const accent = '#f5b82e';
-    const lw = Math.max(2, w / 300);
+    const lw = Math.max(1.5, Math.min(w, h) / 320);
 
-    // Référence
     if (this.ref.length) {
       const pts = (this.ref.length === 4 ? orderConvex(this.ref) : this.ref).map(S);
       ctx.beginPath();
       pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
-      if (this.ref.length === 4) { ctx.closePath(); ctx.fillStyle = 'rgba(79,212,138,.22)'; ctx.fill(); }
+      if (this.ref.length === 4) { ctx.closePath(); ctx.fillStyle = 'rgba(79,212,138,.18)'; ctx.fill(); }
       ctx.strokeStyle = '#4fd48a'; ctx.lineWidth = lw; ctx.stroke();
-      pts.forEach((p) => this.dot(ctx, p, '#4fd48a', lw));
+      (this.ref.length === 4 ? orderConvex(this.ref) : this.ref).forEach((p) => this.dot(ctx, S(p), '#4fd48a', lw, p.snapped));
     }
 
-    // Mesures
     for (const s of this.shapes) {
       const pts = s.pts.map(S);
       ctx.beginPath();
       pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
-      if (s.type === 'area' && s.done) { ctx.closePath(); ctx.fillStyle = 'rgba(245,184,46,.22)'; ctx.fill(); }
+      if (s.type === 'area' && s.done) { ctx.closePath(); ctx.fillStyle = 'rgba(245,184,46,.2)'; ctx.fill(); }
       ctx.strokeStyle = accent; ctx.lineWidth = lw; ctx.stroke();
-      pts.forEach((p) => this.dot(ctx, p, accent, lw));
-      const m = this.toPlane && this.measure(s);
-      if (m) {
+      s.pts.forEach((p, i) => this.dot(ctx, pts[i], accent, lw, p.snapped));
+      if (this.toPlane && s.labelText && pts.length) {
         let at;
-        if (s.type === 'line') at = [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2];
-        else if (s.type === 'angle') at = pts[1];
-        else at = [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
-        this.label(ctx, at, s.type === 'area' ? m.text.split(' · ')[0] : m.text, Math.max(14, w / 28));
+        if (s.type === 'line' && pts.length === 2) at = [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2];
+        else if (s.type === 'angle' && pts.length === 3) at = pts[1];
+        else if (s.type === 'area') at = [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
+        if (at) this.label(ctx, at, s.labelText, Math.max(13, Math.min(w, h) / 26));
       }
     }
   },
 
-  dot(ctx, p, color, lw) {
-    ctx.beginPath(); ctx.arc(p[0], p[1], lw * 3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
+  // Point : cercle + croix fine au centre exact ; plein = affiné automatiquement
+  dot(ctx, p, color, lw, snapped) {
+    const r = lw * 4;
+    ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2);
+    ctx.fillStyle = snapped ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.25)'; ctx.fill();
     ctx.lineWidth = lw; ctx.strokeStyle = color; ctx.stroke();
-    ctx.beginPath(); ctx.arc(p[0], p[1], lw * 0.8, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(p[0] - r * 0.7, p[1]); ctx.lineTo(p[0] + r * 0.7, p[1]);
+    ctx.moveTo(p[0], p[1] - r * 0.7); ctx.lineTo(p[0], p[1] + r * 0.7);
+    ctx.lineWidth = 1; ctx.strokeStyle = snapped ? '#fff' : color; ctx.stroke();
   },
 
   label(ctx, [x, y], text, size) {
@@ -662,21 +978,22 @@ const Photo = {
     ctx.fillText(text, x, y - size * 1.2);
   },
 
-  showLoupe(sp) {
+  // Loupe centrée sur le point (pas sur le doigt), en pixels réels de la photo
+  showLoupe(ip) {
     const L = this.loupe, lc = L.getContext('2d');
     L.hidden = false;
-    L.classList.toggle('right', sp[0] < this.cw / 2 && sp[1] < 150);
-    const zoom = Math.max(this.view.s * 3, 0.6);
-    const ip = this.toImg(...sp);
+    const sp = this.toScr(ip);
+    L.classList.toggle('right', sp[0] < this.cw / 2 && sp[1] < 160);
+    const zoom = Math.max(this.view.s * 4, 3);
     const size = L.width;
-    lc.setTransform(1, 0, 0, 1, 0, 0);
-    lc.fillStyle = '#000'; lc.fillRect(0, 0, size, size);
     const v = { s: zoom, x: size / 2 - ip[0] * zoom, y: size / 2 - ip[1] * zoom };
     this.draw(lc, 1, v, size, size);
     lc.setTransform(1, 0, 0, 1, 0, 0);
-    lc.strokeStyle = '#ff3b30'; lc.lineWidth = 2;
-    lc.beginPath(); lc.moveTo(size / 2, size / 2 - 22); lc.lineTo(size / 2, size / 2 + 22);
-    lc.moveTo(size / 2 - 22, size / 2); lc.lineTo(size / 2 + 22, size / 2); lc.stroke();
+    lc.strokeStyle = '#ff3b30'; lc.lineWidth = 1;
+    lc.beginPath();
+    lc.moveTo(size / 2 + 0.5, 0); lc.lineTo(size / 2 + 0.5, size);
+    lc.moveTo(0, size / 2 + 0.5); lc.lineTo(size, size / 2 + 0.5);
+    lc.stroke();
   },
 
   save() {
@@ -685,8 +1002,7 @@ const Photo = {
     this.refresh();
     const rows = this.shapes.map((s) => this.measure(s)).filter(Boolean);
     if (!rows.length) { toast('Aucune mesure à enregistrer'); return; }
-    const text = rows.map((r) => `${r.label} : ${r.text}`).join('\n');
-    // Vignette annotée
+    const text = rows.map((r) => `${r.label} : ${r.short} ${r.tol}${r.extra ? ' · ' + r.extra : ''}`).join('\n');
     const tw = 480, s = tw / this.img.naturalWidth, th = Math.round(this.img.naturalHeight * s);
     const c = document.createElement('canvas'); c.width = tw; c.height = th;
     this.draw(c.getContext('2d'), 1, { s, x: 0, y: 0 }, tw, th);
@@ -697,14 +1013,29 @@ const Photo = {
 };
 
 /* ================================================================
-   HAUTEUR — visée caméra + inclinaison (trigonométrie)
+   VISÉE — caméra + inclinaison + cap gyroscopique
+   Hauteur (pied → sommet), Distance entre points au sol, Surface au sol depuis un seul point
    ================================================================ */
 
+let lastArea = null; // dernière surface mesurée (m²), proposée dans le Plan
+function setLastArea(m2, label) {
+  if (!(m2 > 0)) return;
+  lastArea = { m2, label };
+  const b = $('addLast');
+  if (b) { b.disabled = false; b.textContent = `Ajouter la dernière surface : ${fmtAreaBig(m2)} (${label})`; }
+}
+
 const Height = {
-  samples: [],
-  eBase: null,
-  eTop: null,
+  mode: 'height',
+  samples: [],      // {t, e, a} élévation et cap bruts de l'axe caméra (°)
+  base: null,       // {e, sig}
+  top: null,
+  shots: [],        // points au sol : {e, a, sigE, sigA}
+  pending: null,
+  pendingSince: 0,
   stream: null,
+  SENSOR_BIAS: 0.15, // incertitude résiduelle d'inclinaison (°)
+  HEAD_BIAS: 0.3,    // dérive résiduelle du cap gyroscopique (°)
 
   init() {
     $('eyeH').value = store.get('eyeH', 1.5);
@@ -712,19 +1043,61 @@ const Height = {
     $('knownD').addEventListener('input', () => this.render());
     $('camStart').addEventListener('click', () => this.start());
     $('markBtn').addEventListener('click', () => this.mark());
-    $('heightReset').addEventListener('click', () => { this.eBase = this.eTop = null; this.render(); });
-    $('heightSave').addEventListener('click', () => {
-      const r = this.result();
-      if (!r || r.h == null) { toast('Visez la base puis le sommet'); return; }
-      const text = `Hauteur : ${fmtLen(r.h)}\nDistance : ${fmtLen(r.d)}`;
-      askSave('Hauteur', text, (note) => History.add('Hauteur', text, note));
+    document.querySelectorAll('[data-hmode]').forEach((b) => b.addEventListener('click', () => {
+      this.mode = b.dataset.hmode;
+      document.querySelectorAll('[data-hmode]').forEach((x) => x.classList.toggle('active', x === b));
+      this.pending = null;
+      this.render();
+    }));
+    $('shotUndo').addEventListener('click', () => {
+      if (this.mode === 'height') { if (this.top) this.top = null; else this.base = null; }
+      else this.shots.pop();
+      this.render();
     });
-    Sensors.on((u) => {
-      const e = Math.asin(clamp(-u[2], -1, 1)) * DEG; // élévation de l'axe de la caméra
-      this.samples.push(e);
-      if (this.samples.length > 20) this.samples.shift();
-      if (!$('s-height').hidden) $('hudAngle').textContent = num(e, 1);
-    });
+    $('heightReset').addEventListener('click', () => { this.base = this.top = null; this.shots = []; this.pending = null; this.render(); });
+    $('heightSave').addEventListener('click', () => this.save());
+    Sensors.on((_, raw, t, cam) => this.onSample(cam, t));
+  },
+
+  eye() { return (parseFloat(String($('eyeH').value).replace(',', '.')) || 1.5) * 1000; },
+  knownDist() { const v = parseFloat(($('knownD').value || '').replace(',', '.')); return v > 0 ? v * 1000 : null; },
+
+  onSample(cam, t) {
+    this.samples.push({ t, e: cam.elev, a: cam.head });
+    while (this.samples.length && t - this.samples[0].t > 1500) this.samples.shift();
+    const win = this.samples.filter((s) => t - s.t < 600);
+    const E = win.map((s) => s.e);
+    const [m, sd] = E.length > 2 ? meanStd(E) : [cam.elev, 1];
+    let am = null, sdA = 0;
+    if (cam.head != null && win.every((s) => s.a != null)) {
+      const a0 = win[0].a;
+      const D = win.map((s) => ((s.a - a0 + 540) % 360) - 180);
+      const [dm, ds] = D.length > 2 ? meanStd(D) : [0, 1];
+      am = (a0 + dm + 360) % 360; sdA = ds;
+    }
+    const steady = E.length >= 8 && sd < 0.12 && sdA < 0.3;
+    if (!$('s-height').hidden) {
+      $('hudAngle').textContent = num(m, 1);
+      $('hudStable').textContent = steady ? '● stable' : '○ tenez immobile';
+      $('hudStable').classList.toggle('ok', steady);
+      $('hudFloor').textContent = m < -0.5 ? 'sol à ' + fmtLen(this.eye() / Math.tan(-m / DEG), 'm') : '';
+    }
+    if (!this.pending) return;
+    const late = t - this.pendingSince > 5000;
+    if (!(steady || (late && E.length >= 4))) return;
+    const sigE = Math.hypot(sd / Math.sqrt(E.length), this.SENSOR_BIAS, late && !steady ? sd : 0);
+    if (late && !steady) toast('Téléphone instable : précision réduite');
+    if (this.pending === 'shot') {
+      if (am == null) { toast('Cap gyroscopique indisponible sur cet appareil'); this.pending = null; this.render(); return; }
+      if (m > -0.5) { toast('Visez un point du sol (vers le bas)'); this.pending = null; this.render(); return; }
+      const r = this.eye() / Math.tan(-m / DEG);
+      if (r / this.eye() > 12) toast('Point lointain : précision réduite. Rapprochez-vous ou tenez le téléphone plus haut.', 3500);
+      this.shots.push({ e: m, a: am, sigE, sigA: Math.hypot(sdA / Math.sqrt(E.length), this.HEAD_BIAS) });
+    } else {
+      this[this.pending] = { e: m, sig: sigE };
+    }
+    this.pending = null;
+    this.render();
   },
 
   async start() {
@@ -743,48 +1116,297 @@ const Height = {
     if (this.stream) { this.stream.getTracks().forEach((t) => t.stop()); this.stream = null; $('camStart').hidden = false; }
   },
 
-  angle() {
-    const s = this.samples.slice(-10);
-    return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null;
-  },
-
   mark() {
-    const a = this.angle();
-    if (a == null) { toast('Activez d\'abord les capteurs'); this.start(); return; }
-    if (this.eBase == null || this.eTop != null) {
-      if (this.eTop != null) this.eTop = null;
-      if (a > -1 && !(parseFloat($('knownD').value) > 0)) { toast('Inclinez vers le bas pour viser la base'); return; }
-      this.eBase = a;
-    } else {
-      this.eTop = a;
-    }
+    if (!this.samples.length) { toast('Activez d\'abord les capteurs'); this.start(); return; }
+    if (this.mode === 'height') {
+      if (this.base && this.top) { this.base = this.top = null; this.render(); return; }
+      const target = this.base ? 'top' : 'base';
+      const last = this.samples[this.samples.length - 1].e;
+      if (target === 'base' && last > -1 && !this.knownDist()) { toast('Inclinez vers le bas pour viser la base'); return; }
+      this.pending = target;
+    } else this.pending = 'shot';
+    this.pendingSince = performance.now();
     this.render();
   },
 
-  result() {
-    if (this.eBase == null) return null;
-    const known = parseFloat(($('knownD').value || '').replace(',', '.'));
-    const h = (parseFloat($('eyeH').value) || 1.5) * 1000;
-    const tb = Math.tan(this.eBase / DEG);
-    const d = known > 0 ? known * 1000 : h / -tb;
+  /* --- Calculs --- */
+
+  heightCalc(eb, et, h, known) {
+    const tb = Math.tan(eb / DEG);
+    const d = known != null ? known : h / -tb;
     if (!(d > 0) || !isFinite(d)) return null;
-    const out = { d, h: null };
-    if (this.eTop != null) out.h = d * (Math.tan(this.eTop / DEG) - tb);
+    return { d, h: et != null ? d * (Math.tan(et / DEG) - tb) : null };
+  },
+
+  floorPts(shots, h, g) {
+    const out = [];
+    for (const s of shots) {
+      const e = s.e + (g ? g() * s.sigE : 0), a = s.a + (g ? g() * s.sigA : 0);
+      if (e >= -0.05) return null;
+      const r = h / Math.tan(-e / DEG);
+      out.push([r * Math.sin(a / DEG), r * Math.cos(a / DEG)]);
+    }
     return out;
   },
 
+  shotsCalc(P) {
+    let chain = 0;
+    for (let i = 1; i < P.length; i++) chain += dist(P[i - 1], P[i]);
+    let area = 0;
+    for (let i = 0; i < P.length; i++) { const j = (i + 1) % P.length; area += P[i][0] * P[j][1] - P[j][0] * P[i][1]; }
+    return { chain, area: Math.abs(area) / 2, per: P.length >= 3 ? chain + dist(P[P.length - 1], P[0]) : chain };
+  },
+
+  // Monte-Carlo : inclinaison, cap et hauteur de l'objectif (±2 cm) ; distance connue ±1 cm
+  result() {
+    const g = gaussFrom(rng(11)), h = this.eye();
+    if (this.mode === 'height') {
+      if (!this.base) return null;
+      const known = this.knownDist();
+      const r = this.heightCalc(this.base.e, this.top && this.top.e, h, known);
+      if (!r) return null;
+      const D = [], H = [];
+      for (let i = 0; i < 400; i++) {
+        const s = this.heightCalc(this.base.e + g() * this.base.sig, this.top && this.top.e + g() * this.top.sig,
+          h + g() * 20, known != null ? known + g() * 10 : null);
+        if (!s) continue;
+        D.push(s.d); if (s.h != null) H.push(s.h);
+      }
+      r.dTol = D.length > 20 ? 2 * meanStd(D)[1] : Infinity;
+      r.hTol = H.length > 20 ? 2 * meanStd(H)[1] : Infinity;
+      return r;
+    }
+    if (this.shots.length < 2) return null;
+    const P = this.floorPts(this.shots, h);
+    if (!P) return null;
+    const r = this.shotsCalc(P);
+    const C = [], A = [], Pe = [];
+    for (let i = 0; i < 400; i++) {
+      const Q = this.floorPts(this.shots, h + g() * 20, g);
+      if (!Q) continue;
+      const s = this.shotsCalc(Q);
+      C.push(s.chain); A.push(s.area); Pe.push(s.per);
+    }
+    r.chainTol = 2 * meanStd(C)[1]; r.areaTol = 2 * meanStd(A)[1]; r.perTol = 2 * meanStd(Pe)[1];
+    return r;
+  },
+
   render() {
+    const mode = this.mode;
+    $('knownRow').hidden = mode !== 'height';
     const r = this.result();
-    $('outDist').textContent = r ? fmtLen(r.d) : '—';
-    $('outHeight').textContent = r && r.h != null ? fmtLen(r.h) : '—';
-    if (this.eBase == null) { $('markBtn').textContent = 'Viser la base'; $('heightHint').textContent = 'Centrez le réticule sur le pied de l\'objet'; }
-    else if (this.eTop == null) { $('markBtn').textContent = 'Viser le sommet'; $('heightHint').textContent = 'Sans bouger, montez jusqu\'au sommet'; }
-    else { $('markBtn').textContent = 'Nouvelle mesure'; $('heightHint').textContent = 'Mesure terminée'; }
+    const set = (i, label, val, tol) => { $('hLabel' + i).textContent = label; $('hVal' + i).textContent = val; $('hTol' + i).textContent = tol || ''; };
+    const tip = $('heightTip');
+    tip.hidden = true;
+    if (mode === 'height') {
+      set(1, 'Distance', r ? fmtLen(r.d, unit, r.dTol) : '—', r && isFinite(r.dTol) ? fmtTol(r.dTol) : '');
+      set(2, 'Hauteur', r && r.h != null ? fmtLen(r.h, unit, r.hTol) : '—', r && r.h != null && isFinite(r.hTol) ? fmtTol(r.hTol) : '');
+      if (r && r.h != null && !this.knownDist() && r.hTol / r.h > 0.03) {
+        tip.hidden = false;
+        tip.textContent = 'Astuce précision : mesurez la distance au sol (au mètre ou avec « Distance ») et saisissez-la dans « Distance connue ».';
+      }
+    } else if (mode === 'dist') {
+      const n = this.shots.length;
+      set(1, n > 2 ? 'Cumul A→…' : 'Distance A–B', r ? fmtLen(r.chain, unit, r.chainTol) : '—', r ? fmtTol(r.chainTol) : '');
+      set(2, 'Points visés', String(n), '');
+    } else {
+      const n = this.shots.length;
+      const ok = r && n >= 3;
+      set(1, 'Surface au sol', ok ? fmtAreaBig(r.area / 1e6) : '—', ok ? '± ' + fmtAreaBig(r.areaTol / 1e6) : `${n} coin${n > 1 ? 's' : ''} visé${n > 1 ? 's' : ''}`);
+      set(2, 'Périmètre', ok ? fmtLen(r.per, 'm', r.perTol) : '—', ok ? fmtTol(r.perTol, 'm') : '');
+      if (ok) setLastArea(r.area / 1e6, 'Visée');
+    }
+    if (mode !== 'height' && this.shots.length < 3) {
+      tip.hidden = false;
+      tip.textContent = mode === 'dist'
+        ? 'Restez au même endroit et visez le pied de chaque point (bas d\'un mur, pied d\'une structure). Toise calcule la distance entre eux.'
+        : 'Placez-vous au centre, sans bouger, et visez chaque coin du sol l\'un après l\'autre, dans l\'ordre du tour.';
+    }
+    const btn = $('markBtn');
+    if (this.pending) { btn.textContent = 'Tenez immobile…'; $('heightHint').textContent = 'Capture dès que l\'image est stable'; return; }
+    if (mode === 'height') {
+      if (!this.base) { btn.textContent = 'Viser la base'; $('heightHint').textContent = 'Centrez le réticule sur le pied de l\'objet'; }
+      else if (!this.top) { btn.textContent = 'Viser le sommet'; $('heightHint').textContent = 'Sans changer de place, montez jusqu\'au sommet (plafond, faîtage, structure)'; }
+      else { btn.textContent = 'Nouvelle mesure'; $('heightHint').textContent = 'Mesure terminée'; }
+    } else {
+      const L = String.fromCharCode(65 + Math.min(this.shots.length, 25));
+      btn.textContent = `Viser le point ${L}`;
+      $('heightHint').textContent = mode === 'dist' ? 'Visez le pied du point, au sol' : 'Visez le coin au ras du sol';
+    }
+  },
+
+  save() {
+    const r = this.result();
+    let text, kind;
+    if (this.mode === 'height') {
+      if (!r || r.h == null) { toast('Visez la base puis le sommet'); return; }
+      text = `Hauteur : ${fmtLen(r.h, unit, r.hTol)} ${fmtTol(r.hTol)}\nDistance : ${fmtLen(r.d, unit, r.dTol)} ${fmtTol(r.dTol)}`;
+      kind = 'Hauteur';
+    } else if (this.mode === 'dist') {
+      if (!r) { toast('Visez au moins 2 points'); return; }
+      text = `Distance : ${fmtLen(r.chain, unit, r.chainTol)} ${fmtTol(r.chainTol)}\n${this.shots.length} points visés`;
+      kind = 'Distance (visée)';
+    } else {
+      if (!r || this.shots.length < 3) { toast('Visez au moins 3 coins'); return; }
+      text = `Surface : ${fmtAreaBig(r.area / 1e6)} ± ${fmtAreaBig(r.areaTol / 1e6)}\nPérimètre : ${fmtLen(r.per, 'm', r.perTol)} ${fmtTol(r.perTol, 'm')}`;
+      kind = 'Surface au sol (visée)';
+    }
+    askSave(kind, text, (note) => History.add(kind, text, note));
   },
 };
 
 /* ================================================================
-   NIVEAU — bulle 2D, chant, calibrage par retournement
+   PLAN — surface d'un lieu par formes, volume et capacité
+   ================================================================ */
+
+const PIECES = {
+  rect: { name: 'Rectangle', fields: ['Longueur', 'Largeur'], area: ([a, b]) => a * b },
+  tri: { name: 'Triangle', fields: ['Base', 'Hauteur'], area: ([a, b]) => a * b / 2 },
+  trap: { name: 'Trapèze', fields: ['Grand côté', 'Petit côté', 'Hauteur'], area: ([a, b, h]) => (a + b) / 2 * h },
+  circle: { name: 'Cercle', fields: ['Diamètre'], area: ([d]) => Math.PI * d * d / 4 },
+  half: { name: 'Demi-cercle', fields: ['Diamètre'], area: ([d]) => Math.PI * d * d / 8 },
+  free: { name: 'Surface connue', fields: ['Surface (m²)'], area: ([s]) => s },
+};
+
+// m² par personne, valeurs usuelles d'organisation d'événements
+const LAYOUTS = [
+  ['Debout (concert, fosse)', 0.5],
+  ['Cocktail, réception', 0.8],
+  ['Bancs (culte, cérémonie)', 0.65],
+  ['Théâtre (chaises en rangs)', 0.85],
+  ['Banquet (tables rondes)', 1.3],
+  ['Classe, conférence (tables)', 1.8],
+];
+
+const Plan = {
+  data: store.get('plan', { name: '', pieces: [], ceil: '', reserve: 15 }),
+
+  init() {
+    $('planName').value = this.data.name || '';
+    $('ceilH').value = this.data.ceil || '';
+    $('reserve').value = this.data.reserve ?? 15;
+    $('planName').addEventListener('input', () => { this.data.name = $('planName').value; this.save(); });
+    $('ceilH').addEventListener('input', () => { this.data.ceil = $('ceilH').value; this.totals(); });
+    $('reserve').addEventListener('input', () => { this.data.reserve = $('reserve').value; this.totals(); });
+    $('addPiece').addEventListener('click', () => {
+      const type = $('pieceType').value;
+      this.data.pieces.push({ id: Date.now(), type, label: PIECES[type].name, vals: PIECES[type].fields.map(() => ''), qty: 1, sign: 1 });
+      this.renderList();
+      const inputs = $('pieces').lastElementChild?.querySelectorAll('.piece-fields input');
+      if (inputs && inputs[0]) inputs[0].focus();
+    });
+    $('addLast').addEventListener('click', () => {
+      if (!lastArea) return;
+      this.data.pieces.push({ id: Date.now(), type: 'free', label: 'Mesure ' + lastArea.label, vals: [String(Math.round(lastArea.m2 * 100) / 100)], qty: 1, sign: 1 });
+      this.renderList();
+    });
+    $('planCopy').addEventListener('click', () => copyText(this.summary()));
+    $('planSave').addEventListener('click', () => {
+      if (!this.area()) { toast('Ajoutez au moins une forme avec ses dimensions'); return; }
+      const text = this.summary();
+      askSave('Plan', text, (note) => History.add('Plan' + (this.data.name ? ' · ' + this.data.name : ''), text, note));
+    });
+    let armed = false;
+    $('planReset').addEventListener('click', () => {
+      if (!armed) { armed = true; $('planReset').textContent = 'Confirmer ?'; setTimeout(() => { armed = false; $('planReset').textContent = 'Nouveau plan'; }, 2500); return; }
+      armed = false; $('planReset').textContent = 'Nouveau plan';
+      this.data = { name: '', pieces: [], ceil: '', reserve: 15 };
+      $('planName').value = ''; $('ceilH').value = ''; $('reserve').value = 15;
+      this.renderList();
+    });
+    this.renderList();
+  },
+
+  save() { store.set('plan', this.data); },
+
+  pieceArea(p) {
+    const v = p.vals.map((x) => parseFloat(String(x).replace(',', '.')));
+    if (v.some((x) => !(x > 0))) return null;
+    return PIECES[p.type].area(v) * (parseFloat(p.qty) || 1) * p.sign;
+  },
+
+  area() { return this.data.pieces.reduce((s, p) => s + (this.pieceArea(p) || 0), 0); },
+
+  renderList() {
+    const ul = $('pieces');
+    ul.textContent = '';
+    this.data.pieces.forEach((p, idx) => {
+      const li = document.createElement('li');
+      li.className = 'piece' + (p.sign < 0 ? ' minus' : '');
+      const head = document.createElement('div'); head.className = 'piece-head';
+      const name = document.createElement('input'); name.type = 'text'; name.value = p.label; name.setAttribute('aria-label', 'Nom de la forme');
+      name.id = 'pn' + p.id;
+      name.addEventListener('input', () => { p.label = name.value; this.save(); });
+      const out = document.createElement('b'); out.id = 'pa' + p.id;
+      head.append(name, out);
+      const fields = document.createElement('div'); fields.className = 'piece-fields';
+      PIECES[p.type].fields.forEach((f, i) => {
+        const lab = document.createElement('label');
+        lab.textContent = f + (p.type === 'free' ? '' : ' (m)');
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.inputMode = 'decimal'; inp.value = p.vals[i]; inp.placeholder = '0,00'; inp.id = `pv${p.id}_${i}`;
+        inp.addEventListener('input', () => { p.vals[i] = inp.value; this.totals(); });
+        lab.append(inp); fields.append(lab);
+      });
+      const opts = document.createElement('div'); opts.className = 'piece-opts';
+      const sign = document.createElement('button'); sign.className = 'btn small';
+      sign.textContent = p.sign > 0 ? 'Ajoutée' : 'Retirée';
+      sign.addEventListener('click', () => { p.sign = -p.sign; this.renderList(); });
+      const qty = document.createElement('button'); qty.className = 'btn small';
+      qty.textContent = '× ' + p.qty;
+      qty.addEventListener('click', () => { p.qty = p.qty >= 8 ? 1 : p.qty + 1; this.renderList(); });
+      const del = document.createElement('button'); del.className = 'btn small danger'; del.textContent = 'Supprimer';
+      del.addEventListener('click', () => { this.data.pieces.splice(idx, 1); this.renderList(); });
+      opts.append(sign, qty, del);
+      li.append(head, fields, opts);
+      ul.append(li);
+    });
+    this.totals();
+  },
+
+  totals() {
+    this.save();
+    for (const p of this.data.pieces) {
+      const a = this.pieceArea(p);
+      const el = $('pa' + p.id);
+      if (el) el.textContent = a == null ? '—' : (a < 0 ? '− ' : '') + fmtAreaBig(Math.abs(a));
+    }
+    const A = this.area();
+    $('planArea').textContent = fmtAreaBig(Math.max(0, A));
+    const h = parseFloat(String(this.data.ceil).replace(',', '.'));
+    $('planVol').textContent = h > 0 && A > 0 ? num(A * h, A * h < 100 ? 1 : 0) + ' m³' : '—';
+    const usable = Math.max(0, A) * (1 - clamp(parseFloat(this.data.reserve) || 0, 0, 90) / 100);
+    const ul = $('capList');
+    ul.textContent = '';
+    for (const [name, m2pp] of LAYOUTS) {
+      const li = document.createElement('li');
+      const s = document.createElement('span'); s.textContent = name + ' ';
+      const sm = document.createElement('small'); sm.textContent = `${num(m2pp, 2)} m²/pers.`;
+      s.append(sm);
+      const b = document.createElement('b'); b.textContent = usable > 0 ? '≈ ' + num(Math.floor(usable / m2pp), 0) + ' pers.' : '—';
+      li.append(s, b); ul.append(li);
+    }
+  },
+
+  summary() {
+    const lines = [];
+    if (this.data.name) lines.push(this.data.name);
+    for (const p of this.data.pieces) {
+      const a = this.pieceArea(p);
+      if (a == null) continue;
+      const dims = p.type === 'free' ? '' : ' (' + p.vals.join(' × ') + ' m)';
+      lines.push(`${p.sign < 0 ? '− ' : '+ '}${p.label}${dims}${p.qty > 1 ? ' × ' + p.qty : ''} : ${fmtAreaBig(Math.abs(a))}`);
+    }
+    const A = this.area();
+    lines.push(`Surface totale : ${fmtAreaBig(Math.max(0, A))}`);
+    const h = parseFloat(String(this.data.ceil).replace(',', '.'));
+    if (h > 0) lines.push(`Volume : ${num(A * h, 0)} m³ (h = ${num(h, 2)} m)`);
+    return lines.join('\n');
+  },
+};
+
+/* ================================================================
+   NIVEAU — bulle 2D, chant, moyenne glissante, calibrage par retournement
    ================================================================ */
 
 const Level = {
@@ -795,6 +1417,8 @@ const Level = {
   calib: store.get('levelCalib', { x: 0, y: 0, e: 0 }),
   calibStep: 0,
   calibFirst: null,
+  buf: [],
+  raw: null,
   reading: null,
   sound: false,
   audio: null,
@@ -811,9 +1435,8 @@ const Level = {
       $('holdBtn').textContent = this.hold ? 'Figé' : 'Figer';
     });
     $('zeroBtn').addEventListener('click', () => {
-      if (!this.reading) return;
-      const isZeroed = this.zero.x || this.zero.y || this.zero.e;
-      if (isZeroed) { this.zero = { x: 0, y: 0, e: 0 }; $('zeroBtn').classList.remove('on'); toast('Zéro absolu'); }
+      if (!this.raw) return;
+      if (this.zero.x || this.zero.y || this.zero.e) { this.zero = { x: 0, y: 0, e: 0 }; $('zeroBtn').classList.remove('on'); toast('Zéro absolu'); }
       else {
         const r = this.raw;
         this.zero = { x: r.x - this.calib.x, y: r.y - this.calib.y, e: r.e - this.calib.e };
@@ -829,13 +1452,13 @@ const Level = {
     });
     $('levelSave').addEventListener('click', () => {
       if (!this.reading) { toast('Activez les capteurs'); return; }
-      const text = $('levelMain').textContent + (this.current === 'surface' ? '\n' + $('levelSub').textContent : '');
+      const text = $('levelMain').textContent + '\n' + $('levelSub').textContent;
       askSave('Niveau', text, (note) => History.add(this.current === 'surface' ? 'Niveau (surface)' : 'Niveau (chant)', text, note));
     });
     if (typeof DeviceOrientationEvent === 'undefined' || typeof DeviceOrientationEvent.requestPermission !== 'function') {
       Sensors.start().then((ok) => { if (ok) $('sensorBtn').hidden = true; });
     }
-    Sensors.on((u) => this.update(u));
+    Sensors.on((u, raw) => this.update(u, raw));
   },
 
   initAudio() {
@@ -850,12 +1473,13 @@ const Level = {
 
   calibrate() {
     if (!this.raw) { toast('Activez les capteurs'); return; }
+    if (!this.steady) { toast('Posez le téléphone et attendez qu\'il soit immobile'); return; }
     if (this.calibStep === 0) {
       this.calibFirst = { ...this.raw };
       this.calibStep = 1;
       $('calibBtn').textContent = 'Étape 2';
       $('calibBtn').classList.add('on');
-      $('calibNote').textContent = 'Tournez le téléphone de 180° au même endroit, puis touchez « Étape 2 ».';
+      $('calibNote').textContent = 'Tournez le téléphone de 180° exactement au même endroit, attendez « stable », puis touchez « Étape 2 ».';
     } else {
       const a = this.calibFirst, b = this.raw;
       this.calib = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, e: (a.e + b.e) / 2 };
@@ -868,24 +1492,36 @@ const Level = {
     }
   },
 
-  update(u) {
-    const [ux, uy, uz] = u;
+  update(_, rawUp) {
+    const [ux, uy, uz] = rawUp;
     const roll = Math.atan2(ux, uy) * DEG;
-    const e = roll - 90 * Math.round(roll / 90);
-    this.raw = { x: Math.atan2(ux, uz) * DEG, y: Math.atan2(uy, uz) * DEG, e };
+    const now = { x: Math.atan2(ux, uz) * DEG, y: Math.atan2(uy, uz) * DEG, e: roll - 90 * Math.round(roll / 90), uz };
+    // Moyenne glissante sur ~0,5 s ; on repart de zéro si l'appareil bouge franchement
+    const last = this.buf[this.buf.length - 1];
+    if (last && (Math.abs(last.x - now.x) > 1.5 || Math.abs(last.y - now.y) > 1.5 || Math.abs(last.e - now.e) > 1.5)) this.buf = [];
+    this.buf.push(now);
+    if (this.buf.length > 30) this.buf.shift();
+    const avg = (k) => this.buf.reduce((s, v) => s + v[k], 0) / this.buf.length;
+    this.raw = { x: avg('x'), y: avg('y'), e: avg('e') };
+    const sdx = meanStd(this.buf.map((v) => v.x))[1], sdy = meanStd(this.buf.map((v) => v.y))[1], sde = meanStd(this.buf.map((v) => v.e))[1];
     if (this.hold || $('s-level').hidden) return;
 
+    const auz = Math.abs(avg('uz'));
     if (this.mode === 'auto') {
-      if (this.current === 'surface' && Math.abs(uz) < 0.7) this.current = 'edge';
-      else if (this.current === 'edge' && Math.abs(uz) > 0.8) this.current = 'surface';
+      if (this.current === 'surface' && auz < 0.7) this.current = 'edge';
+      else if (this.current === 'edge' && auz > 0.8) this.current = 'surface';
     } else this.current = this.mode;
 
     const off = (k) => this.calib[k] + this.zero[k];
     const x = this.raw.x - off('x'), y = this.raw.y - off('y'), ed = this.raw.e - off('e');
     this.reading = { x, y, e: ed };
     const surface = this.current === 'surface';
+    this.steady = this.buf.length >= 15 && (surface ? Math.max(sdx, sdy) : sde) < 0.05;
+    const dg = this.steady ? 2 : 1;
     $('levelSurface').hidden = !surface;
     $('levelEdge').hidden = surface;
+    $('levelStable').textContent = this.steady ? '● stable' : '○ en mouvement';
+    $('levelStable').classList.toggle('ok', this.steady);
 
     let dev;
     if (surface) {
@@ -894,15 +1530,15 @@ const Level = {
       const R = $('levelSurface').clientWidth / 2;
       const k = Math.min(1, tilt / 10) / (tilt || 1) * R * 0.78;
       $('bubble').style.transform = `translate(calc(-50% + ${x * k}px), calc(-50% + ${-y * k}px))`;
-      $('levelMain').textContent = fmtDeg(tilt);
-      $('levelSub').textContent = `X ${fmtDeg(x)} · Y ${fmtDeg(y)} · pente ${num(Math.tan(tilt / DEG) * 100, 1)} %`;
+      $('levelMain').textContent = fmtDeg(tilt, dg);
+      $('levelSub').textContent = `X ${fmtDeg(x, dg)} · Y ${fmtDeg(y, dg)} · ${num(Math.tan(tilt / DEG) * 1000, 1)} mm/m`;
     } else {
       dev = Math.abs(ed);
       $('horizon').style.transform = `rotate(${ed}deg)`;
-      $('levelMain').textContent = fmtDeg(Math.abs(ed));
-      $('levelSub').textContent = `pente ${num(Math.tan(Math.abs(ed) / DEG) * 100, 1)} % · ${num(Math.tan(Math.abs(ed) / DEG) * 1000, 1)} mm/m`;
+      $('levelMain').textContent = fmtDeg(Math.abs(ed), dg);
+      $('levelSub').textContent = `pente ${num(Math.tan(Math.abs(ed) / DEG) * 100, 2)} % · ${num(Math.tan(Math.abs(ed) / DEG) * 1000, 1)} mm/m`;
     }
-    const level = dev < 0.15;
+    const level = dev < 0.1;
     $('levelBox').classList.toggle('is-level', level);
     if (this.audio) this.audio.gain.gain.setTargetAtTime(this.sound && level ? 0.08 : 0, this.audio.ac.currentTime, 0.02);
   },
@@ -941,8 +1577,13 @@ const Ruler = {
       const el = $(id);
       el.addEventListener('pointerdown', (e) => {
         el.setPointerCapture(e.pointerId);
-        const top = $('rulerBox').getBoundingClientRect().top;
-        const mv = (ev) => { this[key] = clamp(ev.clientY - top, 0, this.h); this.place(); };
+        // Déplacement démultiplié après le premier mouvement franc : réglage au dixième de mm
+        const y0 = e.clientY, v0 = this[key];
+        const mv = (ev) => {
+          const dy = ev.clientY - y0;
+          const k = Math.abs(dy) < 40 ? 0.25 : 1;
+          this[key] = clamp(v0 + dy * k, 0, this.h); this.place();
+        };
         const upf = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', upf); };
         el.addEventListener('pointermove', mv);
         el.addEventListener('pointerup', upf);
@@ -954,14 +1595,17 @@ const Ruler = {
       $('rulerSlider').value = this.ppi;
       this.draw();
     });
-    $('rulerSlider').addEventListener('input', () => { this.ppi = parseFloat($('rulerSlider').value); this.draw(); this.place(); });
+    const setPpi = (v) => { this.ppi = clamp(v, 100, 220); $('rulerSlider').value = this.ppi; this.draw(); this.place(); };
+    $('rulerSlider').addEventListener('input', () => setPpi(parseFloat($('rulerSlider').value)));
+    $('ppiMinus').addEventListener('click', () => setPpi(this.ppi - 0.1));
+    $('ppiPlus').addEventListener('click', () => setPpi(this.ppi + 0.1));
     $('calibDone').addEventListener('click', () => {
       store.set('ppi', this.ppi); this.calibrated = true;
       this.calibrating = false; $('rulerCalib').hidden = true; this.draw(); this.place();
       toast('Règle calibrée');
     });
     $('rulerSave').addEventListener('click', () => {
-      const text = fmtLen(Math.abs(this.b - this.a) / this.pxmm);
+      const text = fmtLen(Math.abs(this.b - this.a) / this.pxmm, 'mm', 0.5);
       askSave('Règle', text, (note) => History.add('Règle', text, note));
     });
   },
@@ -979,7 +1623,7 @@ const Ruler = {
     $('curA').style.top = this.a + 'px';
     $('curB').style.top = this.b + 'px';
     const mm = Math.abs(this.b - this.a) / this.pxmm;
-    $('rulerVal').textContent = unit === 'cm' || unit === 'm' ? num(mm, 1) + ' mm' : fmtLen(mm);
+    $('rulerVal').textContent = unit === 'in' || unit === 'ft' ? fmtLen(mm, 'in', 0.1) : num(mm, 1) + ' mm';
     $('rulerPpi').textContent = (this.calibrated ? 'calibrée' : 'modèle détecté') + ` · ${num(this.ppi, 1)} pt/po`;
   },
 
@@ -993,19 +1637,17 @@ const Ruler = {
     ctx.lineWidth = 1;
     ctx.font = '600 13px ui-monospace, Menlo, monospace';
     ctx.textBaseline = 'middle';
-    // Millimètres, bord gauche
     const pm = this.pxmm;
     for (let mm = 0; mm * pm <= this.h; mm++) {
-      const y = Math.round(mm * pm) + 0.5;
+      const y = Math.round(mm * pm * dpr) / dpr + 0.5 / dpr;
       const len = mm % 10 === 0 ? 26 : mm % 5 === 0 ? 17 : 10;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(len, y); ctx.stroke();
       if (mm % 10 === 0 && mm > 0) ctx.fillText(String(mm / 10), 30, y);
     }
-    // Pouces, bord droit
     const pi = this.ppi;
     ctx.textAlign = 'right';
     for (let s = 0; s * pi / 16 <= this.h; s++) {
-      const y = Math.round(s * pi / 16) + 0.5;
+      const y = Math.round(s * pi / 16 * dpr) / dpr + 0.5 / dpr;
       const len = s % 16 === 0 ? 26 : s % 8 === 0 ? 20 : s % 4 === 0 ? 15 : s % 2 === 0 ? 10 : 6;
       ctx.beginPath(); ctx.moveTo(this.w, y); ctx.lineTo(this.w - len, y); ctx.stroke();
       if (s % 16 === 0 && s > 0) ctx.fillText(String(s / 16), this.w - 30, y);
@@ -1015,38 +1657,328 @@ const Ruler = {
     ctx.font = '11px -apple-system, sans-serif';
     ctx.fillText('cm', 30, 10);
     ctx.textAlign = 'right'; ctx.fillText('in', this.w - 30, 10);
-    // Gabarit carte bancaire
     if (this.calibrating) {
       const y0 = 20, y1 = y0 + 85.6 * pm;
       ctx.fillStyle = 'rgba(210,48,31,.12)';
       ctx.fillRect(60, y0, this.w - 120, y1 - y0);
-      ctx.strokeStyle = '#d2301f'; ctx.lineWidth = 2;
+      ctx.strokeStyle = '#d2301f'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(40, y0); ctx.lineTo(this.w - 40, y0); ctx.moveTo(40, y1); ctx.lineTo(this.w - 40, y1); ctx.stroke();
     }
   },
 };
 
+/* ================================================================
+   TERRAIN — très grandes surfaces : carte satellite et/ou GPS
+   ================================================================ */
+
+const EARTH_R = 6378137;
+
+// Aire géodésique (excès sphérique, m²) et longueurs (haversine, m)
+function geoArea(pts) {
+  if (pts.length < 3) return 0;
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+    a += (p2[1] - p1[1]) / DEG * (2 + Math.sin(p1[0] / DEG) + Math.sin(p2[0] / DEG));
+  }
+  return Math.abs(a * EARTH_R * EARTH_R / 2);
+}
+function geoDist(p1, p2) {
+  const dLat = (p2[0] - p1[0]) / DEG, dLon = (p2[1] - p1[1]) / DEG;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(p1[0] / DEG) * Math.cos(p2[0] / DEG) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function geoLen(pts, closed) {
+  let s = 0;
+  for (let i = 0; i < pts.length - (closed ? 0 : 1); i++) s += geoDist(pts[i], pts[(i + 1) % pts.length]);
+  return s;
+}
+
+const Terrain = {
+  map: null,
+  pts: [],            // [lat, lon] avec .sig (m) et .src
+  markers: [],
+  shape: null,
+  mode: 'area',
+  base: 'sat',
+  watchId: null,
+  fix: null,
+  auto: false,
+  collecting: null,
+
+  init() {
+    document.querySelectorAll('[data-tmode]').forEach((b) => b.addEventListener('click', () => {
+      this.mode = b.dataset.tmode;
+      document.querySelectorAll('[data-tmode]').forEach((x) => x.classList.toggle('active', x === b));
+      this.redraw();
+    }));
+    $('gpsPoint').addEventListener('click', () => this.gpsPoint());
+    $('gpsAuto').addEventListener('click', () => this.toggleAuto());
+    $('tUndo').addEventListener('click', () => { this.pts.pop(); this.redraw(); });
+    let clr = false;
+    $('tClear').addEventListener('click', () => {
+      if (!clr && this.pts.length) { clr = true; $('tClear').textContent = 'Confirmer ?'; setTimeout(() => { clr = false; $('tClear').textContent = 'Effacer'; }, 2500); return; }
+      clr = false; $('tClear').textContent = 'Effacer';
+      this.pts = []; this.redraw();
+    });
+    $('tLayer').addEventListener('click', () => this.toggleLayer());
+    $('tCopy').addEventListener('click', () => {
+      if (!this.pts.length) { toast('Aucun point'); return; }
+      copyText(this.pts.map((p, i) => `${i + 1}\t${p[0].toFixed(7)}\t${p[1].toFixed(7)}`).join('\n'));
+    });
+    $('tSave').addEventListener('click', () => {
+      const r = this.result();
+      if (!r) { toast(this.mode === 'area' ? 'Placez au moins 3 points' : 'Placez au moins 2 points'); return; }
+      const text = this.mode === 'area'
+        ? `Surface : ${r.areaText} ${r.areaTol}\nPérimètre : ${fmtLen(r.per, 'm', r.perTolMm)} ${fmtTol(r.perTolMm, 'm')}\n${this.pts.length} sommets`
+        : `Distance : ${fmtLen(r.len, 'm', r.lenTolMm)} ${fmtTol(r.lenTolMm, 'm')}\n${this.pts.length} points`;
+      askSave('Terrain', text, (note) => History.add('Terrain', text, note));
+    });
+  },
+
+  async open() {
+    if (this.map) { this.map.invalidateSize(); return; }
+    try {
+      await this.loadLeaflet();
+    } catch {
+      $('mapMsg').textContent = 'Carte indisponible hors connexion. Le mode GPS fonctionne quand même : ajoutez un point à chaque coin.';
+      return;
+    }
+    $('mapMsg').hidden = true;
+    const view = store.get('mapView', null);
+    this.map = L.map('map', { zoomControl: false, maxZoom: 21 })
+      .setView(view ? view.c : [46.6, 2.4], view ? view.z : 5);
+    this.layers = {
+      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 21, maxNativeZoom: 19, attribution: 'Imagerie © Esri, Maxar, Earthstar Geographics' }),
+      plan: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 21, maxNativeZoom: 19, attribution: '© contributeurs OpenStreetMap' }),
+    };
+    this.layers[this.base].addTo(this.map);
+    this.map.on('click', (e) => this.addPoint([e.latlng.lat, e.latlng.lng], this.tapSigma(e.latlng.lat), 'carte'));
+    this.map.on('moveend', () => store.set('mapView', { c: [this.map.getCenter().lat, this.map.getCenter().lng], z: this.map.getZoom() }));
+    this.startWatch(!view);
+    this.redraw();
+  },
+
+  // Leaflet 1.9.4 (BSD-2), unpkg puis jsDelivr en secours ; mis en cache par le service worker
+  loadLeaflet() {
+    if (window.L) return Promise.resolve();
+    const hosts = ['https://unpkg.com/leaflet@1.9.4/dist/', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/'];
+    const tryHost = (i) => new Promise((res, rej) => {
+      if (i >= hosts.length) { rej(new Error('leaflet')); return; }
+      const css = document.createElement('link');
+      css.rel = 'stylesheet'; css.href = hosts[i] + 'leaflet.css';
+      document.head.append(css);
+      const s = document.createElement('script');
+      s.src = hosts[i] + 'leaflet.js';
+      s.onload = res;
+      s.onerror = () => { css.remove(); s.remove(); tryHost(i + 1).then(res, rej); };
+      document.head.append(s);
+    });
+    return tryHost(0);
+  },
+
+  toggleLayer() {
+    if (!this.map) return;
+    this.map.removeLayer(this.layers[this.base]);
+    this.base = this.base === 'sat' ? 'plan' : 'sat';
+    this.layers[this.base].addTo(this.map);
+    $('tLayer').textContent = this.base === 'sat' ? 'Vue plan' : 'Vue satellite';
+  },
+
+  // Incertitude d'un point posé au doigt : ~1,5 pixel de carte au zoom courant
+  tapSigma(lat) {
+    const mpp = 156543.03392 * Math.cos(lat / DEG) / Math.pow(2, this.map.getZoom());
+    return Math.max(0.15, mpp * 1.5);
+  },
+
+  startWatch(center) {
+    if (!navigator.geolocation || this.watchId != null) return;
+    let centered = !center;
+    this.watchId = navigator.geolocation.watchPosition((pos) => {
+      const c = pos.coords;
+      this.fix = { lat: c.latitude, lon: c.longitude, acc: c.accuracy, t: Date.now() };
+      $('gpsChip').hidden = false;
+      $('gpsChip').textContent = `GPS ± ${num(c.accuracy, c.accuracy < 10 ? 1 : 0)} m`;
+      $('gpsChip').classList.toggle('ok', c.accuracy <= 5);
+      if (this.map) {
+        const ll = [c.latitude, c.longitude];
+        if (!this.me) {
+          this.me = L.circleMarker(ll, { radius: 7, color: '#fff', weight: 2, fillColor: '#2f8cff', fillOpacity: 1 }).addTo(this.map);
+          this.meAcc = L.circle(ll, { radius: c.accuracy, color: '#2f8cff', weight: 1, fillOpacity: 0.12 }).addTo(this.map);
+        } else { this.me.setLatLng(ll); this.meAcc.setLatLng(ll).setRadius(c.accuracy); }
+        if (!centered) { this.map.setView(ll, 18); centered = true; }
+      }
+      if (this.collecting) this.collecting.push(this.fix);
+      if (this.auto) this.autoStep();
+    }, (err) => {
+      $('gpsChip').hidden = false;
+      $('gpsChip').textContent = err.code === 1 ? 'GPS refusé' : 'GPS indisponible';
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+  },
+
+  // Point GPS moyenné pendant 8 s, pondéré par la précision de chaque relevé
+  gpsPoint() {
+    if (!navigator.geolocation) { toast('GPS indisponible'); return; }
+    this.startWatch(false);
+    if (this.collecting) return;
+    this.collecting = [];
+    const btn = $('gpsPoint');
+    let left = 8;
+    btn.textContent = `Immobile… ${left} s`; btn.classList.add('on');
+    const tick = setInterval(() => {
+      left--;
+      btn.textContent = `Immobile… ${left} s`;
+      if (left > 0) return;
+      clearInterval(tick);
+      btn.textContent = 'Point GPS ici'; btn.classList.remove('on');
+      const fixes = this.collecting.filter((f) => f.acc < 50);
+      this.collecting = null;
+      if (!fixes.length) { toast('Signal GPS trop faible : allez à découvert'); return; }
+      let sw = 0, la = 0, lo = 0;
+      for (const f of fixes) { const w = 1 / (f.acc * f.acc); sw += w; la += f.lat * w; lo += f.lon * w; }
+      const bestAcc = Math.min(...fixes.map((f) => f.acc));
+      // Les erreurs GPS sont corrélées dans le temps : la moyenne améliore peu, on reste prudent
+      const sig = Math.max(bestAcc / 2, Math.sqrt(1 / sw) / Math.sqrt(Math.min(fixes.length, 3)));
+      this.addPoint([la / sw, lo / sw], sig, 'gps');
+      toast(`Point GPS ajouté (± ${num(sig * 2, 1)} m, ${fixes.length} relevés)`);
+    }, 1000);
+  },
+
+  toggleAuto() {
+    this.auto = !this.auto;
+    $('gpsAuto').classList.toggle('on', this.auto);
+    $('gpsAuto').textContent = this.auto ? 'Arrêter la marche' : 'Marche auto';
+    if (this.auto) { this.startWatch(false); toast('Faites le tour : un point est ajouté tous les 3 m'); }
+  },
+
+  autoStep() {
+    const f = this.fix;
+    if (!f || f.acc > 15) return;
+    const last = this.pts[this.pts.length - 1];
+    if (!last || geoDist(last, [f.lat, f.lon]) >= Math.max(3, f.acc)) this.addPoint([f.lat, f.lon], f.acc / 2, 'gps');
+  },
+
+  addPoint(ll, sig, src) {
+    const p = [ll[0], ll[1]]; p.sig = sig; p.src = src;
+    this.pts.push(p);
+    this.redraw();
+  },
+
+  redraw() {
+    if (this.map) {
+      this.markers.forEach((m) => m.remove());
+      this.markers = [];
+      if (this.shape) this.shape.remove();
+      const ll = this.pts.map((p) => [p[0], p[1]]);
+      this.shape = this.mode === 'area' && ll.length >= 3
+        ? L.polygon(ll, { color: '#f5b82e', weight: 3, fillOpacity: 0.2 })
+        : L.polyline(ll, { color: '#f5b82e', weight: 3 });
+      this.shape.addTo(this.map);
+      this.pts.forEach((p, i) => {
+        const m = L.marker([p[0], p[1]], {
+          draggable: true,
+          icon: L.divIcon({ className: 'vtx' + (p.src === 'gps' ? ' gps' : ''), iconSize: [22, 22] }),
+        }).addTo(this.map);
+        m.on('drag', (e) => {
+          const q = [e.latlng.lat, e.latlng.lng]; q.sig = this.tapSigma(q[0]); q.src = 'carte';
+          this.pts[i] = q;
+          this.shape.setLatLngs(this.pts.map((x) => [x[0], x[1]]));
+          this.render();
+        });
+        m.on('dragend', () => this.redraw());
+        this.markers.push(m);
+      });
+    }
+    this.render();
+  },
+
+  // Monte-Carlo sur la position de chaque sommet (m → degrés)
+  result() {
+    const P = this.pts, closed = this.mode === 'area';
+    if (P.length < (closed ? 3 : 2)) return null;
+    const g = gaussFrom(rng(5)), A = [], Ls = [];
+    for (let n = 0; n < 300; n++) {
+      const Q = P.map((p) => {
+        const s = p.sig || 1;
+        return [p[0] + g() * s / 111320, p[1] + g() * s / (111320 * Math.cos(p[0] / DEG))];
+      });
+      if (closed) A.push(geoArea(Q));
+      Ls.push(geoLen(Q, closed));
+    }
+    const lenTol = 2 * meanStd(Ls)[1];
+    if (!closed) { const len = geoLen(P, false) * 1000; return { len, lenTolMm: lenTol * 1000 }; }
+    const area = geoArea(P), aTol = 2 * meanStd(A)[1];
+    return {
+      area, areaText: fmtAreaBig(area), areaTol: '± ' + fmtAreaBig(aTol),
+      per: geoLen(P, true) * 1000, perTolMm: lenTol * 1000,
+    };
+  },
+
+  render() {
+    const r = this.result();
+    const area = this.mode === 'area';
+    $('tLabel1').textContent = area ? 'Surface' : 'Distance';
+    $('tLabel2').textContent = area ? 'Périmètre' : 'Points';
+    if (!r) {
+      $('tVal1').textContent = '—'; $('tTol1').textContent = '';
+      $('tVal2').textContent = area ? '—' : String(this.pts.length); $('tTol2').textContent = '';
+      $('tExtra').textContent = '';
+      return;
+    }
+    if (area) {
+      $('tVal1').textContent = r.areaText; $('tTol1').textContent = r.areaTol;
+      $('tVal2').textContent = fmtLen(r.per, 'm', r.perTolMm); $('tTol2').textContent = fmtTol(r.perTolMm, 'm');
+      const m2 = r.area;
+      setLastArea(m2, 'Terrain');
+      $('tExtra').textContent = `${num(m2, 0)} m² · ${num(m2 / 100, 2)} ares · ${num(m2 / 10000, 4)} ha · ${num(m2 / 4046.86, 3)} acres`;
+    } else {
+      $('tVal1').textContent = fmtLen(r.len, 'm', r.lenTolMm); $('tTol1').textContent = fmtTol(r.lenTolMm, 'm');
+      $('tVal2').textContent = String(this.pts.length); $('tTol2').textContent = '';
+      $('tExtra').textContent = '';
+    }
+  },
+};
+
+function fmtAreaBig(m2) {
+  if (unit === 'in' || unit === 'ft') return m2 >= 4046.86 ? num(m2 / 4046.86, 3) + ' acres' : num(m2 * 10.7639, 0) + ' ft²';
+  if (m2 >= 10000) return num(m2 / 10000, 3) + ' ha';
+  return num(m2, m2 < 10 ? 2 : m2 < 1000 ? 1 : 0) + ' m²';
+}
+
 /* ---------------- Navigation ---------------- */
 
-const TITLES = { photo: 'Photo', height: 'Hauteur', level: 'Niveau', ruler: 'Règle', history: 'Mesures' };
+const TITLES = { photo: 'Photo', height: 'Visée', terrain: 'Terrain', plan: 'Plan', level: 'Niveau', ruler: 'Règle', history: 'Mesures' };
 
 function show(name) {
+  if (name === 'tools') name = store.get('toolScreen', 'level');
+  if (!TITLES[name]) name = 'photo';
+  const isTool = name === 'level' || name === 'ruler';
+  if (isTool) store.set('toolScreen', name);
   document.querySelectorAll('.screen').forEach((s) => { s.hidden = s.id !== 's-' + name; });
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === name));
-  $('screenTitle').textContent = TITLES[name];
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === (isTool ? 'tools' : name)));
+  $('toolSeg').hidden = !isTool;
+  document.querySelectorAll('[data-tool-screen]').forEach((b) => b.classList.toggle('active', b.dataset.toolScreen === name));
+  $('screenTitle').textContent = isTool ? '' : TITLES[name];
   if (name !== 'height') Height.stop();
   if (name === 'ruler') requestAnimationFrame(() => Ruler.resize());
   if (name === 'photo') requestAnimationFrame(() => Photo.resize());
+  if (name === 'terrain') requestAnimationFrame(() => Terrain.open());
   store.set('screen', name);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => show(t.dataset.screen)));
+document.querySelectorAll('[data-tool-screen]').forEach((b) => b.addEventListener('click', () => show(b.dataset.toolScreen)));
 
 Photo.init();
 Height.init();
 Level.init();
 Ruler.init();
+Terrain.init();
+Plan.init();
 History.render();
 Height.render();
+Terrain.render();
 show(store.get('screen', 'photo') === 'height' ? 'photo' : store.get('screen', 'photo'));
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {

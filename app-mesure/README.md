@@ -1,31 +1,38 @@
 # Toise — l'app de mesure pour iPhone
 
-Application web installable (PWA), 100 % hors ligne, sans compte ni publicité.
+Application web installable (PWA), sans compte ni publicité. Tout fonctionne hors ligne, sauf le fond de carte de l'outil Terrain.
 
-## Ce qu'elle fait de plus que « Mesures » d'Apple
+## Les outils
 
-| Outil | Toise | Mesures (iPhone) |
+| Outil | Ce qu'il mesure | Précision |
 |---|---|---|
-| **Photo** | Mesure sur n'importe quelle photo (même ancienne) grâce à un objet de référence. **Correction de perspective** par homographie à partir des 4 coins (carte bancaire, A4, billet, carreau ou taille personnalisée). Longueurs, **surfaces + périmètre**, **angles réels**. Loupe de précision, zoom par pincement, précision estimée affichée. | Uniquement en direct, en AR |
-| **Hauteur** | Hauteur d'un arbre, d'un mur, d'un bâtiment par visée caméra + trigonométrie. Distance calculée automatiquement, ou saisie pour plus de précision. | Hauteur des personnes seulement |
-| **Niveau** | Bulle 2D au 0,1°, mode chant, **pente en % et mm/m**, zéro relatif, figer la valeur, signal sonore, **calibrage par retournement à 180°** (supprime le défaut du capteur). | Pas de calibrage, pas de pente |
-| **Règle** | Règle cm / pouces à l'échelle réelle (modèle d'iPhone détecté) avec deux curseurs ; calibrage avec une carte bancaire. | Absent |
-| **Mesures** | Historique avec photo annotée, note et date ; copier ou partager. Unités : cm, mm, m, in, ft. | Limité |
+| **Photo** | Longueurs, surfaces + périmètre, angles réels sur n'importe quelle photo, grâce à un objet de référence : carte bancaire, A4, A3, billet, carreau, **praticable de scène 2 × 1 m**, **palette**, rectangle ou longueur connue (mm, cm ou m). Correction de perspective par homographie. | Aimant sous-pixel : les bords de la référence sont ajustés par droites (insensible aux coins arrondis) et chaque point est recalé sur le bord ou le coin le plus net. Glissement démultiplié ×0,4, loupe en pixels réels, photo en pleine résolution. **Marge ± à 95 %** calculée pour chaque mesure. |
+| **Visée › Hauteur** | Hauteur d'un mur, d'une voûte d'église, d'une structure, d'un arbre : on vise le pied puis le sommet. | Capture automatique quand le téléphone est immobile, moyenne de ~30 relevés, marge ± affichée. Saisir la distance au sol la rend encore plus précise. |
+| **Visée › Distance** | Distance entre deux points au sol sans s'y rendre (largeur d'une scène, d'une nef, entre deux poteaux). | Inclinaison + cap gyroscopique, loi des cosinus, marge ± affichée. |
+| **Visée › Surface au sol** | Surface d'une salle depuis un seul point : on vise chaque coin au ras du sol. | Idéal jusqu'à ~15 m de portée avec le téléphone à 1,5 m. |
+| **Terrain** | **Très grandes surfaces** : parcelle, parvis, champ de festival, toiture, chapiteau. On pose les coins sur une carte satellite (déplaçables), ou on ajoute sa position GPS à chaque coin, ou « Marche auto » en faisant le tour. Résultat en m², ares, hectares, acres + périmètre. | Aire géodésique (courbure de la Terre). Points GPS moyennés 8 s et pondérés. Marge ± affichée. Export des coordonnées. |
+| **Plan** | Surface d'un lieu entier par formes : nef, chœur, **abside** (demi-cercle), transepts (× 2), scène, piliers retirés… **Volume** (m³) et **capacité estimée** : debout, cocktail, bancs, théâtre, banquet, conférence. | Calcul exact à partir des cotes ; ajoute en un geste la dernière surface mesurée par les autres outils. |
+| **Outils › Niveau** | Bulle 2D, chant, pente en % et mm/m, zéro relatif, figer, son. | Moyenne glissante, 2 décimales quand le téléphone est stable, calibrage par retournement à 180°. |
+| **Outils › Règle** | Règle cm / pouces à l'échelle réelle, deux curseurs. | Modèle d'iPhone détecté, calibrage avec une carte bancaire au 0,1 pt près, curseurs démultipliés. |
+| **Mesures** | Historique avec photo annotée, marge d'erreur, note et date ; copier ou partager. | |
+
+Les estimations de capacité sont indicatives : la capacité autorisée d'un établissement recevant du public est fixée par la réglementation (issues de secours, commission de sécurité).
 
 ## Installer sur l'iPhone
 
-L'app doit être servie en **HTTPS** (requis pour la caméra et les capteurs).
+L'app doit être servie en **HTTPS** (requis pour la caméra, les capteurs et le GPS).
 
 1. Héberger le dossier `app-mesure/` (Vercel, Netlify, GitHub Pages… aucun build nécessaire).
-2. Ouvrir l'adresse dans **Safari** › bouton Partager › **Sur l'écran d'accueil**.
-3. Au premier usage du Niveau ou de la Hauteur, autoriser « Mouvement et orientation ».
+2. Ouvrir l'adresse dans **Safari** › Partager › **Sur l'écran d'accueil**.
+3. Au premier usage de la Visée ou du Niveau, autoriser « Mouvement et orientation » ; pour le Terrain, autoriser la localisation.
 
 ## Conseils de précision
 
-- Photo : la référence doit être **dans le même plan** que l'objet mesuré (posée sur le mur, le sol, la table). Plus la référence est grande (A4 plutôt que carte), plus la mesure est précise. Zoomez avant de placer les points.
-- Hauteur : tenez le téléphone verticalement à la hauteur indiquée, sur un sol plat ; entrez la distance si vous la connaissez.
-- Niveau : calibrez une fois sur une surface stable (posez, « Calibrer », tournez de 180°, « Étape 2 »).
+- **Photo** : la référence doit être dans le même plan que l'objet (posée sur le mur, le sol, la scène). Plus elle est grande et proche de l'objet, plus la marge est faible : un praticable de 2 × 1 m pour mesurer une scène, une feuille A4 pour une porte. Photographiez de face, au zoom ×2 en reculant.
+- **Visée** : réglez la hauteur de l'objectif (mesurez-la une fois), restez au même endroit pendant toute la mesure, sol plat. Pour les très grandes salles, rapprochez-vous ou tenez le téléphone plus haut.
+- **Terrain** : zoomez au maximum avant de poser les coins ; en GPS, restez immobile à chaque coin et à découvert.
+- **Niveau** : calibrez une fois sur une surface stable.
 
 ## Fichiers
 
-`index.html`, `styles.css`, `app.js` (aucune dépendance), `manifest.webmanifest`, `sw.js` (hors ligne), `icons/`.
+`index.html`, `styles.css`, `app.js` (aucune dépendance à installer), `manifest.webmanifest`, `sw.js` (hors ligne), `icons/`. La carte utilise Leaflet 1.9.4 (chargée à la demande), l'imagerie Esri et OpenStreetMap.
