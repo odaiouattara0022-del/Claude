@@ -1,12 +1,12 @@
-const CACHE = 'toise-v3';
-const TILES = 'toise-tiles-v1';
+const CACHE = 'toise-v4';
+const TILES = 'toise-tiles-v2';
 const MAX_TILES = 3000;
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 const TILE_HOSTS = ['server.arcgisonline.com', 'tile.openstreetmap.org'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -26,26 +26,39 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  // Tuiles de carte : cache d'abord (zones déjà vues disponibles hors connexion)
+  // Tuiles de carte : cache d'abord ; seules les vraies images (CORS, statut 200) sont gardées
   if (TILE_HOSTS.includes(url.hostname)) {
     e.respondWith(caches.open(TILES).then(async (c) => {
-      const hit = await c.match(e.request);
+      const hit = await c.match(url.href);
       if (hit) return hit;
-      const res = await fetch(e.request);
-      if (res.ok || res.type === 'opaque') {
-        c.put(e.request, res.clone());
-        if (++puts % 100 === 0) trimTiles();
+      let res;
+      try { res = await fetch(url.href, { mode: 'cors', credentials: 'omit' }); } catch { return fetch(e.request); }
+      const type = res.headers.get('content-type') || '';
+      if (res.ok && type.startsWith('image/')) {
+        try { e.waitUntil(c.put(url.href, res.clone()).then(() => { if (++puts % 100 === 0) return trimTiles(); }).catch(() => {})); } catch {}
       }
       return res;
     }));
     return;
   }
 
-  // L'app : réseau d'abord (mises à jour), cache en secours (hors ligne)
+  // L'app : réseau d'abord (mises à jour) avec 4 s maximum, puis copie en cache.
+  // Seules les réponses 200 de ce site sont gardées, sous une clé sans paramètres (?fbclid, ?utm…).
   if (url.origin !== self.location.origin) return;
-  e.respondWith(
-    fetch(e.request)
-      .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })
-      .catch(() => caches.match(e.request, { ignoreSearch: true }))
-  );
+  const key = url.origin + url.pathname;
+  const net = fetch(e.request);
+  // Mise en cache déclarée tout de suite (et clonée avant que la page ne lise la réponse)
+  e.waitUntil(net.then((res) => {
+    if (!res.ok || res.type !== 'basic') return;
+    const copy = res.clone();
+    return caches.open(CACHE).then((c) => c.put(key, copy));
+  }).catch(() => {}));
+  const cached = () => caches.match(key).then((h) => h || (e.request.mode === 'navigate' ? caches.match(new URL('./', self.location).href) : undefined));
+  e.respondWith((async () => {
+    const quick = await Promise.race([net.catch(() => null), new Promise((r) => setTimeout(() => r('lent'), 4000))]);
+    if (quick && quick !== 'lent' && quick.ok) return quick;
+    const h = await cached();
+    if (h) return h;
+    return quick && quick !== 'lent' ? quick : net.catch(() => Response.error());
+  })());
 });

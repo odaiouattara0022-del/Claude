@@ -69,6 +69,8 @@
               <option value="custom">Rectangle personnalisé…</option>
               <option value="line">Longueur connue (2 points)</option>
             </select>
+            <button class="btn small" id="swapRefBtn" hidden>⇄ Inverser longueur / largeur</button>
+            <button class="btn small" id="lineLenBtn" hidden>Saisir la longueur</button>
             <div class="custom" id="customRef" hidden>
               <input type="text" id="customW" inputmode="decimal" placeholder="L mm" aria-label="Largeur en mm">
               <span>×</span>
@@ -117,6 +119,10 @@
         <div class="field-row" id="knownRow">
           <label for="knownD">Distance connue <small>(facultatif)</small></label>
           <div class="num-input"><input type="text" id="knownD" inputmode="decimal" placeholder="auto" autocomplete="off"><span>m</span></div>
+        </div>
+        <div class="field-row" id="armRow" hidden>
+          <label for="armOff">Écart pivot–téléphone <small>(vous tournez sur vous-même ; 0 sur trépied)</small></label>
+          <div class="num-input"><input type="text" id="armOff" inputmode="decimal" value="0,30" autocomplete="off"><span>m</span></div>
         </div>
         <div class="readouts">
           <div><small id="hLabel1">Distance</small><b id="hVal1">—</b><span class="tol" id="hTol1"></span></div>
@@ -273,15 +279,22 @@
 
     <!-- ============ HISTORIQUE ============ -->
     <section class="screen" id="s-history" hidden>
+      <div class="install-note" id="installNote" hidden>
+        <b>Installez Toise pour garder vos mesures.</b> Dans Safari, iOS efface les données d'un site après 7 jours sans visite.
+        Touchez Partager › <b>Sur l'écran d'accueil</b>. Les mesures faites dans Safari ne passent pas dans l'app installée :
+        exportez-les puis importez-les.
+      </div>
       <div class="hist-head">
         <button class="btn small" id="copyAll">Copier tout</button>
         <button class="btn small" id="shareAll">Partager</button>
+        <button class="btn small" id="exportAll">Exporter</button>
+        <label class="btn small file-btn inline"><input type="file" id="importFile" accept="application/json,.json">Importer</label>
         <button class="btn small danger" id="clearAll">Tout effacer</button>
       </div>
       <ul class="hist" id="histList"></ul>
       <div class="hist-empty" id="histEmpty">
         <p>Aucune mesure enregistrée.</p>
-        <p class="note">Les mesures restent sur cet appareil, avec photo annotée, note, marge d'erreur et date.</p>
+        <p class="note" id="histEmptyNote">Les mesures restent sur cet appareil, avec photo annotée, note, marge d'erreur et date. Exportez-les pour les sauvegarder ou les passer sur un autre appareil.</p>
       </div>
     </section>
   </main>
@@ -296,7 +309,7 @@
   </nav>
 </div>
 
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-card">

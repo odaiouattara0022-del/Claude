@@ -101,6 +101,36 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await ctx.close();
   }
 
+  console.log('\n2 bis. Photo : praticable au sol en vue rasante, sauvegarde, saisies');
+  {
+    const D = require('./deck.json');
+    const { ctx, p } = await newPage(b, 'iPhone 13');
+    await p.setInputFiles('#photoInputLib', 'deck.jpg'); await p.waitForTimeout(1200);
+    await p.selectOption('#refSelect', 'deck');
+    const d = await p.evaluate((D) => {
+      Photo.view.s = 1;
+      Photo.ref = D.corners.map(([x, y], i) => { const q = [x + [2, -2, 1.5, -1][i], y + [1, 2, -2, -1.5][i]]; q.sig = Photo.manualSig(); return q; });
+      Photo.refineRef(); Photo.computeRef();
+      const P = D.dots.map(Photo.toPlane);
+      Photo.shapes = [{ type: 'line', done: true, pts: D.dots.map(([x, y]) => { const q = [x, y]; q.sig = 1; return q; }) }];
+      Photo.refresh(); Photo.persist();
+      return Math.hypot(P[0][0] - P[1][0], P[0][1] - P[1][1]);
+    }, D);
+    ok(near(d, 1500, 15), 'praticable 2 × 1 m vu en biais : longueur et largeur bien attribuées', d.toFixed(1) + ' mm (attendu 1500 ; l\'ancienne méthode donnait 2999)');
+    ok(await p.isVisible('#swapRefBtn'), 'bouton « Inverser longueur / largeur » proposé');
+    await p.waitForTimeout(700);
+    await p.reload(); await p.waitForTimeout(1500);
+    ok(await p.evaluate(() => !!Photo.img && Photo.ref.length === 4 && Photo.shapes.length === 1 && !!Photo.toPlane), 'photo, référence et mesures restaurées après rechargement');
+    const parsed = await p.evaluate(() => ['2m50', '1 250 mm', '36 in', '5\'11"', '2,5 m', '92 cm', 'abc'].map((t) => parseLength(t, 'cm')));
+    ok(JSON.stringify(parsed.map((v) => (isNaN(v) ? null : Math.round(v * 10) / 10))) === JSON.stringify([2500, 1250, 914.4, 1803.4, 2500, 920, null]), 'longueurs saisies comprises (2m50, 1 250 mm, 36 in, 5\'11", …)', JSON.stringify(parsed));
+    ok(await p.evaluate(() => fmtLen(5 * 304.8 + 11.999 * 25.4, 'ft', 1)) === '6′ 0,00″', 'pieds-pouces arrondis correctement', await p.evaluate(() => fmtLen(5 * 304.8 + 11.999 * 25.4, 'ft', 1)));
+    // Nouvelle photo : confirmation si des mesures ne sont pas enregistrées
+    await p.click('#newPhotoBtn');
+    ok(await p.textContent('#newPhotoBtn') === 'Confirmer ?' && await p.isVisible('#photoWork'), '« Nouvelle photo » demande confirmation');
+    ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
   console.log('\n3. Visée');
   {
     const { ctx, p } = await newPage(b, 'iPhone 13');
@@ -122,7 +152,8 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await orient(p, 0, 60, 0, 40);
     ok(await p.textContent('#markBtn') === 'Viser le sommet', 'capture dès que c\'est stable');
     // Surface au sol 10×10 m, coins visés dans le désordre
-    await p.click('[data-hmode=floor]'); await p.click('#heightReset');
+    await p.click('[data-hmode=floor]'); await p.evaluate(() => { Height.shots = []; Height.changed(); });
+    await p.fill('#armOff', '0');
     const el = -Math.atan(1.5 / Math.hypot(5, 5)) * 180 / Math.PI;
     for (const hd of [45, 225, 135, 315]) { await orient(p, (360 - hd) % 360, 90 + el, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + el, 0, 40); }
     const area = parseNum(await p.textContent('#hVal1'));
@@ -131,8 +162,18 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.screenshot({ path: 'out/r-floor.png' });
     await p.click('#shotUndo');
     ok(await p.evaluate(() => Height.shots.length === 3), 'annuler le dernier point visé');
+    // On tourne sur soi-même, téléphone à 0,30 m devant soi : l'objectif est plus près des coins que le pivot
+    await p.evaluate(() => { Height.shots = []; Height.changed(); });
+    await p.fill('#armOff', '0,30');
+    const el2 = -Math.atan(1.5 / (Math.hypot(5, 5) - 0.3)) * 180 / Math.PI;
+    for (const hd of [45, 135, 225, 315]) { await orient(p, (360 - hd) % 360, 90 + el2, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + el2, 0, 40); }
+    const area2 = parseNum(await p.textContent('#hVal1'));
+    ok(near(area2, 100, 0.5), 'surface au sol juste en tenant compte de l\'écart pivot–téléphone', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
+    await p.reload(); await p.click('[data-screen=height]');
+    ok(await p.evaluate(() => Height.shots.length === 4 && Height.mode === 'floor'), 'points visés conservés après rechargement');
     // Distance entre 2 points
-    await p.click('[data-hmode=dist]'); await p.click('#heightReset');
+    await p.evaluate(() => Sensors.start());
+    await p.click('[data-hmode=dist]'); await p.evaluate(() => { Height.shots = []; Height.changed(); }); await p.fill('#armOff', '0');
     for (const [hd, r] of [[0, 8], [60, 12]]) { const e = -Math.atan(1.5 / r) * 180 / Math.PI; await orient(p, (360 - hd) % 360, 90 + e, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + e, 0, 40); }
     d = parseNum(await p.textContent('#hVal1'));
     ok(near(d, 10.583, 0.01), 'distance A–B 10,583 m', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
@@ -146,15 +187,25 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.click('[data-screen=tools]'); await p.click('[data-tool-screen=level]');
     await orient(p, 0, 0, 2, 40, 0.001);
     ok(await p.textContent('#levelMain') === '2,00°' && (await p.textContent('#levelStable')).includes('stable'), 'surface : 2,00° stable', await p.textContent('#levelMain') + ' ' + await p.textContent('#levelSub'));
-    // calibrage : biais de +0,4° sur X → lecture 0,4 puis -0,4+... après retournement
-    await orient(p, 0, 0, 0.4, 40, 0.001); await p.click('#calibBtn');
-    await orient(p, 0, 0, 0.4, 40, 0.001); await p.click('#calibBtn');
-    await orient(p, 0, 0, 0.4, 40, 0.001);
-    ok(await p.textContent('#levelMain') === '0,00°', 'après calibrage, le biais est retiré', await p.textContent('#levelMain'));
-    await p.evaluate(() => { Level.calib = { x: 0, y: 0, e: 0 }; });
+    // Calibrage : inclinaison réelle 1°, défaut du capteur 0,4° ; on retourne le téléphone de 180°
+    await orient(p, 0, 0, 1.4, 40, 0.001); await p.click('#calibBtn');
+    await orient(p, 0, 0, -0.6, 40, 0.001); await p.click('#calibBtn');
+    await orient(p, 0, 0, 1.4, 40, 0.001);
+    ok(await p.textContent('#levelMain') === '1,00°', 'calibrage par retournement : le défaut de 0,4° est retiré', await p.textContent('#levelMain'));
+    ok(await p.evaluate(() => Level.calib.edge.e === 0), 'le calibrage de la surface ne touche pas au chant');
+    // Inclinaison exacte en biais : X = 30°, Y = 30° → 39,23° (et non 42,43° = hypot)
+    await p.evaluate(() => { Level.calib.surface = { x: 0, y: 0 }; });
+    await p.evaluate(async () => {
+      const t = Math.tan(30 / 57.29578), uz = 1 / Math.sqrt(1 + 2 * t * t), up = [t * uz, t * uz, uz];
+      for (let i = 0; i < 40; i++) { Level.update(up, up); await new Promise((r) => setTimeout(r, 5)); }
+    });
+    ok(parseNum(await p.textContent('#levelMain')) === 39.23, 'inclinaison combinée exacte (39,23° pour 30° + 30°)', await p.textContent('#levelMain'));
     await orient(p, 0, 80, 0, 40, 0.001);
     ok(!(await p.isHidden('#levelEdge')), 'bascule automatique en mode chant');
+    ok((await p.textContent('#levelStable')).includes('stable'), 'chant : la moyenne se stabilise (« stable »)');
     await p.click('[data-tool-screen=ruler]'); await p.waitForTimeout(300);
+    ok(!(await p.isHidden('#rulerCalib')) && (await p.textContent('#rulerPpi')).includes('non calibrée'), 'règle non calibrée : signalée et calibrage proposé');
+    await p.click('#calibDone');
     const box = await p.locator('#curB').boundingBox();
     const y0 = box.y + box.height / 2, x = box.x + box.width - 25;
     await p.mouse.move(x, y0); await p.mouse.down();
@@ -216,6 +267,10 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.waitForTimeout(10500);
     ok(await p.evaluate(() => Terrain.pts.length === 5 && Terrain.pts[4].src === 'gps'), 'point GPS moyenné ajouté', await p.evaluate(() => JSON.stringify({ n: Terrain.pts.length, last: Terrain.pts[Terrain.pts.length - 1], src: Terrain.pts.map((q) => q.src), toast: document.getElementById('toast').textContent, btn: document.getElementById('gpsPoint').textContent })));
     await p.screenshot({ path: 'out/r-terrain.png' });
+    await p.click('[data-screen=plan]');
+    ok(await p.evaluate(() => Terrain.watchId === null), 'GPS arrêté en quittant l\'onglet Terrain');
+    await p.click('[data-screen=terrain]'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => Terrain.watchId !== null), 'GPS relancé au retour sur Terrain');
     // persistance
     await p.reload(); await p.waitForTimeout(800);
     ok(await p.evaluate(() => Terrain.pts.length === 5 && Terrain.pts[4].src === 'gps'), 'points conservés après redémarrage');
@@ -250,6 +305,14 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.click('#planSave'); await p.click('#sheetOk');
     ok(await p.evaluate(() => History.items[0].kind.startsWith('Plan')), 'plan enregistré dans les mesures');
     await p.screenshot({ path: 'out/r-plan.png' });
+    const json = await p.evaluate(() => exportData());
+    const data = JSON.parse(json);
+    ok(data.app === 'Toise' && Array.isArray(data.keys.history) && data.keys.plan, 'export complet des données');
+    data.keys.history.push({ id: 42, kind: 'Test', value: '<img src=x onerror=alert(1)>', note: 'n', date: '2026-01-01T00:00:00Z', img: 'javascript:alert(1)' });
+    fs.writeFileSync('out/import.json', JSON.stringify(data));
+    await p.click('[data-screen=history]');
+    await p.setInputFiles('#importFile', 'out/import.json'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => { const i = History.items.find((x) => x.id === 42); return i && i.img === null && !document.querySelector('#histList img[src="x"]'); }), 'import : mesures ajoutées, contenu dangereux neutralisé');
     ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
     await ctx.close();
   }
