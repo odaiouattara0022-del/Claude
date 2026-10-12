@@ -8,6 +8,16 @@ const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const DEG = 180 / Math.PI;
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+// Nombre saisi au clavier français (« 1,5 », « 1 250,5 ») ; NaN si vide ou invalide
+const pnum = (v) => { const n = parseFloat(String(v ?? '').replace(/[\s\u202f]/g, '').replace(',', '.')); return isFinite(n) ? n : NaN; };
+
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+  };
+}
 
 const store = {
   get(key, fallback) {
@@ -47,6 +57,7 @@ let unit = store.get('unit', 'cm');
 if (!UNITS.includes(unit)) unit = 'cm';
 
 function num(v, digits) {
+  if (Math.abs(v) < 0.5 * 10 ** -digits) v = 0; // jamais « -0,00 »
   return v.toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
@@ -94,6 +105,13 @@ function fmtArea(mm2, u = unit) {
 
 const fmtDeg = (d, digits = 1) => num(d, digits) + '°';
 
+// Étiquettes de côtés (carte, croquis) : décimales constantes, mètres ou pieds
+function fmtSide(mm) {
+  if (unit === 'in' || unit === 'ft') { const ft = mm / 304.8; return num(ft, ft < 100 ? 1 : 0) + ' ft'; }
+  const m = mm / 1000;
+  return num(m, m < 100 ? 2 : 1) + ' m';
+}
+
 $('unitBtn').textContent = unit;
 $('unitBtn').addEventListener('click', () => {
   unit = UNITS[(UNITS.indexOf(unit) + 1) % UNITS.length];
@@ -129,6 +147,7 @@ function askSave(kind, value, cb, opts = {}) {
   sheetCb = cb;
 }
 $('sheetCancel').addEventListener('click', () => { $('sheet').hidden = true; sheetCb = null; });
+$('sheetNote').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('sheetOk').click(); } });
 $('sheetOk').addEventListener('click', () => {
   $('sheet').hidden = true;
   if (sheetCb) sheetCb($('sheetNote').value.trim());
@@ -156,7 +175,7 @@ const Sensors = {
     }
     window.addEventListener('deviceorientation', (e) => this.onOrient(e));
     this.started = true;
-    setTimeout(() => { if (!this.up) toast('Aucun capteur détecté sur cet appareil.'); }, 1500);
+    setTimeout(() => { if (!this.up && (!$('s-height').hidden || !$('s-level').hidden)) toast('Aucun capteur détecté sur cet appareil.'); }, 1500);
     return true;
   },
 
@@ -553,7 +572,8 @@ const Photo = {
   },
 
   load(file) {
-    const url = URL.createObjectURL(file);
+    if (this.url) URL.revokeObjectURL(this.url);
+    const url = this.url = URL.createObjectURL(file);
     const im = new Image();
     im.onload = () => {
       this.img = im;
@@ -592,7 +612,7 @@ const Photo = {
   refDims() {
     const v = $('refSelect').value;
     if (v === 'custom') {
-      const w = parseFloat($('customW').value), h = parseFloat($('customH').value);
+      const w = pnum($('customW').value), h = pnum($('customH').value);
       return w > 0 && h > 0 ? [w, h, 0.5] : null;
     }
     return REFS[v];
@@ -664,9 +684,13 @@ const Photo = {
     return out;
   },
 
+  // Un point déjà posé n'est attrapé que si on le touche vraiment (20 px, 14 px pour une autre forme
+  // que celle en cours) : on peut ainsi poser un nouveau point tout près, même en vue d'ensemble
   hit(sp) {
-    let best = null, bd = 26;
+    let best = null, bd = 20;
+    const cur = this.current();
     for (const h of this.allPoints()) {
+      if (cur && h.shape && h.shape !== cur && dist(this.toScr(h.arr[h.i]), sp) > 14) continue;
       const d = dist(this.toScr(h.arr[h.i]), sp);
       if (d < bd) { bd = d; best = h; }
     }
@@ -902,7 +926,10 @@ const Photo = {
         const strong = document.createElement('b'); strong.textContent = m.short;
         const t = document.createElement('small'); t.textContent = ' ' + m.tol + (m.extra ? ' · ' + m.extra : '');
         b.append(strong, t);
-        li.append(a, b); ul.append(li);
+        const del = document.createElement('button');
+        del.className = 'row-del'; del.textContent = '×'; del.setAttribute('aria-label', `Supprimer ${m.label.toLowerCase()} ${n}`);
+        del.addEventListener('click', () => { this.shapes.splice(this.shapes.indexOf(s), 1); this.refresh(); });
+        li.append(a, b, del); ul.append(li);
         s.labelText = m.short;
         if (s.type === 'area' && s.done) setLastArea(this.value('area', s.pts.map(this.toPlane)) / 1e6, 'Photo');
       }
@@ -1038,8 +1065,8 @@ const Height = {
   HEAD_BIAS: 0.3,    // dérive résiduelle du cap gyroscopique (°)
 
   init() {
-    $('eyeH').value = store.get('eyeH', 1.5);
-    $('eyeH').addEventListener('input', () => { store.set('eyeH', parseFloat($('eyeH').value) || 1.5); this.render(); });
+    $('eyeH').value = num(store.get('eyeH', 1.5), 2);
+    $('eyeH').addEventListener('input', () => { const v = pnum($('eyeH').value); if (v > 0.2 && v < 50) store.set('eyeH', v); this.render(); });
     $('knownD').addEventListener('input', () => this.render());
     $('camStart').addEventListener('click', () => this.start());
     $('markBtn').addEventListener('click', () => this.mark());
@@ -1059,8 +1086,11 @@ const Height = {
     Sensors.on((_, raw, t, cam) => this.onSample(cam, t));
   },
 
-  eye() { return (parseFloat(String($('eyeH').value).replace(',', '.')) || 1.5) * 1000; },
-  knownDist() { const v = parseFloat(($('knownD').value || '').replace(',', '.')); return v > 0 ? v * 1000 : null; },
+  eye() { const v = pnum($('eyeH').value); return (v > 0.2 && v < 50 ? v : 1.5) * 1000; },
+  knownDist() { const v = pnum($('knownD').value); return v > 0 ? v * 1000 : null; },
+
+  // En surface au sol, les coins sont pris dans l'ordre du tour (cap croissant) quel que soit l'ordre de visée
+  ordered() { return this.mode === 'floor' ? [...this.shots].sort((a, b) => a.a - b.a) : this.shots; },
 
   onSample(cam, t) {
     this.samples.push({ t, e: cam.elev, a: cam.head });
@@ -1101,6 +1131,7 @@ const Height = {
   },
 
   async start() {
+    this.wanted = true;
     const ok = await Sensors.start();
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
@@ -1177,12 +1208,13 @@ const Height = {
       return r;
     }
     if (this.shots.length < 2) return null;
-    const P = this.floorPts(this.shots, h);
+    const shots = this.ordered();
+    const P = this.floorPts(shots, h);
     if (!P) return null;
     const r = this.shotsCalc(P);
     const C = [], A = [], Pe = [];
     for (let i = 0; i < 400; i++) {
-      const Q = this.floorPts(this.shots, h + g() * 20, g);
+      const Q = this.floorPts(shots, h + g() * 20, g);
       if (!Q) continue;
       const s = this.shotsCalc(Q);
       C.push(s.chain); A.push(s.area); Pe.push(s.per);
@@ -1191,9 +1223,54 @@ const Height = {
     return r;
   },
 
+  // Croquis vu de dessus : votre position, les points visés et les distances
+  sketch() {
+    const cv = $('shotSketch');
+    const show = this.mode !== 'height' && this.shots.length > 0;
+    cv.hidden = !show;
+    if (!show) return;
+    const P = this.floorPts(this.ordered(), this.eye());
+    if (!P) return;
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, r.width, r.height);
+    const all = [[0, 0], ...P];
+    const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1000);
+    const k = Math.min(r.width, r.height) * 0.78 / span;
+    const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const S = ([x, y]) => [r.width / 2 + (x - cx) * k, r.height / 2 - (y - cy) * k];
+    const pts = P.map(S), me = S([0, 0]);
+    const closed = this.mode === 'floor' && pts.length >= 3;
+    ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(154,160,173,.6)'; ctx.lineWidth = 1;
+    pts.forEach((p) => { ctx.beginPath(); ctx.moveTo(...me); ctx.lineTo(...p); ctx.stroke(); });
+    ctx.setLineDash([]);
+    ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
+    if (closed) { ctx.closePath(); ctx.fillStyle = 'rgba(245,184,46,.18)'; ctx.fill(); }
+    ctx.strokeStyle = '#f5b82e'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '600 11px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let i = 0; i < pts.length - (closed ? 0 : 1); i++) {
+      const j = (i + 1) % pts.length, a = pts[i], b = pts[j];
+      const t = fmtSide(dist(P[i], P[j]));
+      ctx.fillStyle = 'rgba(18,19,23,.85)'; const tw = ctx.measureText(t).width + 8;
+      ctx.fillRect((a[0] + b[0]) / 2 - tw / 2, (a[1] + b[1]) / 2 - 8, tw, 16);
+      ctx.fillStyle = '#eef0f4'; ctx.fillText(t, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+    }
+    pts.forEach((p, i) => {
+      ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.fillStyle = '#f5b82e'; ctx.fill();
+      ctx.fillStyle = '#1a1405'; ctx.font = '700 11px -apple-system, sans-serif'; ctx.fillText(String.fromCharCode(65 + i), p[0], p[1] + 0.5);
+    });
+    ctx.beginPath(); ctx.arc(me[0], me[1], 6, 0, Math.PI * 2); ctx.fillStyle = '#2f8cff'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  },
+
   render() {
     const mode = this.mode;
     $('knownRow').hidden = mode !== 'height';
+    this.sketch();
     const r = this.result();
     const set = (i, label, val, tol) => { $('hLabel' + i).textContent = label; $('hVal' + i).textContent = val; $('hTol' + i).textContent = tol || ''; };
     const tip = $('heightTip');
@@ -1320,12 +1397,25 @@ const Plan = {
   save() { store.set('plan', this.data); },
 
   pieceArea(p) {
-    const v = p.vals.map((x) => parseFloat(String(x).replace(',', '.')));
+    const v = p.vals.map(pnum);
     if (v.some((x) => !(x > 0))) return null;
     return PIECES[p.type].area(v) * (parseFloat(p.qty) || 1) * p.sign;
   },
 
   area() { return this.data.pieces.reduce((s, p) => s + (this.pieceArea(p) || 0), 0); },
+
+  // Volume : hauteur propre à chaque forme si saisie, sinon hauteur moyenne
+  volume() {
+    const def = pnum(this.data.ceil);
+    let v = 0, partial = false;
+    for (const p of this.data.pieces) {
+      const a = this.pieceArea(p);
+      if (a == null) continue;
+      const h = pnum(p.h) > 0 ? pnum(p.h) : def;
+      if (h > 0) v += a * h; else partial = true;
+    }
+    return { v, partial: partial && v > 0 };
+  },
 
   renderList() {
     const ul = $('pieces');
@@ -1348,6 +1438,12 @@ const Plan = {
         inp.addEventListener('input', () => { p.vals[i] = inp.value; this.totals(); });
         lab.append(inp); fields.append(lab);
       });
+      const hl = document.createElement('label');
+      hl.textContent = 'Hauteur (m)';
+      const hi = document.createElement('input');
+      hi.type = 'text'; hi.inputMode = 'decimal'; hi.value = p.h || ''; hi.placeholder = 'moyenne'; hi.id = `ph${p.id}`;
+      hi.addEventListener('input', () => { p.h = hi.value; this.totals(); });
+      hl.append(hi); fields.append(hl);
       const opts = document.createElement('div'); opts.className = 'piece-opts';
       const sign = document.createElement('button'); sign.className = 'btn small';
       sign.textContent = p.sign > 0 ? 'Ajoutée' : 'Retirée';
@@ -1373,9 +1469,9 @@ const Plan = {
     }
     const A = this.area();
     $('planArea').textContent = fmtAreaBig(Math.max(0, A));
-    const h = parseFloat(String(this.data.ceil).replace(',', '.'));
-    $('planVol').textContent = h > 0 && A > 0 ? num(A * h, A * h < 100 ? 1 : 0) + ' m³' : '—';
-    const usable = Math.max(0, A) * (1 - clamp(parseFloat(this.data.reserve) || 0, 0, 90) / 100);
+    const vol = this.volume();
+    $('planVol').textContent = vol.v > 0 ? num(vol.v, vol.v < 100 ? 1 : 0) + ' m³' + (vol.partial ? ' (incomplet)' : '') : '—';
+    const usable = Math.max(0, A) * (1 - clamp(pnum(this.data.reserve) || 0, 0, 90) / 100);
     const ul = $('capList');
     ul.textContent = '';
     for (const [name, m2pp] of LAYOUTS) {
@@ -1399,8 +1495,8 @@ const Plan = {
     }
     const A = this.area();
     lines.push(`Surface totale : ${fmtAreaBig(Math.max(0, A))}`);
-    const h = parseFloat(String(this.data.ceil).replace(',', '.'));
-    if (h > 0) lines.push(`Volume : ${num(A * h, 0)} m³ (h = ${num(h, 2)} m)`);
+    const vol = this.volume();
+    if (vol.v > 0) lines.push(`Volume : ${num(vol.v, 0)} m³${vol.partial ? ' (incomplet)' : ''}`);
     return lines.join('\n');
   },
 };
@@ -1572,7 +1668,8 @@ const Ruler = {
   init() {
     this.canvas = $('rulerCanvas');
     new ResizeObserver(() => this.resize()).observe($('rulerBox'));
-    this.b = 50 * this.pxmm;
+    this.a = 10 * this.pxmm;   // curseurs sur 1 cm et 6 cm : rien n'est coupé en haut de l'écran
+    this.b = 60 * this.pxmm;
     for (const [id, key] of [['curA', 'a'], ['curB', 'b']]) {
       const el = $(id);
       el.addEventListener('pointerdown', (e) => {
@@ -1580,9 +1677,9 @@ const Ruler = {
         // Déplacement démultiplié après le premier mouvement franc : réglage au dixième de mm
         const y0 = e.clientY, v0 = this[key];
         const mv = (ev) => {
-          const dy = ev.clientY - y0;
-          const k = Math.abs(dy) < 40 ? 0.25 : 1;
-          this[key] = clamp(v0 + dy * k, 0, this.h); this.place();
+          const dy = ev.clientY - y0, ady = Math.abs(dy);
+          const eff = ady < 40 ? ady * 0.25 : 10 + (ady - 40);
+          this[key] = clamp(v0 + Math.sign(dy) * eff, 0, this.h); this.place();
         };
         const upf = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', upf); };
         el.addEventListener('pointermove', mv);
@@ -1668,6 +1765,232 @@ const Ruler = {
 };
 
 /* ================================================================
+   CARTE — fond satellite / plan en tuiles, sans bibliothèque externe
+   ================================================================ */
+
+const TILE = 256;
+const BASEMAPS = {
+  sat: { url: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+    max: 19, floorSig: 0.4, attr: 'Imagerie © Esri, Maxar, Earthstar Geographics' },
+  plan: { url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`,
+    max: 19, floorSig: 1, attr: '© contributeurs OpenStreetMap' },
+};
+
+class GeoMap {
+  constructor(wrap, o) {
+    this.wrap = wrap;
+    this.o = o;
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'map-canvas';
+    this.canvas.setAttribute('aria-label', 'Carte : touchez pour poser un point');
+    wrap.prepend(this.canvas);
+    this.ctx = this.canvas.getContext('2d');
+    this.center = o.center; this.zoom = o.zoom; this.base = o.base || 'sat';
+    this.tiles = new Map();
+    this.pointers = new Map();
+    this.loaded = 0; this.errors = 0;
+    const c = this.canvas;
+    c.addEventListener('pointerdown', (e) => this.down(e));
+    c.addEventListener('pointermove', (e) => this.move(e));
+    c.addEventListener('pointerup', (e) => this.up(e));
+    c.addEventListener('pointercancel', (e) => this.up(e));
+    c.addEventListener('wheel', (e) => { e.preventDefault(); const p = this.pos(e); this.zoomAround(p, this.zoom - e.deltaY * 0.003); }, { passive: false });
+    new ResizeObserver(() => this.resize()).observe(wrap);
+    this.resize();
+  }
+
+  static world(lat, lon, z) {
+    const s = TILE * 2 ** z, sl = Math.sin(clamp(lat, -85.05, 85.05) / DEG);
+    return [(lon + 180) / 360 * s, (0.5 - Math.log((1 + sl) / (1 - sl)) / (4 * Math.PI)) * s];
+  }
+
+  static unworld(x, y, z) {
+    const s = TILE * 2 ** z, n = Math.PI - 2 * Math.PI * y / s;
+    return [Math.atan(Math.sinh(n)) * DEG, x / s * 360 - 180];
+  }
+
+  resize() {
+    const r = this.wrap.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const dpr = window.devicePixelRatio || 1;
+    this.w = r.width; this.h = r.height;
+    this.canvas.width = Math.round(r.width * dpr); this.canvas.height = Math.round(r.height * dpr);
+    this.draw();
+  }
+
+  pos(e) { const r = this.canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+
+  toScreen([lat, lon]) {
+    const [x, y] = GeoMap.world(lat, lon, this.zoom), [cx, cy] = GeoMap.world(...this.center, this.zoom);
+    return [x - cx + this.w / 2, y - cy + this.h / 2];
+  }
+
+  toLatLon([sx, sy]) {
+    const [cx, cy] = GeoMap.world(...this.center, this.zoom);
+    return GeoMap.unworld(cx + sx - this.w / 2, cy + sy - this.h / 2, this.zoom);
+  }
+
+  // Mètres par point d'écran (et à la résolution native de l'imagerie)
+  mpp(lat = this.center[0], z = this.zoom) { return 156543.03392 * Math.cos(lat / DEG) / 2 ** z; }
+
+  changed() { this.request(); this.o.onChange && this.o.onChange(); }
+
+  setView(center, zoom = this.zoom) { this.center = center; this.zoom = clamp(zoom, 2, 22); this.changed(); }
+
+  // Garde le point géographique sous « p » fixe pendant le zoom
+  zoomAround(p, z, ll = this.toLatLon(p)) {
+    this.zoom = clamp(z, 2, 22);
+    const [wx, wy] = GeoMap.world(...ll, this.zoom);
+    this.center = GeoMap.unworld(wx - (p[0] - this.w / 2), wy - (p[1] - this.h / 2), this.zoom);
+    this.changed();
+  }
+
+  panBy(dx, dy) {
+    const [cx, cy] = GeoMap.world(...this.center, this.zoom);
+    this.center = GeoMap.unworld(cx - dx, cy - dy, this.zoom);
+    this.changed();
+  }
+
+  setBase(b) { this.base = b; this.loaded = 0; this.errors = 0; this.request(); }
+
+  request() {
+    if (!this.raf) this.raf = requestAnimationFrame(() => { this.raf = 0; this.draw(); });
+  }
+
+  tile(z, x, y, create = true) {
+    const n = 2 ** z;
+    if (y < 0 || y >= n) return null;
+    x = ((x % n) + n) % n;
+    const key = `${this.base}/${z}/${x}/${y}`;
+    let t = this.tiles.get(key);
+    if (t) { this.tiles.delete(key); this.tiles.set(key, t); return t; }
+    if (!create) return null;
+    t = { img: new Image(), ok: false };
+    t.img.decoding = 'async';
+    t.img.onload = () => { t.ok = true; this.loaded++; this.request(); this.o.onTiles && this.o.onTiles(this); };
+    t.img.onerror = () => { t.err = true; this.errors++; this.o.onTiles && this.o.onTiles(this); };
+    t.img.src = BASEMAPS[this.base].url(z, x, y);
+    this.tiles.set(key, t);
+    if (this.tiles.size > 500) this.tiles.delete(this.tiles.keys().next().value);
+    return t;
+  }
+
+  draw() {
+    if (!this.w) return;
+    const ctx = this.ctx, w = this.w, h = this.h;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#23262d';
+    ctx.fillRect(0, 0, w, h);
+    const B = BASEMAPS[this.base];
+    const tz = clamp(Math.round(this.zoom), 0, B.max);
+    const scale = 2 ** (this.zoom - tz), ts = TILE * scale;
+    const [cx, cy] = GeoMap.world(...this.center, tz);
+    const x0 = cx - w / 2 / scale, y0 = cy - h / 2 / scale;
+    const tx0 = Math.floor(x0 / TILE), ty0 = Math.floor(y0 / TILE);
+    const tx1 = Math.floor((x0 + w / scale) / TILE), ty1 = Math.floor((y0 + h / scale) / TILE);
+    ctx.imageSmoothingEnabled = true;
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const sx = (tx * TILE - x0) * scale, sy = (ty * TILE - y0) * scale;
+      const t = this.tile(tz, tx, ty);
+      if (!t) continue;
+      if (t.ok) { ctx.drawImage(t.img, sx, sy, ts + 0.6, ts + 0.6); continue; }
+      // En attendant la tuile : agrandir une tuile parente déjà chargée
+      let drawn = false;
+      for (let k = 1; k <= 5 && tz - k >= 0 && !drawn; k++) {
+        const f = 2 ** k, p = this.tile(tz - k, Math.floor(tx / f), Math.floor(ty / f), false);
+        if (p && p.ok) {
+          const sub = TILE / f, n = 2 ** tz;
+          const ux = ((tx % n) + n) % n;
+          ctx.drawImage(p.img, (ux % f) * sub, (ty % f) * sub, sub, sub, sx, sy, ts + 0.6, ts + 0.6);
+          drawn = true;
+        }
+      }
+      if (!drawn) { ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.strokeRect(sx + 0.5, sy + 0.5, ts, ts); }
+    }
+    if (this.o.onDraw) this.o.onDraw(ctx, this);
+    // Attribution et échelle
+    ctx.font = '10px -apple-system, sans-serif';
+    const attr = B.attr;
+    const aw = ctx.measureText(attr).width + 8;
+    ctx.fillStyle = 'rgba(18,19,23,.7)'; ctx.fillRect(w - aw, h - 16, aw, 16);
+    ctx.fillStyle = '#ddd'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(attr, w - 4, h - 8);
+    this.drawScale(ctx, h);
+  }
+
+  drawScale(ctx, h) {
+    const mpp = this.mpp();
+    const target = 90 * mpp;
+    const pow = 10 ** Math.floor(Math.log10(target));
+    const nice = [1, 2, 5, 10].map((k) => k * pow).filter((v) => v <= target).pop() || pow;
+    const px = nice / mpp;
+    const x = 10, y = h - 26;
+    ctx.fillStyle = 'rgba(18,19,23,.7)'; ctx.fillRect(x - 4, y - 14, px + 8, 20);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x, y); ctx.lineTo(x + px, y); ctx.lineTo(x + px, y - 4); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '600 11px ui-monospace, Menlo, monospace';
+    ctx.fillText(nice >= 1000 ? num(nice / 1000, 0) + ' km' : num(nice, nice < 1 ? 1 : 0) + ' m', x + 3, y - 4);
+  }
+
+  /* --- Gestes : 1 doigt = déplacer la carte ou un point, toucher = poser, 2 doigts = zoom --- */
+
+  down(e) {
+    this.canvas.setPointerCapture(e.pointerId);
+    const p = this.pos(e);
+    this.pointers.set(e.pointerId, p);
+    if (this.pointers.size === 2) {
+      if (this.g && this.g.type === 'point' && this.o.onPointEnd) this.o.onPointEnd(this.g.hit, true);
+      const [a, b] = [...this.pointers.values()];
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      this.g = { type: 'pinch', d0: dist(a, b) || 1, z0: this.zoom, ll: this.toLatLon(m) };
+      return;
+    }
+    if (this.pointers.size > 2) return;
+    const hit = this.o.hitTest ? this.o.hitTest(p) : null;
+    this.g = hit
+      ? { type: 'point', hit, start: p, origin: this.o.onPointStart(hit), moved: false, t: performance.now() }
+      : { type: 'pan', start: p, last: p, moved: false, t: performance.now() };
+  }
+
+  move(e) {
+    if (!this.pointers.has(e.pointerId)) return;
+    const p = this.pos(e);
+    this.pointers.set(e.pointerId, p);
+    const g = this.g;
+    if (!g) return;
+    if (g.type === 'pinch') {
+      if (this.pointers.size < 2) return;
+      const [a, b] = [...this.pointers.values()];
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      this.zoomAround(m, g.z0 + Math.log2(dist(a, b) / g.d0), g.ll);
+      return;
+    }
+    if (dist(p, g.start) > 6) g.moved = true;
+    if (g.type === 'pan') { this.panBy(p[0] - g.last[0], p[1] - g.last[1]); g.last = p; return; }
+    if (g.type === 'point' && g.moved) {
+      // Glissement démultiplié ×0,5 : le doigt ne cache pas le point
+      const s = [g.origin[0] + (p[0] - g.start[0]) * 0.5, g.origin[1] + (p[1] - g.start[1]) * 0.5];
+      this.o.onPointMove(g.hit, this.toLatLon(s));
+      this.request();
+    }
+  }
+
+  up(e) {
+    if (!this.pointers.has(e.pointerId)) return;
+    const p = this.pointers.get(e.pointerId);
+    this.pointers.delete(e.pointerId);
+    const g = this.g;
+    if (!g) return;
+    if (g.type === 'pinch') { if (!this.pointers.size) this.g = null; else this.g = { type: 'none' }; return; }
+    if (this.pointers.size) return;
+    this.g = null;
+    const quick = performance.now() - g.t < 600;
+    if (g.type === 'pan' && !g.moved && quick && this.o.onTap) this.o.onTap(this.toLatLon(p), p);
+    if (g.type === 'point') this.o.onPointEnd(g.hit, g.moved);
+  }
+}
+
+/* ================================================================
    TERRAIN — très grandes surfaces : carte satellite et/ou GPS
    ================================================================ */
 
@@ -1694,37 +2017,59 @@ function geoLen(pts, closed) {
   return s;
 }
 
+const mkPt = (lat, lon, sig, src) => { const p = [lat, lon]; p.sig = sig; p.src = src; return p; };
+
 const Terrain = {
   map: null,
-  pts: [],            // [lat, lon] avec .sig (m) et .src
-  markers: [],
-  shape: null,
-  mode: 'area',
-  base: 'sat',
+  pts: store.get('terrainPts', []).map((q) => mkPt(q[0], q[1], q[2], q[3])),
+  mode: store.get('terrainMode', 'area'),
+  base: store.get('terrainBase', 'sat'),
+  sel: null,
   watchId: null,
   fix: null,
   auto: false,
   collecting: null,
 
   init() {
-    document.querySelectorAll('[data-tmode]').forEach((b) => b.addEventListener('click', () => {
-      this.mode = b.dataset.tmode;
-      document.querySelectorAll('[data-tmode]').forEach((x) => x.classList.toggle('active', x === b));
-      this.redraw();
-    }));
+    document.querySelectorAll('[data-tmode]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.tmode === this.mode);
+      b.addEventListener('click', () => {
+        this.mode = b.dataset.tmode; store.set('terrainMode', this.mode);
+        document.querySelectorAll('[data-tmode]').forEach((x) => x.classList.toggle('active', x === b));
+        this.changed();
+      });
+    });
+    $('tLayer').textContent = this.base === 'sat' ? 'Vue plan' : 'Vue satellite';
     $('gpsPoint').addEventListener('click', () => this.gpsPoint());
     $('gpsAuto').addEventListener('click', () => this.toggleAuto());
-    $('tUndo').addEventListener('click', () => { this.pts.pop(); this.redraw(); });
+    $('tUndo').addEventListener('click', () => {
+      if (this.sel != null) { this.pts.splice(this.sel, 1); this.sel = null; } else this.pts.pop();
+      this.changed();
+    });
     let clr = false;
     $('tClear').addEventListener('click', () => {
       if (!clr && this.pts.length) { clr = true; $('tClear').textContent = 'Confirmer ?'; setTimeout(() => { clr = false; $('tClear').textContent = 'Effacer'; }, 2500); return; }
       clr = false; $('tClear').textContent = 'Effacer';
-      this.pts = []; this.redraw();
+      this.pts = []; this.sel = null; this.changed();
     });
-    $('tLayer').addEventListener('click', () => this.toggleLayer());
+    $('tLayer').addEventListener('click', () => {
+      this.base = this.base === 'sat' ? 'plan' : 'sat';
+      store.set('terrainBase', this.base);
+      $('tLayer').textContent = this.base === 'sat' ? 'Vue plan' : 'Vue satellite';
+      if (this.map) this.map.setBase(this.base);
+      this.changed();
+    });
+    $('mapZoomIn').addEventListener('click', () => this.map && this.map.zoomAround([this.map.w / 2, this.map.h / 2], Math.round(this.map.zoom) + 1));
+    $('mapZoomOut').addEventListener('click', () => this.map && this.map.zoomAround([this.map.w / 2, this.map.h / 2], Math.round(this.map.zoom) - 1));
+    $('mapLocate').addEventListener('click', () => {
+      this.startWatch(true);
+      if (this.fix && this.map) this.map.setView([this.fix.lat, this.fix.lon], Math.max(this.map.zoom, 18));
+      else toast('Recherche de votre position…');
+    });
+    $('mapFit').addEventListener('click', () => this.fit());
     $('tCopy').addEventListener('click', () => {
       if (!this.pts.length) { toast('Aucun point'); return; }
-      copyText(this.pts.map((p, i) => `${i + 1}\t${p[0].toFixed(7)}\t${p[1].toFixed(7)}`).join('\n'));
+      copyText(this.pts.map((p, i) => `${i + 1}\t${p[0].toFixed(7)}\t${p[1].toFixed(7)}\t± ${num(2 * p.sig, 1)} m`).join('\n'));
     });
     $('tSave').addEventListener('click', () => {
       const r = this.result();
@@ -1736,66 +2081,133 @@ const Terrain = {
     });
   },
 
-  async open() {
-    if (this.map) { this.map.invalidateSize(); return; }
-    try {
-      await this.loadLeaflet();
-    } catch {
-      $('mapMsg').textContent = 'Carte indisponible hors connexion. Le mode GPS fonctionne quand même : ajoutez un point à chaque coin.';
-      return;
-    }
-    $('mapMsg').hidden = true;
+  open() {
+    if (this.map) { this.map.resize(); return; }
     const view = store.get('mapView', null);
-    this.map = L.map('map', { zoomControl: false, maxZoom: 21 })
-      .setView(view ? view.c : [46.6, 2.4], view ? view.z : 5);
-    this.layers = {
-      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 21, maxNativeZoom: 19, attribution: 'Imagerie © Esri, Maxar, Earthstar Geographics' }),
-      plan: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 21, maxNativeZoom: 19, attribution: '© contributeurs OpenStreetMap' }),
-    };
-    this.layers[this.base].addTo(this.map);
-    this.map.on('click', (e) => this.addPoint([e.latlng.lat, e.latlng.lng], this.tapSigma(e.latlng.lat), 'carte'));
-    this.map.on('moveend', () => store.set('mapView', { c: [this.map.getCenter().lat, this.map.getCenter().lng], z: this.map.getZoom() }));
-    this.startWatch(!view);
-    this.redraw();
-  },
-
-  // Leaflet 1.9.4 (BSD-2), unpkg puis jsDelivr en secours ; mis en cache par le service worker
-  loadLeaflet() {
-    if (window.L) return Promise.resolve();
-    const hosts = ['https://unpkg.com/leaflet@1.9.4/dist/', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/'];
-    const tryHost = (i) => new Promise((res, rej) => {
-      if (i >= hosts.length) { rej(new Error('leaflet')); return; }
-      const css = document.createElement('link');
-      css.rel = 'stylesheet'; css.href = hosts[i] + 'leaflet.css';
-      document.head.append(css);
-      const s = document.createElement('script');
-      s.src = hosts[i] + 'leaflet.js';
-      s.onload = res;
-      s.onerror = () => { css.remove(); s.remove(); tryHost(i + 1).then(res, rej); };
-      document.head.append(s);
+    const first = this.pts[0];
+    this.map = new GeoMap($('mapWrap'), {
+      center: view ? view.c : first ? [first[0], first[1]] : [46.6, 2.4],
+      zoom: view ? view.z : first ? 17 : 5,
+      base: this.base,
+      onTap: (ll) => this.tap(ll),
+      hitTest: (p) => this.hit(p),
+      onPointStart: (h) => this.pointStart(h),
+      onPointMove: (h, ll) => this.pointMove(h, ll),
+      onPointEnd: (h, moved) => this.pointEnd(h, moved),
+      onDraw: (ctx, m) => this.drawOverlay(ctx, m),
+      onChange: () => store.set('mapView', { c: this.map.center, z: this.map.zoom }),
+      onTiles: (m) => {
+        const bad = m.errors > 6 && m.loaded === 0;
+        $('mapMsg').hidden = !bad;
+        if (bad) $('mapMsg').textContent = 'Fond de carte indisponible (pas de connexion ?). Le GPS et les calculs fonctionnent : ajoutez un point GPS à chaque coin.';
+      },
     });
-    return tryHost(0);
+    $('mapMsg').hidden = true;
+    this.startWatch(!view && !first);
+    this.changed(false);
   },
 
-  toggleLayer() {
-    if (!this.map) return;
-    this.map.removeLayer(this.layers[this.base]);
-    this.base = this.base === 'sat' ? 'plan' : 'sat';
-    this.layers[this.base].addTo(this.map);
-    $('tLayer').textContent = this.base === 'sat' ? 'Vue plan' : 'Vue satellite';
-  },
-
-  // Incertitude d'un point posé au doigt : ~1,5 pixel de carte au zoom courant
+  // Incertitude d'un point posé à la main : 1,5 point d'écran, et jamais mieux que la précision du fond de carte
   tapSigma(lat) {
-    const mpp = 156543.03392 * Math.cos(lat / DEG) / Math.pow(2, this.map.getZoom());
-    return Math.max(0.15, mpp * 1.5);
+    return Math.max(this.map.mpp(lat) * 1.5, BASEMAPS[this.base].floorSig);
   },
 
-  startWatch(center) {
+  tap(ll) {
+    if (this.sel != null) { this.sel = null; this.changed(false); return; }
+    this.pts.push(mkPt(ll[0], ll[1], this.tapSigma(ll[0]), 'carte'));
+    this.changed();
+  },
+
+  // Sommets, puis étiquettes des côtés (poignées « + » : insérer un point)
+  hit(p) {
+    const m = this.map;
+    let best = null, bd = 24;
+    this.pts.forEach((q, i) => { const d = dist(m.toScreen(q), p); if (d < bd) { bd = d; best = { type: 'v', i }; } });
+    if (best) return best;
+    for (const L of this.labels || []) {
+      if (p[0] >= L.x - 4 && p[0] <= L.x + L.w + 4 && p[1] >= L.y - 6 && p[1] <= L.y + L.h + 6) return { type: 'm', i: L.i };
+    }
+    return null;
+  },
+
+  pointStart(h) {
+    if (h.type === 'm') {
+      const a = this.pts[h.i], b = this.pts[(h.i + 1) % this.pts.length];
+      const q = mkPt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, this.tapSigma(a[0]), 'carte');
+      this.pts.splice(h.i + 1, 0, q);
+      h.type = 'v'; h.i = h.i + 1; h.inserted = true;
+    }
+    return this.map.toScreen(this.pts[h.i]);
+  },
+
+  pointMove(h, ll) {
+    this.pts[h.i] = mkPt(ll[0], ll[1], this.tapSigma(ll[0]), 'carte');
+    this.sel = h.i;
+    this.render();
+  },
+
+  pointEnd(h, moved) {
+    if (!moved && !h.inserted) this.sel = this.sel === h.i ? null : h.i;
+    this.changed();
+  },
+
+  fit() {
+    if (!this.map || !this.pts.length) return;
+    const W = this.pts.map((p) => GeoMap.world(p[0], p[1], 0));
+    const xs = W.map((v) => v[0]), ys = W.map((v) => v[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1e-7);
+    const z = Math.log2(Math.min(this.map.w, this.map.h) * 0.7 / span);
+    const c = GeoMap.unworld((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2, 0);
+    this.map.setView(c, Math.min(z, 20));
+  },
+
+  drawOverlay(ctx, m) {
+    const S = this.pts.map((p) => m.toScreen(p));
+    const closed = this.mode === 'area' && S.length >= 3;
+    // Position GPS
+    if (this.fix) {
+      const c = m.toScreen([this.fix.lat, this.fix.lon]);
+      const r = this.fix.acc / m.mpp(this.fix.lat);
+      ctx.beginPath(); ctx.arc(c[0], c[1], Math.max(r, 8), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(47,140,255,.15)'; ctx.fill(); ctx.strokeStyle = 'rgba(47,140,255,.6)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(c[0], c[1], 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#2f8cff'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    if (!S.length) return;
+    ctx.beginPath();
+    S.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
+    if (closed) { ctx.closePath(); ctx.fillStyle = 'rgba(245,184,46,.22)'; ctx.fill(); }
+    ctx.strokeStyle = '#f5b82e'; ctx.lineWidth = 3; ctx.stroke();
+    // Longueur de chaque côté, posée sur le côté ; l'étiquette sert aussi de poignée « + » pour insérer un point
+    ctx.font = '600 12px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    this.labels = [];
+    for (let i = 0; i < S.length - (closed ? 0 : 1); i++) {
+      const j = (i + 1) % S.length, a = S[i], b = S[j];
+      if (dist(a, b) < 70) continue;
+      const txt = fmtSide(geoDist(this.pts[i], this.pts[j]) * 1000);
+      const tw = ctx.measureText(txt).width, w = tw + 30, h = 22;
+      const x = clamp((a[0] + b[0]) / 2 - w / 2, 4, m.w - w - 4), y = clamp((a[1] + b[1]) / 2 - h / 2, 4, m.h - h - 20);
+      this.labels.push({ i, x, y, w, h });
+      ctx.fillStyle = 'rgba(18,19,23,.88)';
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, 11); ctx.fill();
+      ctx.strokeStyle = 'rgba(245,184,46,.7)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = '#f5b82e'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(x + 7, y + h / 2); ctx.lineTo(x + 15, y + h / 2); ctx.moveTo(x + 11, y + h / 2 - 4); ctx.lineTo(x + 11, y + h / 2 + 4); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillText(txt, x + 21, y + h / 2 + 0.5);
+    }
+    S.forEach((p, i) => {
+      const gps = this.pts[i].src === 'gps', sel = this.sel === i;
+      ctx.beginPath(); ctx.arc(p[0], p[1], sel ? 13 : 10, 0, Math.PI * 2);
+      ctx.fillStyle = sel ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.35)'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = gps ? '#2f8cff' : '#f5b82e'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p[0], p[1], 1.8, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+    });
+  },
+
+  startWatch(force) {
     if (!navigator.geolocation || this.watchId != null) return;
-    let centered = !center;
+    let centered = !force;
     this.watchId = navigator.geolocation.watchPosition((pos) => {
       const c = pos.coords;
       this.fix = { lat: c.latitude, lon: c.longitude, acc: c.accuracy, t: Date.now() };
@@ -1803,18 +2215,15 @@ const Terrain = {
       $('gpsChip').textContent = `GPS ± ${num(c.accuracy, c.accuracy < 10 ? 1 : 0)} m`;
       $('gpsChip').classList.toggle('ok', c.accuracy <= 5);
       if (this.map) {
-        const ll = [c.latitude, c.longitude];
-        if (!this.me) {
-          this.me = L.circleMarker(ll, { radius: 7, color: '#fff', weight: 2, fillColor: '#2f8cff', fillOpacity: 1 }).addTo(this.map);
-          this.meAcc = L.circle(ll, { radius: c.accuracy, color: '#2f8cff', weight: 1, fillOpacity: 0.12 }).addTo(this.map);
-        } else { this.me.setLatLng(ll); this.meAcc.setLatLng(ll).setRadius(c.accuracy); }
-        if (!centered) { this.map.setView(ll, 18); centered = true; }
+        if (!centered) { this.map.setView([c.latitude, c.longitude], 18); centered = true; }
+        this.map.request();
       }
       if (this.collecting) this.collecting.push(this.fix);
       if (this.auto) this.autoStep();
     }, (err) => {
       $('gpsChip').hidden = false;
       $('gpsChip').textContent = err.code === 1 ? 'GPS refusé' : 'GPS indisponible';
+      this.watchId = null;
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
   },
 
@@ -1823,12 +2232,21 @@ const Terrain = {
     if (!navigator.geolocation) { toast('GPS indisponible'); return; }
     this.startWatch(false);
     if (this.collecting) return;
-    this.collecting = [];
+    // Immobile, l'iPhone peut ne plus envoyer de position : on la redemande chaque seconde
+    // (sans nouvelle position, c'est qu'on n'a pas bougé : la dernière reste valable une minute)
+    this.collecting = this.fix && Date.now() - this.fix.t < 60000 ? [this.fix] : [];
+    const ask = () => navigator.geolocation.getCurrentPosition((pos) => {
+      if (!this.collecting) return;
+      const c = pos.coords;
+      this.collecting.push({ lat: c.latitude, lon: c.longitude, acc: c.accuracy, t: Date.now() });
+    }, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 4000 });
+    ask();
     const btn = $('gpsPoint');
     let left = 8;
     btn.textContent = `Immobile… ${left} s`; btn.classList.add('on');
     const tick = setInterval(() => {
       left--;
+      if (left > 0) ask();
       btn.textContent = `Immobile… ${left} s`;
       if (left > 0) return;
       clearInterval(tick);
@@ -1837,12 +2255,13 @@ const Terrain = {
       this.collecting = null;
       if (!fixes.length) { toast('Signal GPS trop faible : allez à découvert'); return; }
       let sw = 0, la = 0, lo = 0;
-      for (const f of fixes) { const w = 1 / (f.acc * f.acc); sw += w; la += f.lat * w; lo += f.lon * w; }
+      for (const f of fixes) { const wt = 1 / (f.acc * f.acc); sw += wt; la += f.lat * wt; lo += f.lon * wt; }
       const bestAcc = Math.min(...fixes.map((f) => f.acc));
       // Les erreurs GPS sont corrélées dans le temps : la moyenne améliore peu, on reste prudent
       const sig = Math.max(bestAcc / 2, Math.sqrt(1 / sw) / Math.sqrt(Math.min(fixes.length, 3)));
-      this.addPoint([la / sw, lo / sw], sig, 'gps');
-      toast(`Point GPS ajouté (± ${num(sig * 2, 1)} m, ${fixes.length} relevés)`);
+      this.pts.push(mkPt(la / sw, lo / sw, sig, 'gps'));
+      this.changed();
+      toast(`Point GPS ajouté (± ${num(sig * 2, 1)} m, ${fixes.length} relevé${fixes.length > 1 ? 's' : ''})`);
     }, 1000);
   },
 
@@ -1850,47 +2269,24 @@ const Terrain = {
     this.auto = !this.auto;
     $('gpsAuto').classList.toggle('on', this.auto);
     $('gpsAuto').textContent = this.auto ? 'Arrêter la marche' : 'Marche auto';
-    if (this.auto) { this.startWatch(false); toast('Faites le tour : un point est ajouté tous les 3 m'); }
+    if (this.auto) { this.startWatch(false); toast('Faites le tour : un point est ajouté tous les 3 m environ'); }
   },
 
   autoStep() {
     const f = this.fix;
     if (!f || f.acc > 15) return;
     const last = this.pts[this.pts.length - 1];
-    if (!last || geoDist(last, [f.lat, f.lon]) >= Math.max(3, f.acc)) this.addPoint([f.lat, f.lon], f.acc / 2, 'gps');
-  },
-
-  addPoint(ll, sig, src) {
-    const p = [ll[0], ll[1]]; p.sig = sig; p.src = src;
-    this.pts.push(p);
-    this.redraw();
-  },
-
-  redraw() {
-    if (this.map) {
-      this.markers.forEach((m) => m.remove());
-      this.markers = [];
-      if (this.shape) this.shape.remove();
-      const ll = this.pts.map((p) => [p[0], p[1]]);
-      this.shape = this.mode === 'area' && ll.length >= 3
-        ? L.polygon(ll, { color: '#f5b82e', weight: 3, fillOpacity: 0.2 })
-        : L.polyline(ll, { color: '#f5b82e', weight: 3 });
-      this.shape.addTo(this.map);
-      this.pts.forEach((p, i) => {
-        const m = L.marker([p[0], p[1]], {
-          draggable: true,
-          icon: L.divIcon({ className: 'vtx' + (p.src === 'gps' ? ' gps' : ''), iconSize: [22, 22] }),
-        }).addTo(this.map);
-        m.on('drag', (e) => {
-          const q = [e.latlng.lat, e.latlng.lng]; q.sig = this.tapSigma(q[0]); q.src = 'carte';
-          this.pts[i] = q;
-          this.shape.setLatLngs(this.pts.map((x) => [x[0], x[1]]));
-          this.render();
-        });
-        m.on('dragend', () => this.redraw());
-        this.markers.push(m);
-      });
+    if (!last || geoDist(last, [f.lat, f.lon]) >= Math.max(3, f.acc)) {
+      this.pts.push(mkPt(f.lat, f.lon, f.acc / 2, 'gps'));
+      this.changed();
     }
+  },
+
+  changed(persist = true) {
+    if (persist) store.set('terrainPts', this.pts.map((p) => [p[0], p[1], p.sig, p.src]));
+    if (this.sel != null && this.sel >= this.pts.length) this.sel = null;
+    $('tUndo').textContent = this.sel != null ? 'Retirer ce point' : 'Annuler';
+    if (this.map) this.map.request();
     this.render();
   },
 
@@ -1908,12 +2304,9 @@ const Terrain = {
       Ls.push(geoLen(Q, closed));
     }
     const lenTol = 2 * meanStd(Ls)[1];
-    if (!closed) { const len = geoLen(P, false) * 1000; return { len, lenTolMm: lenTol * 1000 }; }
+    if (!closed) return { len: geoLen(P, false) * 1000, lenTolMm: lenTol * 1000 };
     const area = geoArea(P), aTol = 2 * meanStd(A)[1];
-    return {
-      area, areaText: fmtAreaBig(area), areaTol: '± ' + fmtAreaBig(aTol),
-      per: geoLen(P, true) * 1000, perTolMm: lenTol * 1000,
-    };
+    return { area, aTol, areaText: fmtAreaBig(area), areaTol: '± ' + fmtAreaBig(aTol), per: geoLen(P, true) * 1000, perTolMm: lenTol * 1000 };
   },
 
   render() {
@@ -1924,7 +2317,7 @@ const Terrain = {
     if (!r) {
       $('tVal1').textContent = '—'; $('tTol1').textContent = '';
       $('tVal2').textContent = area ? '—' : String(this.pts.length); $('tTol2').textContent = '';
-      $('tExtra').textContent = '';
+      $('tExtra').textContent = this.pts.length ? `${this.pts.length} point${this.pts.length > 1 ? 's' : ''} posé${this.pts.length > 1 ? 's' : ''}` : '';
       return;
     }
     if (area) {
@@ -1932,7 +2325,8 @@ const Terrain = {
       $('tVal2').textContent = fmtLen(r.per, 'm', r.perTolMm); $('tTol2').textContent = fmtTol(r.perTolMm, 'm');
       const m2 = r.area;
       setLastArea(m2, 'Terrain');
-      $('tExtra').textContent = `${num(m2, 0)} m² · ${num(m2 / 100, 2)} ares · ${num(m2 / 10000, 4)} ha · ${num(m2 / 4046.86, 3)} acres`;
+      $('tExtra').textContent = `${num(m2, 0)} m² · ${num(m2 / 100, 2)} ares · ${num(m2 / 10000, 4)} ha · ${num(m2 / 4046.86, 3)} acres`
+        + (r.aTol / m2 > 0.02 ? ' · Pour réduire la marge, zoomez au maximum puis replacez les coins.' : '');
     } else {
       $('tVal1').textContent = fmtLen(r.len, 'm', r.lenTolMm); $('tTol1').textContent = fmtTol(r.lenTolMm, 'm');
       $('tVal2').textContent = String(this.pts.length); $('tTol2').textContent = '';
@@ -1962,6 +2356,8 @@ function show(name) {
   document.querySelectorAll('[data-tool-screen]').forEach((b) => b.classList.toggle('active', b.dataset.toolScreen === name));
   $('screenTitle').textContent = isTool ? '' : TITLES[name];
   if (name !== 'height') Height.stop();
+  else if (Height.wanted) Height.start();
+  if (Sensors.started) $('sensorBtn').hidden = true;
   if (name === 'ruler') requestAnimationFrame(() => Ruler.resize());
   if (name === 'photo') requestAnimationFrame(() => Photo.resize());
   if (name === 'terrain') requestAnimationFrame(() => Terrain.open());

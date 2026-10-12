@@ -1,6 +1,6 @@
 # Toise — l'app de mesure pour iPhone
 
-Application web installable (PWA), sans compte ni publicité. Tout fonctionne hors ligne, sauf le fond de carte de l'outil Terrain.
+Application web installable (PWA), sans compte ni publicité, sans aucune bibliothèque externe. Tout fonctionne hors ligne ; le fond de carte de l'outil Terrain demande internet la première fois, puis les zones déjà vues restent disponibles sans réseau.
 
 ## Les outils
 
@@ -9,9 +9,9 @@ Application web installable (PWA), sans compte ni publicité. Tout fonctionne ho
 | **Photo** | Longueurs, surfaces + périmètre, angles réels sur n'importe quelle photo, grâce à un objet de référence : carte bancaire, A4, A3, billet, carreau, **praticable de scène 2 × 1 m**, **palette**, rectangle ou longueur connue (mm, cm ou m). Correction de perspective par homographie. | Aimant sous-pixel : les bords de la référence sont ajustés par droites (insensible aux coins arrondis) et chaque point est recalé sur le bord ou le coin le plus net. Glissement démultiplié ×0,4, loupe en pixels réels, photo en pleine résolution. **Marge ± à 95 %** calculée pour chaque mesure. |
 | **Visée › Hauteur** | Hauteur d'un mur, d'une voûte d'église, d'une structure, d'un arbre : on vise le pied puis le sommet. | Capture automatique quand le téléphone est immobile, moyenne de ~30 relevés, marge ± affichée. Saisir la distance au sol la rend encore plus précise. |
 | **Visée › Distance** | Distance entre deux points au sol sans s'y rendre (largeur d'une scène, d'une nef, entre deux poteaux). | Inclinaison + cap gyroscopique, loi des cosinus, marge ± affichée. |
-| **Visée › Surface au sol** | Surface d'une salle depuis un seul point : on vise chaque coin au ras du sol. | Idéal jusqu'à ~15 m de portée avec le téléphone à 1,5 m. |
-| **Terrain** | **Très grandes surfaces** : parcelle, parvis, champ de festival, toiture, chapiteau. On pose les coins sur une carte satellite (déplaçables), ou on ajoute sa position GPS à chaque coin, ou « Marche auto » en faisant le tour. Résultat en m², ares, hectares, acres + périmètre. | Aire géodésique (courbure de la Terre). Points GPS moyennés 8 s et pondérés. Marge ± affichée. Export des coordonnées. |
-| **Plan** | Surface d'un lieu entier par formes : nef, chœur, **abside** (demi-cercle), transepts (× 2), scène, piliers retirés… **Volume** (m³) et **capacité estimée** : debout, cocktail, bancs, théâtre, banquet, conférence. | Calcul exact à partir des cotes ; ajoute en un geste la dernière surface mesurée par les autres outils. |
+| **Visée › Surface au sol** | Surface d'une salle depuis un seul point : on vise chaque coin au ras du sol, dans n'importe quel ordre. Croquis vu de dessus avec la longueur de chaque côté. | Idéal jusqu'à ~15 m de portée avec le téléphone à 1,5 m. |
+| **Terrain** | **Très grandes surfaces** : parcelle, parvis, champ de festival, toiture, chapiteau. On pose les coins sur une carte satellite intégrée, ou on ajoute sa position GPS à chaque coin, ou « Marche auto » en faisant le tour. Longueur affichée sur chaque côté ; toucher une étiquette insère un point ; les points sont gardés même si l'app se ferme. Résultat en m², ares, hectares, acres + périmètre. | Aire géodésique (courbure de la Terre). Points GPS moyennés 8 s et pondérés. Points posés au doigt glissés à mi-vitesse. Marge ± affichée. Export des coordonnées. |
+| **Plan** | Surface d'un lieu entier par formes : nef, chœur, **abside** (demi-cercle), transepts (× 2), scène, piliers retirés… **Volume** (m³, avec une hauteur propre à chaque forme si besoin : nef haute, bas-côtés plus bas) et **capacité estimée** : debout, cocktail, bancs, théâtre, banquet, conférence. | Calcul exact à partir des cotes ; ajoute en un geste la dernière surface mesurée par les autres outils. |
 | **Outils › Niveau** | Bulle 2D, chant, pente en % et mm/m, zéro relatif, figer, son. | Moyenne glissante, 2 décimales quand le téléphone est stable, calibrage par retournement à 180°. |
 | **Outils › Règle** | Règle cm / pouces à l'échelle réelle, deux curseurs. | Modèle d'iPhone détecté, calibrage avec une carte bancaire au 0,1 pt près, curseurs démultipliés. |
 | **Mesures** | Historique avec photo annotée, marge d'erreur, note et date ; copier ou partager. | |
@@ -35,4 +35,4 @@ L'app doit être servie en **HTTPS** (requis pour la caméra, les capteurs et le
 
 ## Fichiers
 
-`index.html`, `styles.css`, `app.js` (aucune dépendance à installer), `manifest.webmanifest`, `sw.js` (hors ligne), `icons/`. La carte utilise Leaflet 1.9.4 (chargée à la demande), l'imagerie Esri et OpenStreetMap.
+`index.html`, `styles.css`, `app.js` (aucune dépendance), `manifest.webmanifest`, `sw.js` (hors ligne + cache de ~3 000 tuiles de carte), `icons/`. Fonds de carte : imagerie Esri World Imagery et OpenStreetMap.

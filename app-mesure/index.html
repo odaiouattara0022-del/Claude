@@ -70,9 +70,9 @@
               <option value="line">Longueur connue (2 points)</option>
             </select>
             <div class="custom" id="customRef" hidden>
-              <input type="number" id="customW" inputmode="decimal" placeholder="L mm" aria-label="Largeur en mm">
+              <input type="text" id="customW" inputmode="decimal" placeholder="L mm" aria-label="Largeur en mm">
               <span>×</span>
-              <input type="number" id="customH" inputmode="decimal" placeholder="H mm" aria-label="Hauteur en mm">
+              <input type="text" id="customH" inputmode="decimal" placeholder="H mm" aria-label="Hauteur en mm">
             </div>
           </div>
           <div class="tools" id="measureTools" hidden>
@@ -112,16 +112,17 @@
         </div>
         <div class="field-row">
           <label for="eyeH">Hauteur de l'objectif</label>
-          <div class="num-input"><input type="number" id="eyeH" inputmode="decimal" step="0.01" value="1.50"><span>m</span></div>
+          <div class="num-input"><input type="text" id="eyeH" inputmode="decimal" value="1,50" autocomplete="off"><span>m</span></div>
         </div>
         <div class="field-row" id="knownRow">
           <label for="knownD">Distance connue <small>(facultatif)</small></label>
-          <div class="num-input"><input type="number" id="knownD" inputmode="decimal" step="0.01" placeholder="auto"><span>m</span></div>
+          <div class="num-input"><input type="text" id="knownD" inputmode="decimal" placeholder="auto" autocomplete="off"><span>m</span></div>
         </div>
         <div class="readouts">
           <div><small id="hLabel1">Distance</small><b id="hVal1">—</b><span class="tol" id="hTol1"></span></div>
           <div><small id="hLabel2">Hauteur</small><b id="hVal2">—</b><span class="tol" id="hTol2"></span></div>
         </div>
+        <canvas id="shotSketch" class="sketch" hidden aria-label="Croquis vu de dessus des points visés"></canvas>
         <p class="note" id="heightTip" hidden></p>
         <div class="actions">
           <button class="btn primary big" id="markBtn">Viser la base</button>
@@ -134,10 +135,15 @@
 
     <!-- ============ TERRAIN ============ -->
     <section class="screen" id="s-terrain" hidden>
-      <div class="map-wrap">
-        <div id="map"></div>
-        <div class="map-msg" id="mapMsg">Chargement de la carte satellite…</div>
+      <div class="map-wrap" id="mapWrap">
+        <div class="map-msg" id="mapMsg" hidden></div>
         <div class="gps-chip" id="gpsChip" hidden></div>
+        <div class="map-btns">
+          <button class="map-btn" id="mapZoomIn" aria-label="Zoomer">+</button>
+          <button class="map-btn" id="mapZoomOut" aria-label="Dézoomer">−</button>
+          <button class="map-btn" id="mapLocate" aria-label="Ma position"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="1.8"/></svg></button>
+          <button class="map-btn" id="mapFit" aria-label="Voir toute la forme"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+        </div>
       </div>
       <div class="panel">
         <div class="seg">
@@ -149,7 +155,7 @@
           <div><small id="tLabel2">Périmètre</small><b id="tVal2">—</b><span class="tol" id="tTol2"></span></div>
         </div>
         <p class="note mono" id="tExtra"></p>
-        <div class="actions">
+        <div class="actions row-scroll">
           <button class="btn small primary" id="gpsPoint">Point GPS ici</button>
           <button class="btn small" id="gpsAuto">Marche auto</button>
           <button class="btn small" id="tLayer">Vue plan</button>
@@ -158,7 +164,7 @@
           <button class="btn small" id="tCopy">Coordonnées</button>
           <button class="btn small" id="tSave">Enregistrer</button>
         </div>
-        <p class="note">Touchez la carte pour poser les coins (un parvis, une toiture, un terrain de festival) puis glissez-les pour ajuster. À l'extérieur, ajoutez aussi votre position GPS à chaque coin.</p>
+        <p class="note">Touchez la carte pour poser les coins (parvis, toiture, terrain de festival), glissez un point pour l'ajuster, touchez un « + » pour en insérer un. À l'extérieur, ajoutez aussi votre position GPS à chaque coin. Les zones déjà vues restent disponibles hors connexion.</p>
       </div>
     </section>
 
@@ -184,7 +190,7 @@
         <div class="plan-totals">
           <div class="field-row">
             <label for="ceilH">Hauteur moyenne sous plafond</label>
-            <div class="num-input"><input type="number" id="ceilH" inputmode="decimal" step="0.1" placeholder="—"><span>m</span></div>
+            <div class="num-input"><input type="text" id="ceilH" inputmode="decimal" placeholder="—" autocomplete="off"><span>m</span></div>
           </div>
           <div class="readouts">
             <div><small>Surface totale</small><b id="planArea">0 m²</b></div>
@@ -192,7 +198,7 @@
           </div>
           <div class="field-row">
             <label for="reserve">Surface réservée <small>(scène, régie, circulations)</small></label>
-            <div class="num-input"><input type="number" id="reserve" inputmode="decimal" step="1" value="15"><span>%</span></div>
+            <div class="num-input"><input type="text" id="reserve" inputmode="decimal" value="15" autocomplete="off"><span>%</span></div>
           </div>
           <h3 class="cap-title">Capacité estimée</h3>
           <ul class="cap" id="capList"></ul>
