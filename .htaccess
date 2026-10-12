@@ -1,0 +1,18 @@
+# Publication de Toise (app-mesure/) sur https://mesure.clipscuts.com
+# Le dépôt entier est cloné par Hostinger dans le dossier du sous-domaine :
+# toutes les adresses sont servies depuis app-mesure/, le reste du dépôt n'est pas exposé.
+RewriteEngine On
+
+# HTTPS obligatoire (caméra, capteurs, GPS)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Historique Git et fichiers cachés : interdits
+RewriteRule (^|/)\. - [F,L]
+
+# Tout le reste → l'app
+RewriteCond %{REQUEST_URI} !^/app-mesure/
+RewriteRule ^(.*)$ app-mesure/$1 [L]
+
+DirectoryIndex index.html
+Options -Indexes
