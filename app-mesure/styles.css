@@ -390,3 +390,13 @@ input.invalid { border-color: var(--danger) !important; }
   .btn.small { padding: 6px 8px; font-size: 12.5px; }
   .big-num { font-size: 38px; }
 }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.toast.action { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+/* Messages : largeur confortable pour les textes longs */
+.toast { width: max-content; max-width: min(calc(100vw - 32px), 520px); border-radius: 16px; line-height: 1.35; }
+/* Paysage : bulle et lecture du niveau côte à côte */
+@media (orientation: landscape) and (max-height: 520px) {
+  .level { flex-direction: row; gap: 24px; }
+  .level-surface { width: min(30vw, 56vh, 260px); }
+}

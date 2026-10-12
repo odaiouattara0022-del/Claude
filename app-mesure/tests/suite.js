@@ -121,8 +121,20 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.waitForTimeout(700);
     await p.reload(); await p.waitForTimeout(1500);
     ok(await p.evaluate(() => !!Photo.img && Photo.ref.length === 4 && Photo.shapes.length === 1 && !!Photo.toPlane), 'photo, référence et mesures restaurées après rechargement');
-    const parsed = await p.evaluate(() => ['2m50', '1 250 mm', '36 in', '5\'11"', '2,5 m', '92 cm', 'abc'].map((t) => parseLength(t, 'cm')));
-    ok(JSON.stringify(parsed.map((v) => (isNaN(v) ? null : Math.round(v * 10) / 10))) === JSON.stringify([2500, 1250, 914.4, 1803.4, 2500, 920, null]), 'longueurs saisies comprises (2m50, 1 250 mm, 36 in, 5\'11", …)', JSON.stringify(parsed));
+    // Restauration pendant qu'un autre écran est affiché, puis retour sur Photo
+    await p.click('[data-screen=plan]'); await p.reload(); await p.waitForTimeout(1200);
+    await p.click('[data-screen=photo]'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => Photo.view.s > 0 && isFinite(Photo.view.x)), 'photo restaurée sur un autre écran : bien cadrée au retour', await p.evaluate(() => JSON.stringify(Photo.view)));
+    // Surface fermée par changement d'outil → proposée au Plan
+    await p.evaluate(() => {
+      const mk = (x, y) => { const q = [x, y]; q.sig = 1; return q; };
+      Photo.shapes.push({ type: 'area', done: false, pts: [mk(1400, 1900), mk(2600, 1900), mk(2600, 2300), mk(1400, 2300)] });
+      Photo.tool = 'area';
+    });
+    await p.click('[data-tool=line]');
+    ok(await p.evaluate(() => lastArea && lastArea.label === 'Photo'), 'surface fermée par changement d\'outil : proposée au Plan', await p.evaluate(() => JSON.stringify(lastArea)));
+    const parsed = await p.evaluate(() => ['2m50', '1 250 mm', '36 in', '5\'11"', '2,5 m', '92 cm', 'abc', '5’11”', '1 m 20 cm', '2,5 mètres', '83 centimètres'].map((t) => parseLength(t, 'cm')));
+    ok(JSON.stringify(parsed.map((v) => (isNaN(v) ? null : Math.round(v * 10) / 10))) === JSON.stringify([2500, 1250, 914.4, 1803.4, 2500, 920, null, 1803.4, 1200, 2500, 830]), 'longueurs saisies comprises (2m50, 1 250 mm, 36 in, 5’11”, 1 m 20 cm, 2,5 mètres…)', JSON.stringify(parsed));
     ok(await p.evaluate(() => fmtLen(5 * 304.8 + 11.999 * 25.4, 'ft', 1)) === '6′ 0,00″', 'pieds-pouces arrondis correctement', await p.evaluate(() => fmtLen(5 * 304.8 + 11.999 * 25.4, 'ft', 1)));
     // Nouvelle photo : confirmation si des mesures ne sont pas enregistrées
     await p.click('#newPhotoBtn');
@@ -171,12 +183,23 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     ok(near(area2, 100, 0.5), 'surface au sol juste en tenant compte de l\'écart pivot–téléphone', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
     await p.reload(); await p.click('[data-screen=height]');
     ok(await p.evaluate(() => Height.shots.length === 4 && Height.mode === 'floor'), 'points visés conservés après rechargement');
+    await p.evaluate(() => Sensors.start());
+    await orient(p, 0, 90 + el2, 0, 20);
+    await p.click('#markBtn'); await orient(p, 0, 90 + el2, 0, 30);
+    ok(await p.evaluate(() => Height.shots.length === 4), 'série d\'avant le redémarrage : pas complétée avec un cap d\'une autre origine');
     // Distance entre 2 points
     await p.evaluate(() => Sensors.start());
     await p.click('[data-hmode=dist]'); await p.evaluate(() => { Height.shots = []; Height.changed(); }); await p.fill('#armOff', '0');
     for (const [hd, r] of [[0, 8], [60, 12]]) { const e = -Math.atan(1.5 / r) * 180 / Math.PI; await orient(p, (360 - hd) % 360, 90 + e, 0, 10); await p.click('#markBtn'); await orient(p, (360 - hd) % 360, 90 + e, 0, 40); }
     d = parseNum(await p.textContent('#hVal1'));
     ok(near(d, 10.583, 0.01), 'distance A–B 10,583 m', await p.textContent('#hVal1') + ' ' + await p.textContent('#hTol1'));
+    // La caméra de la Visée n'est jamais demandée depuis un autre écran
+    const calls = await p.evaluate(async () => {
+      let n = 0; const orig = Height.start.bind(Height); Height.start = () => { n++; return Promise.resolve(); };
+      Height.wanted = true;
+      show('terrain'); show('plan'); const off = n; show('height'); const on = n; Height.start = orig; return [off, on];
+    });
+    ok(calls[0] === 0 && calls[1] === 1, 'caméra relancée seulement sur l\'écran Visée', JSON.stringify(calls));
     ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
     await ctx.close();
   }
@@ -192,7 +215,7 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await orient(p, 0, 0, -0.6, 40, 0.001); await p.click('#calibBtn');
     await orient(p, 0, 0, 1.4, 40, 0.001);
     ok(await p.textContent('#levelMain') === '1,00°', 'calibrage par retournement : le défaut de 0,4° est retiré', await p.textContent('#levelMain'));
-    ok(await p.evaluate(() => Level.calib.edge.e === 0), 'le calibrage de la surface ne touche pas au chant');
+    ok(await p.evaluate(() => Object.values(Level.calib.edges).every((v) => v === 0)), 'le calibrage de la surface ne touche pas au chant');
     // Inclinaison exacte en biais : X = 30°, Y = 30° → 39,23° (et non 42,43° = hypot)
     await p.evaluate(() => { Level.calib.surface = { x: 0, y: 0 }; });
     await p.evaluate(async () => {
@@ -203,8 +226,19 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await orient(p, 0, 80, 0, 40, 0.001);
     ok(!(await p.isHidden('#levelEdge')), 'bascule automatique en mode chant');
     ok((await p.textContent('#levelStable')).includes('stable'), 'chant : la moyenne se stabilise (« stable »)');
+    // Chant : calibrage propre à chaque chant (défaut de 0,3° posé sur le chant du bas, retourné bout pour bout)
+    await p.evaluate(async () => {
+      const feed = async (rollDeg) => { const r = rollDeg / 57.29578, up = [Math.sin(r), Math.cos(r), 0.02]; for (let i = 0; i < 30; i++) { Level.update(up, up); await new Promise((q) => setTimeout(q, 5)); } };
+      await feed(1.3); document.getElementById('calibBtn').click();
+      await feed(-0.7); document.getElementById('calibBtn').click();
+      await feed(1.3);
+    });
+    ok(await p.evaluate(() => Math.abs(Level.calib.edges['0'] - 0.3) < 0.01 && Level.calib.edges['180'] === 0), 'calibrage du chant du bas sans effet sur le chant opposé', await p.evaluate(() => JSON.stringify(Level.calib.edges)));
+    ok(await p.textContent('#levelMain') === '1,00°', 'chant calibré : 1,00°', await p.textContent('#levelMain'));
     await p.click('[data-tool-screen=ruler]'); await p.waitForTimeout(300);
     ok(!(await p.isHidden('#rulerCalib')) && (await p.textContent('#rulerPpi')).includes('non calibrée'), 'règle non calibrée : signalée et calibrage proposé');
+    await p.waitForTimeout(200);
+    ok(await p.evaluate(() => 20 + Ruler.calibLen * Ruler.pxmm * 1.15 <= Ruler.h), 'trait de calibrage dans l\'écran', await p.evaluate(() => `${Ruler.calibLen} mm, hauteur ${Math.round(Ruler.h)} px`));
     await p.click('#calibDone');
     const box = await p.locator('#curB').boundingBox();
     const y0 = box.y + box.height / 2, x = box.x + box.width - 25;
@@ -313,7 +347,46 @@ const orient = (p, alpha, beta, gamma, n = 30, jitter = 0.01) => p.evaluate(asyn
     await p.click('[data-screen=history]');
     await p.setInputFiles('#importFile', 'out/import.json'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => { const i = History.items.find((x) => x.id === 42); return i && i.img === null && !document.querySelector('#histList img[src="x"]'); }), 'import : mesures ajoutées, contenu dangereux neutralisé');
+    data.keys.ppi = 1e9; data.keys.levelCalib3 = { surface: { x: 'a' }, edges: null }; data.keys.plan = { pieces: 'x' }; data.app = 'Toise';
+    fs.writeFileSync('out/import2.json', JSON.stringify(data));
+    await p.setInputFiles('#importFile', 'out/import2.json'); await p.waitForTimeout(300);
+    await p.reload(); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => Ruler.ppi < 300 && Level.calib.surface.x === 0 && Array.isArray(Plan.data.pieces)), 'import piégé (échelle, calibrage, plan) : valeurs refusées, l\'app démarre');
     ok(p.errs.length === 0, 'aucune erreur', p.errs.join(' | '));
+    await ctx.close();
+  }
+
+  console.log('\n7. Hors ligne et mises à jour (service worker, serveur local)');
+  {
+    const { execSync, spawn } = require('child_process');
+    const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'toise-sw-'));
+    execSync(`cp -r ${path.resolve(__dirname, '..')}/{index.html,styles.css,app.js,sw.js,manifest.webmanifest,icons} ${dir}/`, { shell: '/bin/bash' });
+    const port = 8700 + Math.floor(Math.random() * 200);
+    const srv = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], { cwd: dir, stdio: 'ignore' });
+    await new Promise((r) => setTimeout(r, 800));
+    const ctx = await b.newContext({ ...devices['iPhone 13'] });
+    const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+    const base = `http://127.0.0.1:${port}/`;
+    await p.goto(base); await p.evaluate(() => Promise.race([navigator.serviceWorker.ready, new Promise((r) => setTimeout(r, 8000))])); await p.waitForTimeout(1500);
+    await p.reload(); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => !!navigator.serviceWorker.controller), 'service worker actif');
+    // Déploiement simulé : nouvelle page ET nouveau script (la page sait l'écrire, le script la lit)
+    fs.writeFileSync(path.join(dir, 'app.js'), fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + "\nwindow.TOISE_V2 = !!document.getElementById('v2');\n");
+    fs.writeFileSync(path.join(dir, 'index.html'), fs.readFileSync(path.join(dir, 'index.html'), 'utf8').replace('<main>', '<main><i id="v2" hidden></i>'));
+    await p.waitForTimeout(31000);   // le service worker vérifie les mises à jour au plus toutes les 30 s
+    await p.reload(); await p.waitForTimeout(2500);
+    const mixed1 = await p.evaluate(() => ({ v2js: window.TOISE_V2 !== undefined, v2html: !!document.getElementById('v2') }));
+    ok(mixed1.v2js === mixed1.v2html, 'jamais d\'ancienne page avec le nouveau script (ou l\'inverse)', JSON.stringify(mixed1));
+    ok(await p.isVisible('#toast') && (await p.textContent('#toast')).includes('Nouvelle version'), 'nouvelle version annoncée', await p.textContent('#toast'));
+    await p.click('#toast'); await p.waitForTimeout(2000);
+    const after = await p.evaluate(() => ({ v2js: window.TOISE_V2, v2html: !!document.getElementById('v2') }));
+    ok(after.v2js === true && after.v2html, 'après rechargement : nouvelle version complète', JSON.stringify(after));
+    // Hors connexion : l'app s'ouvre depuis le cache
+    srv.kill(); await new Promise((r) => setTimeout(r, 300));
+    await p.reload(); await p.waitForTimeout(1000);
+    ok(await p.evaluate(() => document.title === 'Toise' && typeof Photo === 'object'), 'ouverture hors connexion');
+    ok(errs.length === 0, 'aucune erreur', errs.join(' | '));
     await ctx.close();
   }
 

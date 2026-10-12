@@ -19,8 +19,8 @@
   <header class="top">
     <h1 id="screenTitle">Photo</h1>
     <div class="seg mini" id="toolSeg" hidden>
-      <button class="seg-b" data-tool-screen="level">Niveau</button>
-      <button class="seg-b" data-tool-screen="ruler">Règle</button>
+      <button class="seg-b" aria-pressed="false" data-tool-screen="level">Niveau</button>
+      <button class="seg-b" aria-pressed="false" data-tool-screen="ruler">Règle</button>
     </div>
     <button class="chip" id="unitBtn" aria-label="Changer d'unité">cm</button>
   </header>
@@ -78,9 +78,9 @@
             </div>
           </div>
           <div class="tools" id="measureTools" hidden>
-            <button class="tool active" data-tool="line">Longueur</button>
-            <button class="tool" data-tool="area">Surface</button>
-            <button class="tool" data-tool="angle">Angle</button>
+            <button class="tool active" data-tool="line" aria-pressed="true">Longueur</button>
+            <button class="tool" data-tool="area" aria-pressed="false">Surface</button>
+            <button class="tool" data-tool="angle" aria-pressed="false">Angle</button>
           </div>
           <div class="actions">
             <button class="btn small" id="undoBtn">Annuler</button>
@@ -108,9 +108,9 @@
       </div>
       <div class="panel">
         <div class="seg">
-          <button class="seg-b active" data-hmode="height">Hauteur</button>
-          <button class="seg-b" data-hmode="dist">Distance</button>
-          <button class="seg-b" data-hmode="floor">Surface au sol</button>
+          <button class="seg-b active" aria-pressed="true" data-hmode="height">Hauteur</button>
+          <button class="seg-b" aria-pressed="false" data-hmode="dist">Distance</button>
+          <button class="seg-b" aria-pressed="false" data-hmode="floor">Surface au sol</button>
         </div>
         <div class="field-row">
           <label for="eyeH">Hauteur de l'objectif</label>
@@ -153,8 +153,8 @@
       </div>
       <div class="panel">
         <div class="seg">
-          <button class="seg-b active" data-tmode="area">Surface</button>
-          <button class="seg-b" data-tmode="line">Distance</button>
+          <button class="seg-b active" aria-pressed="true" data-tmode="area">Surface</button>
+          <button class="seg-b" aria-pressed="false" data-tmode="line">Distance</button>
         </div>
         <div class="readouts">
           <div><small id="tLabel1">Surface</small><b id="tVal1">—</b><span class="tol" id="tTol1"></span></div>
@@ -235,10 +235,10 @@
         </div>
       </div>
       <div class="panel">
-        <div class="seg" role="tablist">
-          <button class="seg-b active" data-lmode="auto">Auto</button>
-          <button class="seg-b" data-lmode="surface">Surface</button>
-          <button class="seg-b" data-lmode="edge">Chant</button>
+        <div class="seg">
+          <button class="seg-b active" aria-pressed="true" data-lmode="auto">Auto</button>
+          <button class="seg-b" aria-pressed="false" data-lmode="surface">Surface</button>
+          <button class="seg-b" aria-pressed="false" data-lmode="edge">Chant</button>
         </div>
         <div class="actions">
           <button class="btn small" id="sensorBtn">Activer les capteurs</button>
@@ -266,7 +266,7 @@
           <button class="btn small primary" id="rulerSave">Enregistrer</button>
         </div>
         <div class="calib" id="rulerCalib" hidden>
-          <p>Posez une carte bancaire sur l'écran, bord contre le trait du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord (85,60 mm).</p>
+          <p id="calibText">Posez une carte bancaire sur l'écran, contre le trait rouge du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord.</p>
           <input type="range" id="rulerSlider" min="100" max="220" step="0.05" aria-label="Échelle de la règle">
           <div class="actions">
             <button class="btn small" id="ppiMinus" aria-label="Réduire">−</button>
@@ -309,7 +309,8 @@
   </nav>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<div class="sr-only" id="live" role="status" aria-live="polite"></div>
 
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-card">

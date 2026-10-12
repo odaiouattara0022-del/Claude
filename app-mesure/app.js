@@ -81,6 +81,7 @@ function fmtLen(mm, u = unit, tol = Infinity) {
     case 'm': return num(mm / 1000, tol < 1 ? 4 : (tol < 10 || mm < 10000) ? 3 : 2) + ' m';
     case 'in': return num(mm / 25.4, tol < 0.25 ? 3 : 2) + ' in';
     case 'ft': {
+      if (mm < 0) return '−' + fmtLen(-mm, u, tol);
       const dg = tol < 2.5 ? 2 : 1;
       const inches = Math.round(mm / 25.4 * 10 ** dg) / 10 ** dg; // arrondi d'abord : jamais « 5′ 12,00″ »
       const ft = Math.floor(inches / 12 + 1e-9);
@@ -91,6 +92,7 @@ function fmtLen(mm, u = unit, tol = Infinity) {
 
 function fmtTol(mm, u = unit) {
   if (!isFinite(mm)) return '';
+  if (u === 'ft' && mm >= 609.6) return '± ' + num(mm / 304.8, 2) + ' ft';
   if (u === 'in' || u === 'ft') return '± ' + num(mm / 25.4, mm < 25.4 ? 3 : 2) + ' in';
   if (mm < 1) return '± ' + num(mm, 2) + ' mm';
   if (mm < 10) return '± ' + num(mm, 1) + ' mm';
@@ -142,21 +144,26 @@ function toast(msg, ms = 2400) {
   const t = $('toast');
   t.textContent = msg;
   t.hidden = false;
+  t.classList.remove('action'); t.onclick = null;
+  // Zone d'annonce séparée, toujours présente : VoiceOver lit le message de façon fiable
+  const live = $('live');
+  if (live) { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 60); }
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.hidden = true; }, ms);
 }
 
 // Bouton destructeur : un premier toucher arme (« Confirmer ? »), le second agit
 function armConfirm(btn, needs, action) {
-  const label = btn.textContent;
+  const label = btn.textContent, wasDanger = btn.classList.contains('danger');
   let armed = false, t;
+  const disarm = () => { armed = false; btn.textContent = label; btn.classList.toggle('danger', wasDanger); };
   btn.addEventListener('click', () => {
     if (needs() && !armed) {
       armed = true; btn.textContent = 'Confirmer ?'; btn.classList.add('danger');
-      t = setTimeout(() => { armed = false; btn.textContent = label; btn.classList.remove('danger'); }, 2500);
+      t = setTimeout(disarm, 2500);
       return;
     }
-    clearTimeout(t); armed = false; btn.textContent = label; btn.classList.remove('danger');
+    clearTimeout(t); disarm();
     action();
   });
 }
@@ -241,12 +248,13 @@ const History = {
     this.items.unshift(item);
     if (!store.set('history', this.items)) {
       item.img = null;
-      if (!store.set('history', this.items)) { this.items.shift(); toast('Stockage plein : supprimez des mesures.'); return; }
+      if (!store.set('history', this.items)) { this.items.shift(); toast('Stockage plein : supprimez des mesures.'); this.render(); return false; }
       toast('Enregistré (sans photo, stockage plein)');
     } else toast(isStandalone() || store.get('installTip', false) ? 'Mesure enregistrée'
       : 'Mesure enregistrée. Ajoutez Toise à l\'écran d\'accueil pour la garder (Partager › Sur l\'écran d\'accueil).', isStandalone() ? 2400 : 5000);
     if (!isStandalone()) store.set('installTip', true);
     this.render();
+    return true;
   },
 
   remove(id) {
@@ -330,29 +338,71 @@ $('exportAll').addEventListener('click', async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
 
+// Validation de chaque donnée importée : un fichier faux ou piégé ne doit ni planter l'app ni s'afficher tel quel
+const fin = (v, lo, hi) => typeof v === 'number' && isFinite(v) && v >= lo && v <= hi;
+const IMPORT_RULES = {
+  ppi: (v) => (fin(v, 100, 220) ? v : undefined),
+  eyeH: (v) => (fin(v, 0.2, 50) ? v : undefined),
+  armOff: (v) => (fin(v, 0, 3) ? v : undefined),
+  levelCalib3: (v) => {
+    if (!v || !v.surface || !v.edges || !fin(v.surface.x, -3, 3) || !fin(v.surface.y, -3, 3)) return undefined;
+    const edges = {};
+    for (const k of ['0', '90', '180', '-90']) edges[k] = fin(v.edges[k], -3, 3) ? v.edges[k] : 0;
+    return { surface: { x: v.surface.x, y: v.surface.y }, edges };
+  },
+  terrainPts: (v) => (Array.isArray(v) && v.length <= 5000
+    ? v.filter((q) => Array.isArray(q) && fin(q[0], -85, 85) && fin(q[1], -180, 180))
+      .map((q) => [q[0], q[1], fin(q[2], 0.01, 1e4) ? q[2] : 5, q[3] === 'gps' ? 'gps' : 'carte'])
+    : undefined),
+  plan: (v) => {
+    if (!v || !Array.isArray(v.pieces)) return undefined;
+    const pieces = v.pieces.filter((pc) => pc && PIECES[pc.type] && Array.isArray(pc.vals)).slice(0, 300).map((pc, i) => ({
+      id: Date.now() + i, type: pc.type, label: String(pc.label || PIECES[pc.type].name).slice(0, 80),
+      vals: PIECES[pc.type].fields.map((_, j) => String(pc.vals[j] ?? '').slice(0, 20)),
+      qty: fin(pc.qty, 1, 99) ? Math.round(pc.qty) : 1, sign: pc.sign === -1 ? -1 : 1, h: String(pc.h ?? '').slice(0, 20),
+    }));
+    return { name: String(v.name || '').slice(0, 80), pieces, ceil: String(v.ceil ?? '').slice(0, 20), reserve: fin(pnum(v.reserve), 0, 90) ? String(pnum(v.reserve)) : '15' };
+  },
+};
+
 $('importFile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    if (!data || data.app !== 'Toise' || typeof data.keys !== 'object') throw new Error('format');
-    const items = Array.isArray(data.keys.history) ? data.keys.history : [];
-    // Validation stricte : texte simple, images JPEG en data: uniquement (tout est affiché en textContent)
-    const clean = items.filter((i) => i && typeof i.value === 'string').map((i) => ({
-      id: Number(i.id) || Date.now() + Math.random(), kind: String(i.kind || 'Mesure').slice(0, 80), value: String(i.value).slice(0, 2000),
-      note: String(i.note || '').slice(0, 200), date: isNaN(Date.parse(i.date)) ? new Date().toISOString() : i.date,
-      img: typeof i.img === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.img) ? i.img : null,
-    }));
-    const known = new Set(History.items.map((i) => i.id));
-    const added = clean.filter((i) => !known.has(i.id));
-    History.items = [...History.items, ...added].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
-    store.set('history', History.items);
-    for (const k of ['plan', 'terrainPts', 'levelCalib2', 'ppi', 'eyeH', 'armOff']) {
-      if (data.keys[k] !== undefined && store.get(k, null) == null) store.set(k, data.keys[k]);
-    }
-    History.render();
-    toast(`${added.length} mesure${added.length > 1 ? 's' : ''} importée${added.length > 1 ? 's' : ''}. Rouvrez l'app pour retrouver le plan et les réglages.`, 4000);
-  } catch { toast('Fichier non reconnu : choisissez un export Toise (.json)'); }
+  let data;
+  try { data = JSON.parse(await f.text()); } catch { data = null; }
+  if (!data || data.app !== 'Toise' || typeof data.keys !== 'object' || !data.keys) { toast('Fichier non reconnu : choisissez un export Toise (.json)'); return; }
+  const items = Array.isArray(data.keys.history) ? data.keys.history : [];
+  const clean = items.filter((i) => i && typeof i.value === 'string').slice(0, 2000).map((i) => ({
+    id: Number(i.id) || Date.now() + Math.random(), kind: String(i.kind || 'Mesure').slice(0, 80), value: String(i.value).slice(0, 2000),
+    note: String(i.note || '').slice(0, 200), date: isNaN(Date.parse(i.date)) ? new Date().toISOString() : new Date(Date.parse(i.date)).toISOString(),
+    img: typeof i.img === 'string' && i.img.length < 400000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(i.img) ? i.img : null,
+  }));
+  const known = new Set(History.items.map((i) => i.id));
+  const added = clean.filter((i) => !known.has(i.id));
+  const before = History.items;
+  const merged = [...before, ...added].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  // Stockage plein : on retente sans les photos importées, sinon on annule tout
+  let noImg = false;
+  if (!store.set('history', merged)) {
+    added.forEach((i) => { i.img = null; }); noImg = true;
+    if (!store.set('history', merged)) { store.set('history', before); toast('Stockage plein : import impossible. Supprimez d\'anciennes mesures avec photo, puis réessayez.', 5000); return; }
+  }
+  History.items = merged;
+  // Réglages et travaux : appliqués tout de suite, seulement là où il n'y a encore rien
+  const applied = [];
+  for (const [k, rule] of Object.entries(IMPORT_RULES)) {
+    if (data.keys[k] === undefined) continue;
+    const v = rule(data.keys[k]);
+    if (v === undefined) continue;
+    if (k === 'plan' && !Plan.data.pieces.length) { Plan.data = v; store.set('plan', v); $('planName').value = v.name; $('ceilH').value = v.ceil; $('reserve').value = v.reserve; Plan.renderList(); applied.push('plan'); }
+    else if (k === 'terrainPts' && !Terrain.pts.length && v.length) { Terrain.pts = v.map((q) => mkPt(q[0], q[1], q[2], q[3])); Terrain.changed(); Terrain.fit(); applied.push('terrain'); }
+    else if (k === 'levelCalib3' && !store.get('levelCalib3', null)) { Level.calib = v; store.set(k, v); Level.paintCalib(); applied.push('calibrage du niveau'); }
+    else if (k === 'ppi' && !Ruler.calibrated) { Ruler.ppi = v; Ruler.calibrated = true; store.set(k, v); Ruler.draw(); Ruler.place(); applied.push('règle'); }
+    else if (k === 'eyeH' || k === 'armOff') { if (store.get(k, null) == null) { store.set(k, v); $(k).value = num(v, 2); } }
+  }
+  History.render();
+  toast(`${added.length} mesure${added.length > 1 ? 's' : ''} importée${added.length > 1 ? 's' : ''}` + (noImg ? ' (sans photos : stockage plein)' : '')
+    + (applied.length ? ` · repris : ${applied.join(', ')}` : ''), 4500);
 });
 
 let clearArmed = false;
@@ -667,7 +717,12 @@ async function exifFocal35(file) {
 function parseLength(str, defUnit) {
   const F = { mm: 1, cm: 10, dm: 100, m: 1000, km: 1e6, in: 25.4, po: 25.4, pouce: 25.4, pouces: 25.4, '"': 25.4, '″': 25.4,
     ft: 304.8, pi: 304.8, pied: 304.8, pieds: 304.8, "'": 304.8, '′': 304.8 };
-  let t = String(str || '').toLowerCase().trim().replace(/(\d)[\s\u202f\u00a0]+(?=\d)/g, '$1').replace(/,/g, '.');
+  let t = String(str || '').toLowerCase().trim()
+    .replace(/[’‘´`]/g, "'").replace(/[”“″]/g, '"').replace(/′/g, "'")
+    .replace(/millim[eè]tres?/g, 'mm').replace(/centim[eè]tres?/g, 'cm').replace(/kilom[eè]tres?/g, 'km').replace(/m[eè]tres?/g, 'm')
+    .replace(/(\d)[\s\u202f\u00a0]+(?=\d)/g, '$1').replace(/,/g, '.');
+  let mc = t.match(/^(\d+(?:\.\d+)?)\s*m\s*(\d+(?:\.\d+)?)\s*cm$/);              // 1 m 20 cm
+  if (mc) return parseFloat(mc[1]) * 1000 + parseFloat(mc[2]) * 10;
   let m = t.match(/^(\d+(?:\.\d+)?)\s*m\s*(\d{1,2})$/);                       // 2m50
   if (m) return parseFloat(m[1]) * 1000 + parseFloat(m[2].padEnd(2, '0')) * 10;
   m = t.match(/^(\d+(?:\.\d+)?)\s*(?:'|′|ft|pi|pieds?)\s*(\d+(?:\.\d+)?)\s*(?:"|″|in|po|pouces?)?$/); // 5'11"
@@ -690,8 +745,8 @@ const IDB = {
       if (!window.indexedDB) { rej(new Error('idb')); return; }
       const r = indexedDB.open('toise', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('kv');
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
+      r.onsuccess = () => { const db = r.result; db.onclose = () => { this.p = null; }; db.onversionchange = () => { db.close(); this.p = null; }; res(db); };
+      r.onerror = () => { this.p = null; rej(r.error); };
     });
     return this.p;
   },
@@ -702,7 +757,7 @@ const IDB = {
         const tx = db.transaction('kv', mode), st = tx.objectStore('kv'), rq = fn(st);
         tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => res(undefined); tx.onabort = () => res(undefined);
       });
-    } catch { return undefined; }
+    } catch { this.p = null; return undefined; }
   },
   get(k) { return this.run('readonly', (st) => st.get(k)); },
   set(k, v) { return this.run('readwrite', (st) => st.put(v, k)); },
@@ -748,17 +803,25 @@ const Photo = {
       const kind = $('refSelect').value === 'line' ? 'line' : 'rect';
       if (kind !== this.lastRefKind) {
         if (this.ref.length) toast('Type de référence changé : replacez les points de la référence');
-        this.ref = []; this.lineRefLen = null; this.refSwap = false;
+        this.ref = []; this.lineRefLen = null; this.forcedLong = null;
       }
       this.lastRefKind = kind;
       this.computeRef();
+      this.pushArea(true);
       this.persist();
     });
-    $('swapRefBtn').addEventListener('click', () => { this.refSwap = !this.refSwap; this.computeRef(); this.persist(); toast('Longueur et largeur de la référence inversées'); });
+    $('swapRefBtn').addEventListener('click', () => {
+      const q = orderConvex(this.ref);
+      const [a, b] = this.bigFirst ? [q[1], q[2]] : [q[0], q[1]];   // l'autre côté devient le grand
+      const t = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      this.forcedLong = ((t % Math.PI) + Math.PI) % Math.PI;
+      this.computeRef(); this.pushArea(true); this.persist();
+      toast('Longueur et largeur de la référence inversées');
+    });
     $('lineLenBtn').addEventListener('click', () => this.askLineLen());
     ['customW', 'customH'].forEach((id) => $(id).addEventListener('input', () => this.computeRef()));
     armConfirm($('resetRefBtn'), () => this.ref.length > 0 && this.shapes.length > 0, () => {
-      this.ref = []; this.lineRefLen = null; this.refSwap = false; this.computeRef(); this.persist();
+      this.ref = []; this.lineRefLen = null; this.forcedLong = null; this.computeRef(); this.persist();
       toast('Replacez les points de la référence');
     });
     $('undoBtn').addEventListener('click', () => this.undo());
@@ -768,11 +831,18 @@ const Photo = {
     paintSnap();
     sb.addEventListener('click', () => { this.snap = !this.snap; store.set('snap', this.snap); paintSnap(); });
     document.querySelectorAll('.tool').forEach((b) => b.addEventListener('click', () => {
+      const c = this.current();
       this.finishOpen();
+      if (c && c.done && c.type === 'area') this.pushArea();
       this.tool = b.dataset.tool;
-      document.querySelectorAll('.tool').forEach((x) => x.classList.toggle('active', x === b));
+      document.querySelectorAll('.tool').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
       this.refresh();
+      this.persist();
     }));
+    ['customW', 'customH'].forEach((id) => $(id).addEventListener('input', () => { this.pushArea(true); this.persist(); }));
+    // iOS peut fermer l'app en arrière-plan : on sauvegarde tout de suite
+    document.addEventListener('visibilitychange', () => { if (document.hidden && this.img) this.persist(false, true); });
+    window.addEventListener('pagehide', () => { if (this.img) this.persist(false, true); });
 
     const c = this.canvas;
     c.addEventListener('pointerdown', (e) => this.down(e));
@@ -789,47 +859,64 @@ const Photo = {
     const f35 = state ? Promise.resolve(state.f35) : exifFocal35(file);
     im.onload = async () => {
       this.img = im; this.file = file;
-      this.ref = []; this.shapes = []; this.toPlane = null; this.lineRefLen = null; this.refSwap = false;
+      this.ref = []; this.shapes = []; this.toPlane = null; this.lineRefLen = null; this.forcedLong = null;
       this.f35 = await f35;
       // Focale rapportée au grand côté de l'image (l'équivalent 24×36 se rapporte à la diagonale de 43,27 mm)
       this.focal = this.f35 ? this.f35 / 43.27 * Math.hypot(im.naturalWidth, im.naturalHeight) / Math.max(im.naturalWidth, im.naturalHeight) : null;
       if (state) {
         this.ref = (state.ref || []).map(ptIn);
         this.shapes = (state.shapes || []).map((sh) => ({ type: sh.type, done: sh.done, pts: sh.pts.map(ptIn) }));
-        this.lineRefLen = state.lineRefLen || null; this.refSwap = !!state.refSwap;
+        this.lineRefLen = state.lineRefLen || null; this.forcedLong = state.forcedLong ?? null;
+        const open = this.shapes[this.shapes.length - 1];
+        this.tool = open && !open.done ? open.type : (state.tool || this.tool);
+        document.querySelectorAll('.tool').forEach((x) => { x.classList.toggle('active', x.dataset.tool === this.tool); x.setAttribute('aria-pressed', String(x.dataset.tool === this.tool)); });
         if (state.refType) { $('refSelect').value = state.refType; $('customRef').hidden = state.refType !== 'custom'; this.lastRefKind = state.refType === 'line' ? 'line' : 'rect'; }
         if (state.custom) { $('customW').value = state.custom[0] || ''; $('customH').value = state.custom[1] || ''; }
       }
       $('photoEmpty').hidden = true; $('photoWork').hidden = false;
-      requestAnimationFrame(() => { this.resize(); this.fit(); this.computeRef(); });
+      requestAnimationFrame(() => { this.resize(); this.fit(); this.computeRef(); if (state) this.pushArea(true); });
       if (!state) {
         const mp = im.naturalWidth * im.naturalHeight / 1e6;
         toast(`Photo ${im.naturalWidth} × ${im.naturalHeight} (${num(mp, 1)} Mpx)` + (this.f35 ? ` · focale ${this.f35} mm` : '') + ' chargée en pleine résolution');
         this.persist(true);
       }
     };
-    im.onerror = () => toast('Image illisible');
+    im.onerror = () => {
+      URL.revokeObjectURL(url); if (this.url === url) this.url = null;
+      if (state) { IDB.del('photo'); IDB.del('photoFile'); toast('Le travail photo précédent n\'a pas pu être restauré'); }
+      else toast('Image illisible : choisissez une photo JPEG ou HEIC');
+    };
     im.src = url;
   },
 
   // Le travail en cours (photo + points) survit à un rechargement de la page, fréquent sur iPhone
-  persist(withImage = false) {
+  persist(withImage = false, now = false) {
     clearTimeout(this.persistT);
-    this.persistT = setTimeout(() => {
+    const run = () => {
       if (!this.img) { IDB.del('photo'); return; }
       const st = {
         ref: this.ref.map(ptOut), shapes: this.shapes.map((sh) => ({ type: sh.type, done: sh.done, pts: sh.pts.map(ptOut) })),
-        lineRefLen: this.lineRefLen, refSwap: !!this.refSwap, refType: $('refSelect').value,
+        lineRefLen: this.lineRefLen, forcedLong: this.forcedLong ?? null, refType: $('refSelect').value, tool: this.tool,
         custom: [$('customW').value, $('customH').value], f35: this.f35 || null,
       };
       if (withImage) IDB.set('photoFile', this.file);
       IDB.set('photo', st);
-    }, withImage ? 0 : 400);
+    };
+    if (now || withImage) run(); else this.persistT = setTimeout(run, 400);
   },
 
   async restore() {
     const [st, file] = await Promise.all([IDB.get('photo'), IDB.get('photoFile')]);
-    if (st && file instanceof Blob) this.load(file, st);
+    if (st && file instanceof Blob && file.size > 0) this.load(file, st);
+    else if (st || file) { IDB.del('photo'); IDB.del('photoFile'); }
+  },
+
+  // Dernière surface fermée → proposée au Plan (onlyIfPhoto : ne remplace pas une surface Terrain/Visée plus récente)
+  pushArea(onlyIfPhoto = false) {
+    if (!this.toPlane) return;
+    if (onlyIfPhoto && lastArea && lastArea.label !== 'Photo') return;
+    const sh = [...this.shapes].reverse().find((x) => x.type === 'area' && x.done);
+    if (sh) setLastArea(this.value('area', sh.pts.map(this.toPlane)) / 1e6, 'Photo');
   },
 
   dirty() { return this.shapes.some((sh) => sh.pts.length) && !this.saved; },
@@ -841,11 +928,14 @@ const Photo = {
     this.canvas.width = Math.round(r.width * dpr);
     this.canvas.height = Math.round(r.height * dpr);
     this.cw = r.width; this.ch = r.height;
+    if (this.needFit || !(this.view.s > 0)) { this.fit(); return; }
     this.draw();
   },
 
   fit() {
     if (!this.img) return;
+    if (!this.cw || !this.ch) { this.needFit = true; return; }   // écran caché : on cadrera à l'affichage
+    this.needFit = false;
     const s = Math.min(this.cw / this.img.naturalWidth, this.ch / this.img.naturalHeight);
     this.view = { s, x: (this.cw - this.img.naturalWidth * s) / 2, y: (this.ch - this.img.naturalHeight * s) / 2 };
     this.draw();
@@ -884,8 +974,15 @@ const Photo = {
   computeRef() {
     const dims = this.refDims();
     if (this.ref.length === 4 && dims && $('refSelect').value !== 'line') {
-      const auto = refBigFirst(orderConvex(this.ref), dims, this.img && this.img.naturalWidth, this.img && this.img.naturalHeight, this.focal);
-      this.bigFirst = this.refSwap ? !auto : auto;
+      const q = orderConvex(this.ref);
+      if (this.forcedLong != null) {
+        // Choix manuel : le grand côté est celui dont la direction à l'image est la plus proche de celle retenue
+        const ang = (a, b) => { const t = Math.atan2(b[1] - a[1], b[0] - a[0]); return ((t % Math.PI) + Math.PI) % Math.PI; };
+        const diff = (x, y) => { const d = Math.abs(x - y) % Math.PI; return Math.min(d, Math.PI - d); };
+        this.bigFirst = diff(ang(q[0], q[1]), this.forcedLong) <= diff(ang(q[1], q[2]), this.forcedLong);
+      } else {
+        this.bigFirst = refBigFirst(q, dims, this.img && this.img.naturalWidth, this.img && this.img.naturalHeight, this.focal);
+      }
     }
     const square = !dims || Math.max(dims[0], dims[1]) / Math.min(dims[0], dims[1]) < 1.02;
     $('swapRefBtn').hidden = !(this.ref.length === 4 && $('refSelect').value !== 'line' && !square);
@@ -963,6 +1060,7 @@ const Photo = {
 
   down(e) {
     if (!this.img) return;
+    if (!(this.view.s > 0)) { this.resize(); if (!(this.view.s > 0)) return; }
     this.canvas.setPointerCapture(e.pointerId);
     const sp = this.pos(e);
     this.pointers.set(e.pointerId, sp);
@@ -1041,6 +1139,7 @@ const Photo = {
       this.refresh();
       this.saved = false;
       if (sh && sh.type === 'area' && sh.done && this.toPlane) setLastArea(this.value('area', sh.pts.map(this.toPlane)) / 1e6, 'Photo');
+      else if (isRef) this.pushArea(true);
       this.persist();
     }
   },
@@ -1050,7 +1149,7 @@ const Photo = {
     askSave('', `Entrez la longueur réelle entre les 2 points : 830 mm, 92 cm, 2,50 m, 2m50, 36 in, 5'11"… Sans unité : ${def}.`, (v) => {
       const L = parseLength(v, def);
       if (L > 0 && L < 1e7) {
-        this.lineRefLen = L; this.computeRef(); this.persist();
+        this.lineRefLen = L; this.computeRef(); this.pushArea(true); this.persist();
         toast(`Longueur de référence : ${fmtLen(L, unit, 0.5)}`);
       } else {
         toast('Longueur non comprise : écrivez par exemple « 2,50 m » ou « 830 mm »', 3500);
@@ -1094,7 +1193,12 @@ const Photo = {
     if (last) {
       last.pts.pop(); last.done = false;
       if (!last.pts.length) this.shapes.pop();
-    } else if (this.ref.length) { this.ref.pop(); this.computeRef(); }
+    } else if (this.ref.length) {
+      this.ref.pop();
+      if ($('refSelect').value === 'line') this.lineRefLen = null;
+      else this.forcedLong = null;
+      this.computeRef();
+    }
     this.refresh();
     this.persist();
   },
@@ -1311,7 +1415,8 @@ const Photo = {
     this.draw(c.getContext('2d'), 1, { s, x: 0, y: 0 }, tw, th);
     let img = null;
     try { img = c.toDataURL('image/jpeg', 0.72); } catch {}
-    askSave('Photo', text, (note) => { History.add('Photo', text, note, img); this.saved = true; });
+    askSave('Photo', text, (note) => { if (History.add('Photo', text, note, img)) this.saved = true; });
+    this.pushArea();
   },
 };
 
@@ -1320,15 +1425,25 @@ const Photo = {
    Hauteur (pied → sommet), Distance entre points au sol, Surface au sol depuis un seul point
    ================================================================ */
 
-let lastArea = null; // dernière surface mesurée (m²), proposée dans le Plan
+let lastArea = store.get('lastArea', null); // dernière surface mesurée (m²), proposée dans le Plan
+function paintLastArea() {
+  const b = $('addLast');
+  if (!b) return;
+  b.disabled = !lastArea;
+  b.textContent = lastArea ? `Ajouter la dernière surface : ${fmtAreaBig(lastArea.m2)} (${lastArea.label})` : 'Ajouter la dernière surface mesurée';
+}
 function setLastArea(m2, label) {
   if (!(m2 > 0)) return;
   lastArea = { m2, label };
-  const b = $('addLast');
-  if (b) { b.disabled = false; b.textContent = `Ajouter la dernière surface : ${fmtAreaBig(m2)} (${label})`; }
+  store.set('lastArea', lastArea);
+  paintLastArea();
+}
+function clearLastArea(label) {
+  if (lastArea && lastArea.label === label) { lastArea = null; store.set('lastArea', null); paintLastArea(); }
 }
 
 const Height = {
+  session: Math.random().toString(36).slice(2), // origine du cap gyroscopique : propre à ce chargement de la page
   mode: 'height',
   samples: [],      // {t, e, a} élévation et cap bruts de l'axe caméra (°)
   base: null,       // {e, sig}
@@ -1346,9 +1461,12 @@ const Height = {
     $('eyeH').addEventListener('input', () => { const v = pnum($('eyeH').value); if (this.eyeOk()) store.set('eyeH', v); this.render(); });
     $('armOff').addEventListener('input', () => { const v = pnum($('armOff').value); if (v >= 0 && v < 3) store.set('armOff', v); this.render(); });
     const sv = store.get('visee', null);
-    if (sv) { this.mode = sv.mode || 'height'; this.base = sv.base || null; this.top = sv.top || null; this.shots = sv.shots || []; }
+    if (sv) {
+      this.mode = sv.mode || 'height'; this.base = sv.base || null; this.top = sv.top || null; this.shots = sv.shots || [];
+      if (sv.knownD) $('knownD').value = sv.knownD;
+    }
     document.querySelectorAll('[data-hmode]').forEach((x) => { x.classList.toggle('active', x.dataset.hmode === this.mode); x.setAttribute('aria-pressed', String(x.dataset.hmode === this.mode)); });
-    $('knownD').addEventListener('input', () => this.render());
+    $('knownD').addEventListener('input', () => this.changed());
     $('camStart').addEventListener('click', () => this.start());
     $('markBtn').addEventListener('click', () => this.mark());
     document.querySelectorAll('[data-hmode]').forEach((b) => b.addEventListener('click', () => {
@@ -1372,13 +1490,19 @@ const Height = {
   eyeOk() { const v = pnum($('eyeH').value); return v > 0.2 && v < 50; },
   eye() { return (this.eyeOk() ? pnum($('eyeH').value) : store.get('eyeH', 1.5)) * 1000; },
   // Écart horizontal entre le pivot (vous, qui tournez sur vous-même) et l'objectif du téléphone
-  arm() { const v = pnum($('armOff').value); return (v >= 0 && v < 3 ? v : 0.3) * 1000; },
+  arm() { return (this.armOk() ? pnum($('armOff').value) : store.get('armOff', 0.3)) * 1000; },
   bigU() { return unit === 'in' || unit === 'ft' ? 'ft' : 'm'; },
 
   changed() {
-    store.set('visee', { mode: this.mode, base: this.base, top: this.top, shots: this.shots });
+    store.set('visee', { mode: this.mode, base: this.base, top: this.top, shots: this.shots, knownD: $('knownD').value });
+    if (this.mode === 'floor' && this.shots.length >= 3) { const r = this.result(); if (r) setLastArea(r.area / 1e6, 'Visée'); }
+    else if (this.mode === 'floor') clearLastArea('Visée');
     this.render();
   },
+
+  armOk() { const v = pnum($('armOff').value); return v >= 0 && v < 3; },
+  // Points d'une série visée avant un redémarrage : l'origine du cap a changé, on ne peut pas les compléter
+  staleSeries() { return this.mode !== 'height' && this.shots.some((sh) => sh.s !== this.session); },
   knownDist() { const v = pnum($('knownD').value); return v > 0 ? v * 1000 : null; },
 
   // En surface au sol, les coins sont pris dans l'ordre du tour (cap croissant) quel que soit l'ordre de visée
@@ -1398,7 +1522,8 @@ const Height = {
       am = (a0 + dm + 360) % 360; sdA = ds;
     }
     // Le cap ne sert qu'aux modes Distance et Surface : en Hauteur, seule l'inclinaison doit être stable
-    const steady = E.length >= 8 && sd < 0.12 && (this.mode === 'height' || sdA < 0.3);
+    // (l'écart de cap compte moins quand on vise très bas : on le ramène à l'écart latéral réel)
+    const steady = E.length >= 8 && sd < 0.12 && (this.mode === 'height' || sdA * Math.cos(m / DEG) < 0.3);
     if (!$('s-height').hidden) {
       $('hudAngle').textContent = num(m, 1);
       $('hudStable').textContent = steady ? '● stable' : '○ tenez immobile';
@@ -1415,13 +1540,12 @@ const Height = {
       if (m > -0.5) { toast('Visez un point du sol (vers le bas)'); this.pending = null; this.render(); return; }
       const r = this.eye() / Math.tan(-m / DEG);
       if (r / this.eye() > 12) toast('Point lointain : précision réduite. Rapprochez-vous ou tenez le téléphone plus haut.', 3500);
-      this.shots.push({ e: m, a: am, sigE, sigA: Math.hypot(sdA / Math.sqrt(E.length), this.HEAD_BIAS) });
+      this.shots.push({ e: m, a: am, sigE, sigA: Math.hypot(sdA / Math.sqrt(E.length), this.HEAD_BIAS), s: this.session });
     } else {
       this[this.pending] = { e: m, sig: sigE };
     }
     this.pending = null;
     this.changed();
-    if (this.mode === 'floor' && this.shots.length >= 3) { const r = this.result(); if (r) setLastArea(r.area / 1e6, 'Visée'); }
   },
 
   async start() {
@@ -1453,6 +1577,8 @@ const Height = {
       return;
     }
     if (!this.eyeOk()) { toast('Indiquez la hauteur de l\'objectif (entre 0,2 et 50 m)'); $('eyeH').focus(); return; }
+    if (this.mode !== 'height' && !this.armOk()) { toast('Indiquez l\'écart pivot–téléphone (0 à 3 m)'); $('armOff').focus(); return; }
+    if (this.staleSeries()) { toast('Cette série a été visée avant le redémarrage de l\'app : l\'orientation de départ est perdue. Touchez « Recommencer » pour une nouvelle série.', 6000); return; }
     if (this.mode === 'height') {
       if (this.base && this.top) { this.base = this.top = null; this.changed(); return; }
       const target = this.base ? 'top' : 'base';
@@ -1495,6 +1621,7 @@ const Height = {
 
   // Monte-Carlo : inclinaison, cap, hauteur de l'objectif (±2 cm), écart pivot–objectif (±8 cm) ; distance connue ±1 cm
   result() {
+    if (!this.eyeOk() || (this.mode !== 'height' && !this.armOk())) return null;   // champ invalide : pas de résultat
     const g = gaussFrom(rng(11)), h = this.eye();
     if (this.mode === 'height') {
       if (!this.base) return null;
@@ -1577,6 +1704,8 @@ const Height = {
     $('knownRow').hidden = mode !== 'height';
     $('armRow').hidden = mode === 'height';
     $('eyeH').classList.toggle('invalid', !this.eyeOk());
+    $('armOff').classList.toggle('invalid', !this.armOk());
+    this.invalid = !this.eyeOk() || (mode !== 'height' && !this.armOk());
     this.sketch();
     const r = this.result();
     const set = (i, label, val, tol) => { $('hLabel' + i).textContent = label; $('hVal' + i).textContent = val; $('hTol' + i).textContent = tol || ''; };
@@ -1619,6 +1748,7 @@ const Height = {
   },
 
   save() {
+    if (!this.eyeOk() || (this.mode !== 'height' && !this.armOk())) { toast('Corrigez d\'abord la hauteur de l\'objectif ou l\'écart pivot–téléphone'); return; }
     const r = this.result();
     let text, kind;
     if (this.mode === 'height') {
@@ -1817,15 +1947,27 @@ function screenAngle() {
   return (screen.orientation && screen.orientation.angle) || 0;
 }
 
+// Chant sur lequel repose le téléphone : 0 (bas), 90, 180 (haut), -90 — repère de l'appareil
+const edgeKey = (roll) => { const k = Math.round(roll / 90) * 90; return String(k === -180 ? 180 : k); };
+
+// Son court et silencieux en boucle : sur iOS 15-16, il fait passer l'app en lecture (le bip reste audible
+// même avec l'interrupteur silencieux) ; sur iOS 17+, navigator.audioSession fait de même.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=='; // 0,1 s de silence
+
 const Level = {
   mode: 'auto',
   current: 'surface',
+  edge: '0',
   hold: false,
-  // Calibrage et zéro propres à chaque mode, dans le repère de l'appareil
-  zero: { surface: { x: 0, y: 0 }, edge: { e: 0 } },
+  // Zéro relatif : lecture brute de la surface de référence (le calibrage s'annule alors de lui-même)
+  zero: { surface: null, edge: null },
+  // Calibrage (défaut du capteur, repère de l'appareil) : surface, et chacun des 4 chants séparément
   calib: (() => {
-    const c = store.get('levelCalib2', null);
-    return c && c.surface && c.edge ? c : { surface: { x: 0, y: 0 }, edge: { e: 0 } };
+    const c = store.get('levelCalib3', null);
+    if (c && c.surface && c.edges) return c;
+    const old = store.get('levelCalib', null);   // ancien format : seule la partie surface est fiable
+    const ok = old && Math.abs(old.x) < 3 && Math.abs(old.y) < 3;
+    return { surface: ok ? { x: old.x, y: old.y } : { x: 0, y: 0 }, edges: { 0: 0, 90: 0, 180: 0, '-90': 0 } };
   })(),
   calibStep: 0,
   calibFirst: null,
@@ -1838,11 +1980,14 @@ const Level = {
   audio: null,
 
   init() {
-    document.querySelectorAll('[data-lmode]').forEach((b) => b.addEventListener('click', () => {
-      this.mode = b.dataset.lmode;
-      document.querySelectorAll('[data-lmode]').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-      this.cancelCalib();
-    }));
+    document.querySelectorAll('[data-lmode]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.lmode === this.mode));
+      b.addEventListener('click', () => {
+        this.mode = b.dataset.lmode;
+        document.querySelectorAll('[data-lmode]').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        this.cancelCalib();
+      });
+    });
     $('sensorBtn').addEventListener('click', async () => { if (await Sensors.start()) $('sensorBtn').hidden = true; });
     $('holdBtn').addEventListener('click', () => {
       this.hold = !this.hold;
@@ -1853,13 +1998,10 @@ const Level = {
     });
     $('zeroBtn').addEventListener('click', () => {
       if (!this.raw) return;
-      const m = this.current, z = this.zero[m];
-      if (m === 'surface' ? (z.x || z.y) : z.e) {
-        this.zero[m] = m === 'surface' ? { x: 0, y: 0 } : { e: 0 };
-        toast('Zéro absolu');
-      } else {
-        const c = this.calib[m], r = this.raw;
-        this.zero[m] = m === 'surface' ? { x: r.x - c.x, y: r.y - c.y } : { e: r.e - c.e };
+      const m = this.current;
+      if (this.zero[m]) { this.zero[m] = null; toast('Zéro absolu'); }
+      else {
+        this.zero[m] = m === 'surface' ? { x: this.raw.x, y: this.raw.y } : { e: this.raw.e, edge: this.edge };
         toast('Zéro relatif défini : mesurez un angle par rapport à cette surface');
       }
       this.paintZero();
@@ -1870,16 +2012,14 @@ const Level = {
       $('soundBtn').textContent = 'Son : ' + (this.sound ? 'oui' : 'non');
       $('soundBtn').classList.toggle('on', this.sound);
       $('soundBtn').setAttribute('aria-pressed', String(this.sound));
-      if (this.sound) {
-        this.initAudio();
-        toast('Bip continu quand c\'est de niveau. Rien entendu ? Désactivez le mode silencieux.', 3500);
-      } else this.beep(false);
+      if (this.sound) { this.initAudio(); toast('Bip continu quand c\'est de niveau.'); }
+      else this.audioOff();
     });
     // iOS suspend le son après un appel, Siri ou l'arrière-plan : on le relance au geste suivant
     document.addEventListener('pointerdown', () => {
-      if (this.audio && this.sound && this.audio.ac.state !== 'running') this.audio.ac.resume().catch(() => {});
+      if (this.audio && this.sound && !$('s-level').hidden && this.audio.ac.state !== 'running') this.audio.ac.resume().catch(() => {});
     });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.beep(false); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.audioOff(true); });
     $('levelSave').addEventListener('click', () => {
       if (!this.reading) { toast('Activez les capteurs'); return; }
       const text = $('levelMain').textContent + '\n' + $('levelSub').textContent;
@@ -1894,22 +2034,27 @@ const Level = {
 
   paintZero() {
     const z = this.zero[this.current];
-    const on = this.current === 'surface' ? !!(z.x || z.y) : !!z.e;
+    const on = !!z && (this.current === 'surface' || z.edge === this.edge);
     $('zeroBtn').classList.toggle('on', on);
     $('zeroBtn').setAttribute('aria-pressed', String(on));
   },
 
   paintCalib() {
-    const s = this.calib.surface, e = this.calib.edge;
-    if (s.x || s.y || e.e) {
-      $('calibNote').textContent = `Calibré · surface : X ${fmtDeg(s.x, 2)}, Y ${fmtDeg(s.y, 2)} · chant : ${fmtDeg(e.e, 2)}. Chaque mode se calibre séparément.`;
+    const s = this.calib.surface, E = this.calib.edges;
+    const n = Object.values(E).filter((v) => v).length;
+    if (s.x || s.y || n) {
+      $('calibNote').textContent = `Calibré · surface : X ${fmtDeg(s.x, 2)}, Y ${fmtDeg(s.y, 2)} · chants calibrés : ${n}/4. Chaque mode (et chaque chant) se calibre séparément.`;
     }
   },
 
   initAudio() {
-    try {
-      if (navigator.audioSession) navigator.audioSession.type = 'playback';
-    } catch {}
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
+    if (!navigator.audioSession) {
+      try {
+        if (!this.silent) { this.silent = new Audio(SILENT_WAV); this.silent.loop = true; this.silent.setAttribute('playsinline', ''); }
+        this.silent.play().catch(() => {});
+      } catch {}
+    }
     if (!this.audio) {
       try {
         const ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -1922,6 +2067,15 @@ const Level = {
     this.audio.ac.resume().catch(() => {});
   },
 
+  // Coupe le bip et rend la main au son des autres apps (musique)
+  audioOff(keepSetting = false) {
+    this.beep(false);
+    if (this.audio) this.audio.ac.suspend().catch(() => {});
+    if (this.silent) this.silent.pause();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch {}
+    if (!keepSetting) this.sound = false;
+  },
+
   beep(on) {
     if (!this.audio) return;
     this.audio.gain.gain.setTargetAtTime(this.sound && on ? 0.08 : 0, this.audio.ac.currentTime, 0.02);
@@ -1932,47 +2086,52 @@ const Level = {
     this.calibStep = 0;
     $('calibBtn').textContent = 'Calibrer';
     $('calibBtn').classList.remove('on');
-    $('calibNote').textContent = 'Calibrage annulé (changement de mode).';
+    $('calibNote').textContent = 'Calibrage annulé (changement de mode ou de chant).';
   },
 
   // Calibrage par retournement : la moyenne des deux lectures à 180° d'écart est le défaut du capteur.
-  // Seules les composantes du mode courant sont calibrées.
+  // Seul le mode courant (et le chant courant) est calibré.
   calibrate() {
     if (!this.raw) { toast('Activez les capteurs'); return; }
     if (!this.steady) { toast('Posez le téléphone et attendez « stable »'); return; }
-    const m = this.current;
+    const m = this.current, key = m === 'surface' ? 'surface' : 'edge' + this.edge;
     if (this.calibStep === 0) {
       this.calibFirst = { ...this.raw };
-      this.calibMode = m;
+      this.calibMode = key;
       this.calibStep = 1;
       $('calibBtn').textContent = 'Étape 2';
       $('calibBtn').classList.add('on');
       $('calibNote').textContent = m === 'surface'
         ? 'Tournez le téléphone de 180° à plat, exactement au même endroit, attendez « stable », puis touchez « Étape 2 ».'
-        : 'Retournez le téléphone bout pour bout (180°) sur le même chant, attendez « stable », puis touchez « Étape 2 ».';
+        : 'Retournez le téléphone bout pour bout (180°) en restant sur le même chant, attendez « stable », puis touchez « Étape 2 ».';
       return;
     }
-    if (m !== this.calibMode) { this.cancelCalib(); return; }
+    if (key !== this.calibMode) { this.cancelCalib(); return; }
     const a = this.calibFirst, b = this.raw;
-    if (m === 'surface') this.calib.surface = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    else this.calib.edge = { e: (a.e + b.e) / 2 };
-    store.set('levelCalib2', this.calib);
+    const c = m === 'surface' ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : { e: (a.e + b.e) / 2 };
     this.calibStep = 0;
     $('calibBtn').textContent = 'Calibrer';
     $('calibBtn').classList.remove('on');
+    // Un capteur d'iPhone se trompe de quelques dixièmes de degré : au-delà, la pose a bougé
+    if (Math.max(Math.abs(c.x ?? 0), Math.abs(c.y ?? 0), Math.abs(c.e ?? 0)) > 3) {
+      toast('Correction trop grande (plus de 3°) : le téléphone a bougé ou la surface n\'est pas stable. Recommencez.', 4500);
+      return;
+    }
+    if (m === 'surface') this.calib.surface = c; else this.calib.edges[this.edge] = c.e;
+    const ok = store.set('levelCalib3', this.calib);
     this.paintCalib();
-    toast(m === 'surface' ? 'Calibrage de la surface enregistré' : 'Calibrage du chant enregistré');
+    toast(!ok ? 'Calibré pour cette session (stockage plein : non sauvegardé)' : m === 'surface' ? 'Calibrage de la surface enregistré' : 'Calibrage de ce chant enregistré', ok ? 2400 : 5000);
   },
 
   update(_, rawUp) {
     const [ux, uy, uz] = rawUp;
     const roll = Math.atan2(ux, uy) * DEG;
-    const now = { x: Math.atan2(ux, uz) * DEG, y: Math.atan2(uy, uz) * DEG, e: roll - 90 * Math.round(roll / 90), uz };
+    const now = { x: Math.atan2(ux, uz) * DEG, y: Math.atan2(uy, uz) * DEG, e: roll - 90 * Math.round(roll / 90), uz, k: edgeKey(roll) };
     const surfaceNow = this.current === 'surface';
     // Moyenne glissante ~0,5 s ; on repart de zéro seulement si l'appareil bouge franchement
     // (sur les seules composantes utiles au mode : à plat, l'angle de chant n'a pas de sens et varie beaucoup)
     const last = this.buf[this.buf.length - 1];
-    if (last && (surfaceNow ? Math.max(Math.abs(last.x - now.x), Math.abs(last.y - now.y)) : Math.abs(last.e - now.e)) > 1.5) this.buf = [];
+    if (last && (surfaceNow ? Math.max(Math.abs(last.x - now.x), Math.abs(last.y - now.y)) : (Math.abs(last.e - now.e) > 1.5 || last.k !== now.k ? 99 : 0)) > 1.5) this.buf = [];
     this.buf.push(now);
     if (this.buf.length > 30) this.buf.shift();
     const avg = (k) => this.buf.reduce((s, v) => s + v[k], 0) / this.buf.length;
@@ -1983,12 +2142,13 @@ const Level = {
     if (this.hold || $('s-level').hidden) { this.beep(false); return; }
 
     const auz = Math.abs(avg('uz'));
-    const prev = this.current;
+    const prev = this.current, prevEdge = this.edge;
     if (this.mode === 'auto') {
       if (this.current === 'surface' && auz < 0.7) this.current = 'edge';
       else if (this.current === 'edge' && auz > 0.8) this.current = 'surface';
     } else this.current = this.mode;
-    if (prev !== this.current) { this.buf = [now]; this.cancelCalib(); this.paintZero(); }
+    this.edge = now.k;
+    if (prev !== this.current || (this.current === 'edge' && prevEdge !== this.edge)) { this.buf = [now]; this.cancelCalib(); this.paintZero(); }
 
     const surface = this.current === 'surface';
     this.steady = this.buf.length >= 15 && sd < 0.06;
@@ -1997,16 +2157,17 @@ const Level = {
     $('levelEdge').hidden = surface;
     $('levelStable').textContent = this.steady ? '● stable' : '○ en mouvement';
     $('levelStable').classList.toggle('ok', this.steady);
+    const th = screenAngle();
 
     let dev;
     if (surface) {
-      const c = this.calib.surface, z = this.zero.surface;
-      const ax = this.raw.x - c.x - z.x, ay = this.raw.y - c.y - z.y;   // repère de l'appareil
+      const z = this.zero.surface, c = this.calib.surface;
+      const ax = this.raw.x - (z ? z.x : c.x), ay = this.raw.y - (z ? z.y : c.y);   // repère de l'appareil
       // Inclinaison exacte : tan²(X) + tan²(Y) = tan²(inclinaison)
       const tilt = Math.atan(Math.hypot(Math.tan(ax / DEG), Math.tan(ay / DEG))) * DEG;
       // Repère de l'écran (l'app peut être affichée en paysage)
-      const th = screenAngle() / DEG;
-      const x = ax * Math.cos(th) - ay * Math.sin(th), y = ax * Math.sin(th) + ay * Math.cos(th);
+      const t = th / DEG;
+      const x = ax * Math.cos(t) - ay * Math.sin(t), y = ax * Math.sin(t) + ay * Math.cos(t);
       this.reading = { x, y, tilt };
       dev = tilt;
       const R = $('levelSurface').clientWidth / 2;
@@ -2015,10 +2176,14 @@ const Level = {
       $('levelMain').textContent = fmtDeg(tilt, dg);
       $('levelSub').textContent = `X ${fmtDeg(x, dg)} · Y ${fmtDeg(y, dg)} · ${num(Math.tan(tilt / DEG) * 1000, 1)} mm/m`;
     } else {
-      const ed = this.raw.e - this.calib.edge.e - this.zero.edge.e;
+      const z = this.zero.edge && this.zero.edge.edge === this.edge ? this.zero.edge : null;
+      const ed = this.raw.e - (z ? z.e : this.calib.edges[this.edge] || 0);
       this.reading = { e: ed };
       dev = Math.abs(ed);
-      $('horizon').style.transform = `rotate(${ed}deg)`;
+      // Horizon dans le repère de l'écran affiché (juste aussi quand l'orientation est verrouillée en portrait)
+      let hr = Number(this.edge) + ed - th;
+      hr = ((hr + 540) % 360) - 180;
+      $('horizon').style.transform = `rotate(${hr}deg)`;
       $('levelMain').textContent = fmtDeg(Math.abs(ed), dg);
       $('levelSub').textContent = `pente ${num(Math.tan(Math.abs(ed) / DEG) * 100, 2)} % · ${num(Math.tan(Math.abs(ed) / DEG) * 1000, 1)} mm/m`;
     }
@@ -2080,16 +2245,17 @@ const Ruler = {
       this.calibrating = !this.calibrating;
       $('rulerCalib').hidden = !this.calibrating;
       $('rulerSlider').value = this.ppi;
-      this.draw();
+      requestAnimationFrame(() => this.resize()); // le panneau de calibrage réduit la hauteur de la règle
     });
     const setPpi = (v) => { this.ppi = clamp(v, 100, 220); $('rulerSlider').value = this.ppi; this.draw(); this.place(); };
     $('rulerSlider').addEventListener('input', () => setPpi(parseFloat($('rulerSlider').value)));
     $('ppiMinus').addEventListener('click', () => setPpi(this.ppi - 0.1));
     $('ppiPlus').addEventListener('click', () => setPpi(this.ppi + 0.1));
     $('calibDone').addEventListener('click', () => {
-      store.set('ppi', this.ppi); this.calibrated = true;
-      this.calibrating = false; $('rulerCalib').hidden = true; this.draw(); this.place();
-      toast('Règle calibrée');
+      const ok = store.set('ppi', this.ppi); this.calibrated = true;
+      this.calibrating = false; $('rulerCalib').hidden = true;
+      requestAnimationFrame(() => this.resize());
+      toast(ok ? 'Règle calibrée' : 'Règle calibrée pour cette session (stockage plein : réglage non sauvegardé)', ok ? 2400 : 5000);
     });
     $('rulerSave').addEventListener('click', () => {
       const text = fmtLen(Math.abs(this.b - this.a) / this.pxmm, 'mm', 0.5);
@@ -2111,7 +2277,7 @@ const Ruler = {
     $('curB').style.top = this.b + 'px';
     const mm = Math.abs(this.b - this.a) / this.pxmm;
     $('rulerVal').textContent = unit === 'in' || unit === 'ft' ? fmtLen(mm, 'in', 0.1) : num(mm, 1) + ' mm';
-    $('rulerPpi').textContent = this.calibrated ? `calibrée · ${num(this.ppi, 1)} pt/po` : 'non calibrée (jusqu\'à ± 10 %)';
+    $('rulerPpi').textContent = this.calibrated ? `calibrée · ${num(this.ppi, 1)} pt/po` : 'non calibrée : échelle approximative';
     $('rulerPpi').classList.toggle('warn', !this.calibrated);
     $('calibRuler').classList.toggle('primary', !this.calibrated);
   },
@@ -2147,7 +2313,15 @@ const Ruler = {
     ctx.fillText('cm', 30, 10);
     ctx.textAlign = 'right'; ctx.fillText('in', this.w - 30, 10);
     if (this.calibrating) {
-      const y0 = 20, y1 = y0 + 85.6 * pm;
+      // Référence de calibrage qui tient à l'écran, même en agrandissant l'échelle de 15 %
+      const room = this.h - 40;
+      const refs = [[85.6, 'le grand côté d\'une carte bancaire (85,60 mm)'], [53.98, 'le petit côté d\'une carte bancaire (53,98 mm)'], [25.75, 'une pièce de 2 € (25,75 mm)']];
+      const [L, txt] = refs.find(([l]) => l * pm * 1.15 <= room) || refs[2];
+      if (this.calibLen !== L) {
+        this.calibLen = L;
+        $('calibText').textContent = `Posez ${txt} sur l'écran, contre le trait rouge du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord.`;
+      }
+      const y0 = 20, y1 = y0 + L * pm;
       ctx.fillStyle = 'rgba(210,48,31,.12)';
       ctx.fillRect(60, y0, this.w - 120, y1 - y0);
       ctx.strokeStyle = '#d2301f'; ctx.lineWidth = 1;
@@ -2179,6 +2353,7 @@ class GeoMap {
     this.ctx = this.canvas.getContext('2d');
     this.center = o.center; this.zoom = o.zoom; this.base = o.base || 'sat';
     this.tiles = new Map();
+    this.retries = new Map();
     this.pointers = new Map();
     this.loaded = 0; this.errors = 0;
     const c = this.canvas;
@@ -2255,13 +2430,16 @@ class GeoMap {
     x = ((x % n) + n) % n;
     const key = `${this.base}/${z}/${x}/${y}`;
     let t = this.tiles.get(key);
-    if (t && t.err && create && Date.now() - t.errAt > 8000) { this.tiles.delete(key); t = null; } // nouvel essai
+    if (t && t.err && create && navigator.onLine !== false && Date.now() - t.errAt > t.wait) { this.tiles.delete(key); this.retries.set(key, t.wait * 2); t = null; } // nouvel essai
     if (t) { this.tiles.delete(key); this.tiles.set(key, t); return t; }
     if (!create) return null;
-    t = { img: new Image(), ok: false };
+    t = { img: new Image(), ok: false, wait: this.retries.get(key) || 8000 };
     t.img.decoding = 'async';
     t.img.onload = () => { t.ok = true; this.loaded++; this.request(); this.o.onTiles && this.o.onTiles(this); };
-    t.img.onerror = () => { t.err = true; t.errAt = Date.now(); this.errors++; this.o.onTiles && this.o.onTiles(this); setTimeout(() => this.request(), 8500); };
+    t.img.onerror = () => {
+      t.err = true; t.errAt = Date.now(); this.errors++; this.o.onTiles && this.o.onTiles(this);
+      if (t.wait <= 64000) setTimeout(() => { if (this.canvas.isConnected && this.wrap.offsetParent !== null) this.request(); }, t.wait + 500);
+    };
     t.img.src = BASEMAPS[this.base].url(z, x, y);
     this.tiles.set(key, t);
     if (this.tiles.size > 500) this.tiles.delete(this.tiles.keys().next().value);
@@ -2396,9 +2574,13 @@ function curv(lat) {
 // Aire (m²) : projection sinusoïdale ellipsoïdale centrée sur le polygone (équivalente), puis formule du lacet
 function geoArea(pts) {
   if (pts.length < 3) return 0;
-  const lat0 = pts.reduce((s, p) => s + p[0], 0) / pts.length, lon0 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  const lat0 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
   const { M } = curv(lat0);
-  const P = pts.map(([la, lo]) => [curv(la).N * Math.cos(la / DEG) * (lo - lon0) / DEG, M * (la - lat0) / DEG]);
+  const wrap = (d) => (d > 180 ? d - 360 : d < -180 ? d + 360 : d);
+  const ref = pts[0][1];
+  const L = pts.map((p) => ref + wrap(p[1] - ref));            // longitudes continues (antiméridien)
+  const l0 = L.reduce((s, v) => s + v, 0) / L.length;
+  const P = pts.map(([la], i) => [curv(la).N * Math.cos(la / DEG) * (L[i] - l0) / DEG, M * (la - lat0) / DEG]);
   let a = 0;
   for (let i = 0; i < P.length; i++) { const j = (i + 1) % P.length; a += P[i][0] * P[j][1] - P[j][0] * P[i][1]; }
   return Math.abs(a) / 2;
@@ -2430,6 +2612,8 @@ const Terrain = {
   collecting: null,
 
   init() {
+    // iOS relâche le maintien de l'écran en arrière-plan : on le reprend au retour pendant la marche auto
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && this.auto) this.keepAwake(); });
     document.querySelectorAll('[data-tmode]').forEach((b) => {
       b.classList.toggle('active', b.dataset.tmode === this.mode);
       b.addEventListener('click', () => {
@@ -2461,6 +2645,7 @@ const Terrain = {
     $('mapZoomIn').addEventListener('click', () => this.map && this.map.zoomAround([this.map.w / 2, this.map.h / 2], Math.round(this.map.zoom) + 1));
     $('mapZoomOut').addEventListener('click', () => this.map && this.map.zoomAround([this.map.w / 2, this.map.h / 2], Math.round(this.map.zoom) - 1));
     $('mapLocate').addEventListener('click', () => {
+      this.denied = false;
       this.startWatch(true);
       if (this.fix && this.map) this.map.setView([this.fix.lat, this.fix.lon], Math.max(this.map.zoom, 18));
       else toast('Recherche de votre position…');
@@ -2607,6 +2792,8 @@ const Terrain = {
   stopWatch() {
     if (this.watchId != null && navigator.geolocation) navigator.geolocation.clearWatch(this.watchId);
     this.watchId = null;
+    this.fix = null; this.coarse = 0;   // une position ancienne ne doit pas resservir plus tard
+    if (this.map) this.map.request();
   },
 
   startWatch(force) {
@@ -2617,8 +2804,9 @@ const Terrain = {
       const gap = this.fix ? Date.now() - this.fix.t : 0;
       this.fix = { lat: c.latitude, lon: c.longitude, acc: c.accuracy, t: Date.now() };
       if (this.auto && gap > 15000) toast('Suivi GPS interrompu un moment (écran verrouillé ?) : vérifiez le tracé.', 4000);
-      // « Position exacte » désactivée dans iOS : précision de plusieurs centaines de mètres
-      if (c.accuracy > 500 && !this.approxWarned) {
+      // « Position exacte » désactivée dans iOS : précision de plusieurs centaines de mètres, durablement
+      this.coarse = c.accuracy > 500 ? (this.coarse || 0) + 1 : 0;
+      if (this.coarse >= 3 && !this.approxWarned) {
         this.approxWarned = true;
         toast('Position approximative : activez « Position exacte » (Réglages › Confidentialité › Service de localisation › Safari ou Toise).', 6000);
       }
@@ -2648,6 +2836,7 @@ const Terrain = {
   // Point GPS moyenné pendant 8 s, pondéré par la précision de chaque relevé
   gpsPoint() {
     if (!navigator.geolocation) { toast('GPS indisponible'); return; }
+    this.denied = false;
     this.startWatch(false);
     if (this.collecting) return;
     // Immobile, l'iPhone peut ne plus envoyer de position : on la redemande chaque seconde
@@ -2684,6 +2873,7 @@ const Terrain = {
       const sig = Math.max(bestAcc / 2, Math.sqrt(1 / sw) / Math.sqrt(Math.min(fixes.length, 3)));
       this.pts.push(mkPt(la / sw, lo / sw, sig, 'gps'));
       this.changed();
+      if ($('s-terrain').hidden && !this.auto) this.stopWatch();   // fini pendant qu'on était sur un autre écran
       toast(`Point GPS ajouté (± ${num(sig * 2, 1)} m, ${fixes.length} relevé${fixes.length > 1 ? 's' : ''})`);
     }, 1000);
   },
@@ -2694,16 +2884,22 @@ const Terrain = {
     $('gpsAuto').setAttribute('aria-pressed', String(this.auto));
     $('gpsAuto').textContent = this.auto ? 'Arrêter la marche' : 'Marche auto';
     if (this.auto) {
+      this.denied = false;
       this.startWatch(false);
       // Écran verrouillé = GPS coupé par iOS : on garde l'écran allumé pendant le tour
-      if (await this.keepAwake()) toast('Faites le tour : un point tous les 3 m environ. L\'écran reste allumé.');
+      const awake = await this.keepAwake();
+      if (!this.auto) { this.releaseLock(); return; }   // arrêtée pendant la demande
+      if (awake) toast('Faites le tour : un point tous les 3 m environ. L\'écran reste allumé.');
       else toast('Faites le tour : un point tous les 3 m. Gardez l\'écran allumé (le verrouillage coupe le GPS).', 4500);
-    } else if (this.lock) { this.lock.release().catch(() => {}); this.lock = null; }
+    } else this.releaseLock();
   },
+
+  releaseLock() { if (this.lock) { this.lock.release().catch(() => {}); this.lock = null; } },
 
   async keepAwake() {
     try {
       if (!navigator.wakeLock) return false;
+      this.releaseLock();
       this.lock = await navigator.wakeLock.request('screen');
       return true;
     } catch { return false; }
@@ -2723,6 +2919,7 @@ const Terrain = {
     if (persist) {
       store.set('terrainPts', this.pts.map((p) => [p[0], p[1], p.sig, p.src]));
       if (this.mode === 'area' && this.pts.length >= 3) setLastArea(geoArea(this.pts), 'Terrain');
+      else clearLastArea('Terrain');
     }
     if (this.sel != null && this.sel >= this.pts.length) this.sel = null;
     $('tUndo').textContent = this.sel != null ? 'Retirer ce point' : 'Annuler';
@@ -2795,6 +2992,8 @@ function show(name) {
   document.querySelectorAll('[data-tool-screen]').forEach((b) => { b.classList.toggle('active', b.dataset.toolScreen === name); b.setAttribute('aria-pressed', String(b.dataset.toolScreen === name)); });
   document.querySelectorAll('.tab').forEach((t) => { if (t.classList.contains('active')) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
   $('screenTitle').textContent = isTool ? '' : TITLES[name];
+  if (name !== 'level' && Level.sound) Level.audioOff(true);
+  if (name === 'level' && Level.sound) Level.initAudio();
   if (name !== 'height') Height.stop();
   else if (Height.wanted) Height.start();
   if (name !== 'terrain' && !Terrain.auto && !Terrain.collecting) Terrain.stopWatch();
@@ -2806,6 +3005,8 @@ function show(name) {
   });
   if (name === 'photo') requestAnimationFrame(() => Photo.resize());
   if (name === 'terrain') requestAnimationFrame(() => Terrain.open());
+  if (name === 'height') requestAnimationFrame(() => Height.render());
+  if (name === 'plan') paintLastArea();
   store.set('screen', name);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => show(t.dataset.screen)));
@@ -2818,11 +3019,20 @@ Level.init();
 Ruler.init();
 Terrain.init();
 Plan.init();
+paintLastArea();
 History.render();
 Height.render();
 Terrain.render();
 show(store.get('screen', 'photo') === 'height' ? 'photo' : store.get('screen', 'photo'));
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
+if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Nouvelle version téléchargée en arrière-plan : on propose de recharger (rien n'est perdu, tout est sauvegardé)
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'toise-update') return;
+    const t = $('toast');
+    toast('Nouvelle version de Toise prête : touchez ici pour l\'ouvrir.', 15000);
+    t.classList.add('action');
+    t.onclick = () => { Photo.persist(); location.reload(); };
+  });
 }
