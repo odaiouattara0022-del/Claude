@@ -1,0 +1,17 @@
+{
+  "name": "Toise — Mesure",
+  "short_name": "Toise",
+  "description": "Mesure sur photo avec correction de perspective, hauteur, niveau, règle.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#121317",
+  "theme_color": "#121317",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

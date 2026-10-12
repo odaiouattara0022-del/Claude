@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Toise">
+<meta name="theme-color" content="#121317">
+<title>Toise</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1 id="screenTitle">Photo</h1>
+    <button class="chip" id="unitBtn" aria-label="Changer d'unité">cm</button>
+  </header>
+
+  <main>
+    <!-- ============ PHOTO ============ -->
+    <section class="screen" id="s-photo">
+      <div class="photo-empty" id="photoEmpty">
+        <div class="empty-art" aria-hidden="true">
+          <svg viewBox="0 0 120 80"><rect x="18" y="14" width="84" height="54" rx="4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4"/><rect x="30" y="26" width="34" height="22" rx="2" fill="var(--accent)" opacity=".85"/><path d="M70 56 L96 30" stroke="var(--accent)" stroke-width="2.5"/><circle cx="70" cy="56" r="3.5" fill="var(--accent)"/><circle cx="96" cy="30" r="3.5" fill="var(--accent)"/></svg>
+        </div>
+        <h2>Mesurer sur une photo</h2>
+        <p>Posez un objet de taille connue (carte bancaire, feuille A4…) <b>à plat, dans le même plan</b> que ce que vous mesurez. Toise corrige la perspective à partir de ses 4 coins.</p>
+        <label class="btn primary file-btn">
+          <input type="file" id="photoInput" accept="image/*" capture="environment">
+          Prendre une photo
+        </label>
+        <label class="btn file-btn">
+          <input type="file" id="photoInputLib" accept="image/*">
+          Choisir dans la photothèque
+        </label>
+      </div>
+
+      <div class="photo-work" id="photoWork" hidden>
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="photoCanvas"></canvas>
+          <canvas id="loupe" width="240" height="240" hidden></canvas>
+        </div>
+        <div class="photo-bar">
+          <div class="step" id="photoStep">1. Placez les 4 coins de la référence</div>
+          <div class="ref-row" id="refRow">
+            <select id="refSelect" aria-label="Objet de référence">
+              <option value="card">Carte bancaire 85,6 × 54 mm</option>
+              <option value="a4">Feuille A4 210 × 297 mm</option>
+              <option value="letter">Lettre US 216 × 279 mm</option>
+              <option value="bill">Billet 20 € 133 × 72 mm</option>
+              <option value="tile">Carreau 30 × 30 cm</option>
+              <option value="custom">Personnalisé…</option>
+              <option value="line">Longueur connue (2 points)</option>
+            </select>
+            <div class="custom" id="customRef" hidden>
+              <input type="number" id="customW" inputmode="decimal" placeholder="L mm" aria-label="Largeur en mm">
+              <span>×</span>
+              <input type="number" id="customH" inputmode="decimal" placeholder="H mm" aria-label="Hauteur en mm">
+            </div>
+          </div>
+          <div class="tools" id="measureTools" hidden>
+            <button class="tool active" data-tool="line">Longueur</button>
+            <button class="tool" data-tool="area">Surface</button>
+            <button class="tool" data-tool="angle">Angle</button>
+          </div>
+          <div class="actions">
+            <button class="btn small" id="undoBtn">Annuler</button>
+            <button class="btn small" id="resetRefBtn">Référence</button>
+            <button class="btn small" id="newPhotoBtn">Nouvelle photo</button>
+            <button class="btn small primary" id="savePhotoBtn">Enregistrer</button>
+          </div>
+          <ul class="results" id="photoResults"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HAUTEUR ============ -->
+    <section class="screen" id="s-height" hidden>
+      <div class="cam" id="camBox">
+        <video id="camVideo" playsinline muted autoplay></video>
+        <div class="crosshair" aria-hidden="true"><span></span></div>
+        <div class="cam-hud">
+          <div class="hud-angle"><span id="hudAngle">--</span>°</div>
+          <div class="hud-hint" id="heightHint">Visez la base de l'objet</div>
+        </div>
+        <button class="btn" id="camStart">Activer la caméra et les capteurs</button>
+      </div>
+      <div class="panel">
+        <div class="field-row">
+          <label for="eyeH">Hauteur du téléphone</label>
+          <div class="num-input"><input type="number" id="eyeH" inputmode="decimal" step="0.01" value="1.50"><span>m</span></div>
+        </div>
+        <div class="field-row">
+          <label for="knownD">Distance connue <small>(facultatif)</small></label>
+          <div class="num-input"><input type="number" id="knownD" inputmode="decimal" step="0.01" placeholder="auto"><span>m</span></div>
+        </div>
+        <div class="readouts">
+          <div><small>Distance</small><b id="outDist">—</b></div>
+          <div><small>Hauteur</small><b id="outHeight">—</b></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary big" id="markBtn">Viser la base</button>
+          <button class="btn small" id="heightReset">Recommencer</button>
+          <button class="btn small" id="heightSave">Enregistrer</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NIVEAU ============ -->
+    <section class="screen" id="s-level" hidden>
+      <div class="level" id="levelBox">
+        <div class="level-surface" id="levelSurface">
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <div class="bubble" id="bubble"></div>
+        </div>
+        <div class="level-edge" id="levelEdge" hidden>
+          <div class="horizon" id="horizon"></div>
+        </div>
+        <div class="level-read">
+          <div class="big-num" id="levelMain">--°</div>
+          <div class="sub-num" id="levelSub">Posez le téléphone</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="seg" role="tablist">
+          <button class="seg-b active" data-lmode="auto">Auto</button>
+          <button class="seg-b" data-lmode="surface">Surface</button>
+          <button class="seg-b" data-lmode="edge">Chant</button>
+        </div>
+        <div class="actions">
+          <button class="btn small" id="sensorBtn">Activer les capteurs</button>
+          <button class="btn small" id="holdBtn">Figer</button>
+          <button class="btn small" id="zeroBtn">Zéro relatif</button>
+          <button class="btn small" id="calibBtn">Calibrer</button>
+          <button class="btn small" id="soundBtn">Son : non</button>
+          <button class="btn small primary" id="levelSave">Enregistrer</button>
+        </div>
+        <p class="note" id="calibNote">Calibrage en 2 temps : posez, appuyez, tournez de 180°, appuyez. Élimine le défaut du capteur.</p>
+      </div>
+    </section>
+
+    <!-- ============ RÈGLE ============ -->
+    <section class="screen" id="s-ruler" hidden>
+      <div class="ruler" id="rulerBox">
+        <canvas id="rulerCanvas"></canvas>
+        <div class="cursor" id="curA"><span></span></div>
+        <div class="cursor" id="curB"><span></span></div>
+        <div class="ruler-read"><b id="rulerVal">0,0 mm</b><small id="rulerPpi"></small></div>
+      </div>
+      <div class="panel">
+        <div class="actions">
+          <button class="btn small" id="calibRuler">Calibrer avec une carte</button>
+          <button class="btn small primary" id="rulerSave">Enregistrer</button>
+        </div>
+        <div class="calib" id="rulerCalib" hidden>
+          <p>Posez une carte bancaire sur l'écran, bord gauche contre le trait du haut. Ajustez jusqu'à ce que le trait du bas touche l'autre bord (85,60 mm).</p>
+          <input type="range" id="rulerSlider" min="120" max="200" step="0.05">
+          <button class="btn small primary" id="calibDone">Terminé</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISTORIQUE ============ -->
+    <section class="screen" id="s-history" hidden>
+      <div class="hist-head">
+        <button class="btn small" id="copyAll">Copier tout</button>
+        <button class="btn small" id="shareAll">Partager</button>
+        <button class="btn small danger" id="clearAll">Tout effacer</button>
+      </div>
+      <ul class="hist" id="histList"></ul>
+      <div class="hist-empty" id="histEmpty">
+        <p>Aucune mesure enregistrée.</p>
+        <p class="note">Les mesures restent sur cet appareil, avec photo annotée, note et date.</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Outils">
+    <button class="tab active" data-screen="photo"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Photo</button>
+    <button class="tab" data-screen="height"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 20V8l5-4 5 4v12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M20 4v16" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2 2"/></svg>Hauteur</button>
+    <button class="tab" data-screen="level"><svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M9 8v8M15 8v8" stroke="currentColor" stroke-width="1.2"/></svg>Niveau</button>
+    <button class="tab" data-screen="ruler"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 7v4M11 7v3M15 7v4M19 7v3" stroke="currentColor" stroke-width="1.5"/></svg>Règle</button>
+    <button class="tab" data-screen="history"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.5"/></svg>Mesures</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card">
+    <h3 id="sheetTitle">Enregistrer</h3>
+    <p id="sheetValue" class="sheet-value"></p>
+    <input type="text" id="sheetNote" placeholder="Note (ex. : largeur porte salon)" maxlength="120">
+    <div class="actions">
+      <button class="btn small" id="sheetCancel">Annuler</button>
+      <button class="btn small primary" id="sheetOk">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
