@@ -7,11 +7,14 @@ RewriteEngine On
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Renouvellement du certificat HTTPS : toujours accessible
+RewriteRule ^\.well-known/ - [L]
+
 # Historique Git et fichiers cachés : interdits
 RewriteRule (^|/)\. - [F,L]
 
 # Tout le reste → l'app
-RewriteCond %{REQUEST_URI} !^/app-mesure/
+RewriteCond %{REQUEST_URI} !^/app-mesure(/|$)
 RewriteRule ^(.*)$ app-mesure/$1 [L]
 
 DirectoryIndex index.html
